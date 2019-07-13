@@ -14,64 +14,55 @@ typedef struct _st_iTask {
 //### ORDER LIST ###
 #define ORDER_MAX		8
 
-typedef struct _stCLIENT_ORDER{
+/// JOB Order
+typedef struct _stJOB_REPRORT {
+	WORD code;
+	WORD property;
 	WORD status;
-	WORD order;
-}ST_CLIENT_ORDER, *LPST_CLIENT_ORDER;
+}ST_JOB_REPRORT, *LPST_JOB_REPRORT;
 
-typedef struct _stCLIENT_ORDER_RECEIPT{
+typedef struct _stJOB_ORDER {
+	WORD code;
+	WORD property;
 	WORD status;
-	WORD receipt;
-}ST_CLIENT_ORDER_RECEIPT, *LPST_CLIENT_ORDER_RECEIPT;
+	WORD responce;
+	ST_JOB_REPRORT repo1;
+	ST_JOB_REPRORT repo2;
+}ST_JOB_ORDER, *LPST_JOB_ORDER;
 
-typedef struct _stCLIENT_ORDER_REPORT {
+typedef struct _stMODE_ORDER {
+	WORD code;
+	WORD property;
 	WORD status;
-	WORD report;
-}ST_CLIENT_ORDER_REPORT, *LPST_CLIENT_ORDER_REPORT;
+	WORD responce;
+}ST_MODE_ORDER, *LPST_MODE_ORDER;
 
-typedef struct _stCLIENT_ORDER_PACK {
+typedef struct _stESTOP_ORDER {
+	WORD code;
+	WORD property;
 	WORD status;
-	ST_CLIENT_ORDER order;
-	ST_CLIENT_ORDER_RECEIPT receipt;
-	ST_CLIENT_ORDER_REPORT	report;
-}ST_CLIENT_ORDER_PACK, *LPST_CLIENT_ORDER_PACK;
+	WORD responce;
+}ST_ESTOP_ORDER, *LPST_ESTOP_ORDER;
 
-typedef struct _stORDER_FILE {
-	WORD ihot;
-	ST_CLIENT_ORDER_PACK order_pack[ORDER_MAX];
-}ST_ORDER_FILE, *LPST_ORDER_FILE;
+typedef struct _stMANUAL_ORDER {
+	WORD status;
+	WORD hoist;
+	WORD trolley;
+	WORD gantry;
+	WORD relief;
+	WORD turn;
+}ST_MANUAL_ORDER, *LPST_MANUAL_ORDER;
 
-
-//### JOB LIST ###
-
-typedef struct _stJOB_RECIPE {
-	WORD preproc;
-	WORD from;
-	WORD midproc;
-	WORD to;
-	WORD postproc;
-}ST_JOB_RECIPE, *LPST_JOB_RECIPE;
-
-typedef struct _stJOB {
-	WORD jobID;
-	ST_JOB_RECIPE recipe;
-}ST_JOB, *LPST_JOB;
-
-typedef struct _stJOB_REPORT {
-	WORD report;
-}ST_JOB_REPORT, *LPST_JOB_REPORT;
+typedef struct _stUI_ORDER {
+	WORD status;
+	WORD hoist;
+	WORD trolley;
+	WORD gantry;
+	WORD relief;
+	WORD turn;
+}ST_UI_ORDER, *LPST_UI_ORDER;
 
 
-typedef struct _stJOB_PACK {
 
-	LPST_CLIENT_ORDER_PACK pOrder[ORDER_MAX];
-	ST_CLIENT_ORDER_RECEIPT receipt[ORDER_MAX];
-	ST_CLIENT_ORDER_REPORT	report[ORDER_MAX];
 
-}ST_JOB_PACK, *LPST_JOB_PACK;
 
-typedef struct _stJOB_FILE {
-	WORD ihot;
-	ST_JOB_PACK job_pack[ORDER_MAX];
-
-}ST_JOB_FILE, *LPST_JOB_FILE;

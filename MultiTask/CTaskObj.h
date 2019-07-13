@@ -4,6 +4,9 @@
 #include <process.h>
 #include "resource.h"
 
+#include "SharedObjects.h"
+#include "CommonFormat.h"
+
 using namespace std;
 
 //#ƒ^ƒXƒNğŒİ’è•”
