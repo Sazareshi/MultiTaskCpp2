@@ -158,6 +158,7 @@
     <ClInclude Include="CClerk.h" />
     <ClInclude Include="CComClient.h" />
     <ClInclude Include="CComPartner.h" />
+    <ClInclude Include="CodeDef.h" />
     <ClInclude Include="CommonFormat.h" />
     <ClInclude Include="CPlayer.h" />
     <ClInclude Include="CManager.h" />

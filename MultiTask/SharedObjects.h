@@ -38,3 +38,31 @@ public:
 
 	BYTE fault[NUM_OF_TASK][NUM_OF_TASK_FAULT];
 };
+
+
+typedef struct _stIO_Physic {
+	double M_load;
+
+	double x;
+	double y;
+	double z;
+	double th;
+	double ph;
+
+	double vx;
+	double vy;
+	double vz;
+	double wth;
+	double wph;
+
+}ST_IO_PHYSIC, *LPST_IO_PHYSIC;
+
+class CIO_Table
+{
+public:
+	CIO_Table() {};
+	~CIO_Table() {};
+
+	ST_IO_PHYSIC phsic;
+
+};
