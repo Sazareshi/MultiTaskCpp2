@@ -82,22 +82,22 @@ typedef struct _stESTOP_ORDER {
 typedef struct _stMANUAL_ORDER {
 	WORD type;				//手動操作タイプ
 	WORD status;			//実行ステータス　-1：無効
-	WORD mh;
-	WORD tt;
-	WORD gt;
-	WORD bh;
-	WORD slew;
+	double mh;
+	double tt;
+	double gt;
+	double bh;
+	double slew;
 }ST_MANUAL_ORDER, *LPST_MANUAL_ORDER;
 
 /// ユーザインターフェイス Order
 typedef struct _stUI_ORDER {
 	WORD type;				//UI処理タイプ
 	WORD status;			//実行ステータス　-1：無効
-	WORD mh;
-	WORD tt;
-	WORD gt;
-	WORD bh;
-	WORD slew;
+	double mh;
+	double tt;
+	double gt;
+	double bh;
+	double slew;
 }ST_UI_ORDER, *LPST_UI_ORDER;
 
 /// ステータス報告 Order

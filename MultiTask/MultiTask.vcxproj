@@ -163,7 +163,9 @@
     <ClInclude Include="CPlayer.h" />
     <ClInclude Include="CManager.h" />
     <ClInclude Include="CPublicRelation.h" />
+    <ClInclude Include="CRK4.h" />
     <ClInclude Include="CTaskObj.h" />
+    <ClInclude Include="CVector3.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="MultiTask.h" />
     <ClInclude Include="Resource.h" />
@@ -179,7 +181,9 @@
     <ClCompile Include="CPlayer.cpp" />
     <ClCompile Include="CManager.cpp" />
     <ClCompile Include="CPublicRelation.cpp" />
+    <ClCompile Include="CRK4.cpp" />
     <ClCompile Include="CTaskObj.cpp" />
+    <ClCompile Include="CVector3.cpp" />
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="MultiTask.cpp" />
     <ClCompile Include="SharedObjects.cpp" />
