@@ -19,6 +19,10 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 	case WM_COMMAND:
 		switch (LOWORD(wp)) {
 		case IDC_TASK_FUNC_RADIO1:
+		{
+			ActOpenGL();
+		}
+
 		case IDC_TASK_FUNC_RADIO2:
 		case IDC_TASK_FUNC_RADIO3:
 		case IDC_TASK_FUNC_RADIO4:
@@ -254,4 +258,34 @@ void CPublicRelation::set_panel_tip_txt()
 
 	SetWindowText(GetDlgItem(inf.hWnd_opepane, IDC_STATIC_TASKSET3), wstr.c_str());
 	SetWindowText(GetDlgItem(inf.hWnd_opepane, IDC_STATIC_TASKSET4), wstr_type.c_str());
+}
+
+//#################### OPEN GL ################################################
+void CPublicRelation::ActOpenGL(){
+
+	st_gl_basic.bGLactive = FALSE;
+
+	st_gl_basic.WinPosX = 600;
+	st_gl_basic.WinPosY = 100;
+	st_gl_basic.WinWidth = 800;
+	st_gl_basic.WinHeight = 600;
+	st_gl_basic.WindowTitle[0] = 'a';
+	st_gl_basic.WindowTitle[1] = '\n';
+
+
+	glutInit(&__argc, __argv);//環境の初期化
+	glutInitWindowPosition(st_gl_basic.WinPosX, st_gl_basic.WinPosY);//ウィンドウの位置の指定
+	glutInitWindowSize(st_gl_basic.WinWidth, st_gl_basic.WinHeight); //ウィンドウサイズの指定
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);//ディスプレイモードの指定
+	glutCreateWindow(st_gl_basic.WindowTitle);		//ウィンドウの作成
+#if 0
+	glutDisplayFunc(Display);			//描画時に呼び出される関数を指定する（関数名：Display）
+	glutIdleFunc(Idle);					//プログラムアイドル状態時に呼び出される関数
+
+	glutMouseWheelFunc(mouse_wheel);	//マウスホイール操作時に呼び出される関数
+	Initialize();						//初期設定の関数を呼び出す
+	bGLactive = TRUE;
+	glutMainLoop();
+	return;
+#endif
 }

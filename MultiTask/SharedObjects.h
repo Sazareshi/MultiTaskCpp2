@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CommonFormat.h"
+#include "CVector3.h"
 
 class CCOM_Table
 {
@@ -41,20 +42,31 @@ public:
 
 
 typedef struct _stIO_Physic {
-	double M_load;
+	double M_load;//吊荷質量
 
-	double x;
-	double y;
-	double z;
-	double th;
-	double ph;
+//吊点　　座標原点　xy：旋回軸　z：起伏視点(上が+）
+	Vector3 cp;		//吊点xyz
 
-	double vx;
-	double vy;
-	double vz;
-	double wth;
-	double wph;
+	double R;		//軸長さ
+	double th;		//旋回角度
+	double ph;		//起伏角度
 
+	Vector3 cv;		//吊点vx vy vz
+	double vR;		//軸長さ変化速度
+	double wth;		//旋回角速度
+	double wph;		//起伏角速度
+
+//吊荷点　　座標原点　吊点
+	Vector3 pos;		//吊点xyz
+	double L;		//ロープ長
+	double Le;		//有効ロープ長（振れ周期）
+	double _th;		//水平面角度
+	double _ph;		//Z軸角度
+
+	Vector3 vel;		//吊点vx vy vz
+	double vL;		// ロープ長変化速度
+	double _wth;	//水平面角速度
+	double _wph;	//Z軸角速度
 }ST_IO_PHYSIC, *LPST_IO_PHYSIC;
 
 class CIO_Table
