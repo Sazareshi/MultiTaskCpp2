@@ -75,6 +75,9 @@
     <ClInclude Include="openGL.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Mob.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -117,6 +120,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="CVector3.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="openGL.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Mob.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

@@ -171,6 +171,7 @@
     <ClInclude Include="CTaskObj.h" />
     <ClInclude Include="CVector3.h" />
     <ClInclude Include="Helper.h" />
+    <ClInclude Include="Mob.h" />
     <ClInclude Include="MultiTask.h" />
     <ClInclude Include="openGL.h" />
     <ClInclude Include="Resource.h" />
@@ -191,7 +192,9 @@
     <ClCompile Include="CTaskObj.cpp" />
     <ClCompile Include="CVector3.cpp" />
     <ClCompile Include="Helper.cpp" />
+    <ClCompile Include="Mob.cpp" />
     <ClCompile Include="MultiTask.cpp" />
+    <ClCompile Include="openGL.cpp" />
     <ClCompile Include="SharedObjects.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
