@@ -3,11 +3,11 @@
 #include "CommonFormat.h"
 #include "CVector3.h"
 
-class CCOM_Table
+class CORDER_Table
 {
 public:
-	CCOM_Table();
-	~CCOM_Table();
+	CORDER_Table();
+	~CORDER_Table();
 
 	ST_JOB_ORDER job_A;
 	ST_JOB_ORDER job_B;
@@ -18,6 +18,10 @@ public:
 	ST_UI_ORDER ui;
 };
 
+#define ENV_MODE_REAL	0
+#define ENV_MODE_SIM1	1
+#define ENV_MODE_SIM2	2
+
 class CMODE_Table
 {
 public:
@@ -26,6 +30,7 @@ public:
 	
 	DWORD operation;
 	DWORD auto_control;
+	DWORD environment;
 };
 
 #define NUM_OF_TASK_FAULT	100

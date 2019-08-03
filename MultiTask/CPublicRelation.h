@@ -5,9 +5,18 @@
 #include "CRK4.h"
 #include "openGL.h"
 #include "Mob.h"
+#include "CComDevice.h"
+#include "CManager.h"
+
 
 extern vector<void*>	VectpCTaskObj;	//タスクオブジェクトのポインタ
 extern ST_iTask g_itask;
+
+typedef struct st_PR_UIio{
+	int notch_slew;
+	int notch_bh;
+	int env_mode;
+}ST_PR_UIio, *P_ST_PR_UIio;
 
 class CPublicRelation :
 	public CTaskObj
@@ -17,12 +26,10 @@ public:
 	~CPublicRelation();
 
 
-
-
-
-
 	LRESULT CALLBACK PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp);
 	void set_panel_tip_txt();//タブパネルのStaticテキストを設定
+
+	ST_PR_UIio ui_table;
 
 // Mob
 	Mob_HoistPoint  hp;

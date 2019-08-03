@@ -161,7 +161,7 @@
     <ClInclude Include="CAnalyst.h" />
     <ClInclude Include="CClerk.h" />
     <ClInclude Include="CComClient.h" />
-    <ClInclude Include="CComPartner.h" />
+    <ClInclude Include="CComDevice.h" />
     <ClInclude Include="CodeDef.h" />
     <ClInclude Include="CommonFormat.h" />
     <ClInclude Include="CPlayer.h" />
@@ -184,7 +184,7 @@
     <ClCompile Include="CAnalyst.cpp" />
     <ClCompile Include="CClerk.cpp" />
     <ClCompile Include="CComClient.cpp" />
-    <ClCompile Include="CComPartner.cpp" />
+    <ClCompile Include="CComDevice.cpp" />
     <ClCompile Include="CPlayer.cpp" />
     <ClCompile Include="CManager.cpp" />
     <ClCompile Include="CPublicRelation.cpp" />

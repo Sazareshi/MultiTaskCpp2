@@ -26,6 +26,8 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 		case IDC_TASK_FUNC_RADIO1:
 		{
 			if(st_gl_basic.bGLactive != TRUE) ActOpenGL();
+			inf.panel_func_id = LOWORD(wp); set_panel_tip_txt(); set_PNLparam_value(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+			break;
 		}
 
 		case IDC_TASK_FUNC_RADIO2:
@@ -33,7 +35,8 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 		case IDC_TASK_FUNC_RADIO4:
 		case IDC_TASK_FUNC_RADIO5:
 		case IDC_TASK_FUNC_RADIO6:
-			inf.panel_func_id = LOWORD(wp); set_panel_tip_txt(); set_PNLparam_value(0.0, 0.0, 0.0, 0.0, 0.0, 0.0); break;
+			inf.panel_func_id = LOWORD(wp); set_panel_tip_txt(); set_PNLparam_value(0.0, 0.0, 0.0, 0.0, 0.0, 0.0); 
+			break;
 
 		case IDC_TASK_ITEM_RADIO1:
 		case IDC_TASK_ITEM_RADIO2:
@@ -43,14 +46,26 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 		case IDC_TASK_ITEM_RADIO6:
 			inf.panel_type_id = LOWORD(wp); set_panel_tip_txt();  SetFocus(GetDlgItem(inf.hWnd_opepane, IDC_TASK_EDIT1)); 
 			if (inf.panel_func_id == IDC_TASK_FUNC_RADIO1) {
-				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) pOrders->_UI->slew = -1.0;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) pOrders->_UI[0].slew = 0.0;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) pOrders->_UI[0].slew = 1.0;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO4) pOrders->_UI[0].bh = -1.0;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO5) pOrders->_UI[0].bh = 0.0;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO6) pOrders->_UI[0].bh = 1.0;
+				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) ui_table.notch_slew = -5;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) ui_table.notch_slew = 0;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) ui_table.notch_slew = 5;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO4) ui_table.notch_bh = -5;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO5) ui_table.notch_bh = 0;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO6) ui_table.notch_bh = 5;
 				else;
+
+				CComDevice* pCOMD = (CComDevice*)VectpCTaskObj[g_itask.comd];
+				pCOMD->get_UI();
 			}
+			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO6) {
+				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) ui_table.env_mode = 0;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) ui_table.env_mode = 1;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) ui_table.env_mode = 2;
+
+				CManager* pMan = (CManager*)VectpCTaskObj[g_itask.comd];
+				pMan->get_UI();
+			}
+			else;
 			break;
 
 		case IDSET: {
@@ -232,7 +247,7 @@ void CPublicRelation::set_panel_tip_txt()
 		}
 	}break;
 	case IDC_TASK_FUNC_RADIO6: {
-		wstr = L"Type for Func6 \n\r 1:?? 2:?? 3:?? \n\r 4:?? 5:?? 6:??";
+		wstr = L"Type for Func6 \n\r 1:EnvReal 2:EnvSim1 3:EnvSim2 \n\r 4:?? 5:?? 6:??";
 		switch (inf.panel_type_id) {
 		case IDC_TASK_ITEM_RADIO1:
 			wstr_type += L"Param of type1 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";

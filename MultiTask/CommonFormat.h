@@ -5,7 +5,7 @@
 typedef struct _st_iTask {
 	int ana;
 	int clerk;
-	int comc;
+	int comd;
 	int comp;
 	int ply;
 	int pr;
@@ -93,11 +93,11 @@ typedef struct _stMANUAL_ORDER {
 typedef struct _stUI_ORDER {
 	WORD type;				//UI処理タイプ
 	WORD status;			//実行ステータス　-1：無効
-	double mh;
-	double tt;
-	double gt;
-	double bh;
-	double slew;
+	int notch_mh;
+	int notch_tt;
+	int notch_gt;
+	int notch_bh;
+	int notch_slew;
 }ST_UI_ORDER, *LPST_UI_ORDER;
 
 /// ステータス報告 Order
