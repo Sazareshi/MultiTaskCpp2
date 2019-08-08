@@ -51,7 +51,6 @@ typedef struct _stIO_Physic {
 
 //吊点　　座標原点　xy：旋回軸　z：起伏視点(上が+）
 	Vector3 cp;		//吊点xyz
-
 	double R;		//軸長さ
 	double th;		//旋回角度
 	double ph;		//起伏角度
@@ -80,6 +79,6 @@ public:
 	CIO_Table() {};
 	~CIO_Table() {};
 
-	ST_IO_PHYSIC phsic;
+	ST_IO_PHYSIC physics;
 
 };

@@ -11,6 +11,9 @@ class CManager :	public CTaskObj
 public:
 	CManager();
 	~CManager();
+
+	void routine_work(void *param);
+	CManager* pManObj;
 	void init_task(void *pobj);
 	LRESULT CALLBACK PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp);
 	bool get_UI();

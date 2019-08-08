@@ -1,7 +1,11 @@
 #pragma once
 
 #include "CodeDef.h"
-///# タスクオブジェクトインデックス構造体
+
+/************************************************/
+/*    # タスクオブジェクトインデックス構造体    */
+/************************************************/
+
 typedef struct _st_iTask {
 	int ana;
 	int clerk;
@@ -12,7 +16,10 @@ typedef struct _st_iTask {
 	int mng;
 }ST_iTask, *P_ST_iTask;
 
-//### ORDER LIST ###
+/************************************************/
+/*    ORDER LIST                                */
+/************************************************/
+
 #define ORDER_MAX		8
 
 /// JOB Order
@@ -98,6 +105,8 @@ typedef struct _stUI_ORDER {
 	int notch_gt;
 	int notch_bh;
 	int notch_slew;
+	int notch_operm;
+	int notch_hook;
 }ST_UI_ORDER, *LPST_UI_ORDER;
 
 /// ステータス報告 Order
@@ -122,3 +131,31 @@ typedef struct _stORDERs {
 	ST_UI_ORDER		_UI[ORDER_MAX_UI];
 	ST_STAT_ORDER	_STATUS[ORDER_MAX_STAT];
 }ST_ORDERs, *LPST_ORDERs;
+
+/************************************************/
+/*    SPEC LIST                                */
+/************************************************/
+
+#define NOTCH_MAX 6
+#define ACCELERATION_MAX 4
+#define FWD_ACC 0
+#define FWD_DEC 1
+#define AWD_ACC 2
+#define AWD_DEC 3
+
+
+typedef struct _stSpec {
+	double slew_notch_spd[NOTCH_MAX];
+	double hoist_notch_spd[NOTCH_MAX];
+	double bh_notch_spd[NOTCH_MAX];
+	double gantry_notch_spd[NOTCH_MAX];
+	double hook_notch_spd[NOTCH_MAX];
+	double operm_notch_spd[NOTCH_MAX];
+
+	double slew_acc[ACCELERATION_MAX];
+	double hoist_acc[ACCELERATION_MAX];
+	double bh_acc[ACCELERATION_MAX];
+	double gantry_acc[ACCELERATION_MAX];
+	double hook_acc[ACCELERATION_MAX];
+	double operm_acc[ACCELERATION_MAX];
+}ST_SPEC, *LPST_SPEC;

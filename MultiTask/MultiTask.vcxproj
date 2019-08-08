@@ -196,6 +196,7 @@
     <ClCompile Include="MultiTask.cpp" />
     <ClCompile Include="openGL.cpp" />
     <ClCompile Include="SharedObjects.cpp" />
+    <ClCompile Include="SetSpec.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

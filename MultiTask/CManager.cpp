@@ -4,7 +4,9 @@
 
 extern CMODE_Table*	pMode;				//共有メモリModeクラスポインタ
 
-CManager::CManager(){}
+CManager::CManager(){
+	pManObj = this;
+}
 
 CManager::~CManager(){}
 
@@ -17,6 +19,11 @@ bool CManager::get_UI() {
 void CManager::init_task(void *pobj) {
 	set_panel_tip_txt();
 	pMode->environment = ENV_MODE_SIM1;
+};
+
+void CManager::routine_work(void *param) {
+	ws << L" working!" << *(inf.psys_counter) << L" MODE=" << pMode->environment;
+	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 };
 
 LRESULT CALLBACK CManager::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {

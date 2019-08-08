@@ -2,15 +2,38 @@
 #include "CPublicRelation.h"
 #include <stdio.h>
 
-extern LPST_ORDERs		pOrders;
+extern CORDER_Table*	pOrder;				//共有メモリOrderクラスポインタ
+extern CMODE_Table*		pMode;				//共有メモリModeクラスポインタ
+extern ST_SPEC			g_spec;				//クレーン仕様
+extern CIO_Table*		pIO_Table;
 
 CPublicRelation::CPublicRelation(){
 	st_gl_basic.bGLactive = FALSE;
+	pPRObj = this;
+	this->ui_table.env_mode = ENV_MODE_SIM1;
 }
 
 CPublicRelation::~CPublicRelation(){}
 
 ST_GL_BASIC CPublicRelation::st_gl_basic; // OpenGL 基本構造体
+
+void CPublicRelation::cal_simulation() {
+	if ((pOrder->ui.notch_mh >= 0) && (pOrder->ui.notch_mh >= 0)) {
+		if (pIO_Table->physics.cv.z < 0.0) {}
+		hp.acc_ref.z = g_spec.bh_acc[pOrder->ui.notch_mh];
+	}
+
+};
+
+void CPublicRelation::routine_work(void *param) {
+
+	ws <<  L" working!"<< *(inf.psys_counter) << L" MODE=" << this->ui_table.env_mode ;
+	tweet2owner(ws.str()); ws.str(L""); ws.clear();
+
+	//シミュレータ計算
+	if (pMode->auto_control != ENV_MODE_SIM2) cal_simulation();
+
+};
 
 LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 
@@ -58,9 +81,9 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 				pCOMD->get_UI();
 			}
 			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO6) {
-				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) ui_table.env_mode = 0;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) ui_table.env_mode = 1;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) ui_table.env_mode = 2;
+				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) ui_table.env_mode = ENV_MODE_REAL;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) ui_table.env_mode = ENV_MODE_SIM1;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) ui_table.env_mode = ENV_MODE_SIM2;
 
 				CManager* pMan = (CManager*)VectpCTaskObj[g_itask.comd];
 				pMan->get_UI();
@@ -151,7 +174,7 @@ void CPublicRelation::set_panel_tip_txt()
 		}
 	}break;
 	case IDC_TASK_FUNC_RADIO2: {
-		wstr = L"Type for Func2 \n\r 1:?? 2:?? 3:?? \n\r 4:?? 5:?? 6:??";
+		wstr = L"Func2 \n\r 1:?? 2:?? 3:?? \n\r 4:?? 5:?? 6:??";
 		switch (inf.panel_type_id) {
 		case IDC_TASK_ITEM_RADIO1:
 			wstr_type += L"Param of type1 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";
@@ -247,7 +270,7 @@ void CPublicRelation::set_panel_tip_txt()
 		}
 	}break;
 	case IDC_TASK_FUNC_RADIO6: {
-		wstr = L"Type for Func6 \n\r 1:EnvReal 2:EnvSim1 3:EnvSim2 \n\r 4:?? 5:?? 6:??";
+		wstr = L"Func6(Mode) \n\r 1:EnvReal 2:EnvSim1 3:EnvSim2 \n\r 4:?? 5:?? 6:??";
 		switch (inf.panel_type_id) {
 		case IDC_TASK_ITEM_RADIO1:
 			wstr_type += L"Param of type1 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";

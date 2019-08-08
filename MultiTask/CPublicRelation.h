@@ -25,9 +25,12 @@ public:
 	CPublicRelation();
 	~CPublicRelation();
 
+	CPublicRelation* pPRObj;
 
 	LRESULT CALLBACK PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp);
 	void set_panel_tip_txt();//タブパネルのStaticテキストを設定
+	void routine_work(void *param);
+	void cal_simulation();
 
 	ST_PR_UIio ui_table;
 
