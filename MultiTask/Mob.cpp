@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Mob.h"
+#include "CommonFormat.h"
 
 //Mob_HP
 Mob_HoistPoint::Mob_HoistPoint(){};
@@ -19,45 +20,49 @@ void Mob_HoistPoint::init_mob(double _dt, Vector3& _r, Vector3& _v) {
 	dw_sl = 0.0;			//ù‰ñŠp‰Á‘¬“x
 
 	r_bm = DEFAULT_BH;		//ˆøˆÊ’u
-	v_bm = 0.0;				//ù‰ñŠp‘¬“x
-	a_bm = 0.0;				//ù‰ñŠp‰Á‘¬“x
+	v_bm = 0.0;				//ˆø‘¬“x
+	a_bm = 0.0;				//ˆø‰Á‘¬“x
+
+	
+
+	acc_cyl = Vector3(0.0, 0.0, 0.0);
+	acc_cyl_ref = Vector3(0.0, 0.0, 0.0);
+
 
 	return;
 }
 
 Vector3 Mob_HoistPoint::A(double t, Vector3& r, Vector3& v) {
 
-	acc = (dt*acc_ref + HP_Tf * acc) / (dt + HP_Tf); //ˆêŸ’x‚ê
+	double a_er = acc_cyl.x - r_bm * w_sl * w_sl;
+	double a_eth = r_bm * acc_cyl.y + 2.0 * v_bm * w_sl;
+	Vector3 acc_cyl2(a_er,a_eth,acc_cyl_ref.z);
 
-	return acc;
+	acc_rec = acc_cyl2.cyl2rec(acc_cyl2,th_sl);
+	
+	return acc_rec;
+
 } //Model of acceleration
 
 void Mob_HoistPoint::timeEvolution(double t) {
 
-	Vector3 v1 = V(t, r, v);
-	Vector3 a1 = A(t, r, v);
+	acc_cyl = (dt*acc_cyl_ref + HP_Tf * acc_cyl) / (dt + HP_Tf); //ˆêŸ’x‚ê
 
-	Vector3 _v1 = Vector3(r.x + v1.x*dt / 2.0, r.y + v1.y*dt / 2.0, r.z + v1.z*dt / 2.0);
-	Vector3 _a1 = Vector3(v.x + a1.x*dt / 2.0, v.y + a1.y*dt / 2.0, v.z + a1.z*dt / 2.0);
-	Vector3 v2 = V(t + dt / 2.0, _v1, _a1);
-	Vector3 a2 = A(t + dt / 2.0, _v1, _a1);
+	v_bm = v_bm + dt * acc_cyl.x;
+	if (v_bm* v_bm < 0.00001)v_bm = 0.0;
+	w_sl = w_sl + dt * acc_cyl.y;
+	if (w_sl* w_sl < 0.000000001)w_sl = 0.0;
 
-	Vector3 _v2 = Vector3(r.x + v2.x*dt / 2.0, r.y + v2.y*dt / 2.0, r.z + v2.z*dt / 2.0);
-	Vector3 _a2 = Vector3(v.x + a2.x*dt / 2.0, v.y + a2.y*dt / 2.0, v.z + a2.z*dt / 2.0);
-	Vector3 v3 = V(t + dt / 2.0, _v2, _a2);
-	Vector3 a3 = A(t + dt / 2.0, _v2, _a2);
+	r_bm += dt * v_bm;
+	th_sl += dt * w_sl;
+	if (th_sl >= DEF_2PI) th_sl -= DEF_2PI;
+	 
+	v.x = v_bm * sin(th_sl) + r_bm * w_sl * cos(th_sl);
+	v.y = v_bm * cos(th_sl) - r_bm * w_sl * sin(th_sl);
 
-	Vector3 _v3 = Vector3(r.x + v3.x*dt, r.y + v3.y*dt, r.z + v3.z*dt);
-	Vector3 _a3 = Vector3(v.x + a3.x*dt, v.y + a3.y*dt, v.z + a3.z*dt);
-	Vector3 v4 = V(t + dt, _v3, _a3);
-	Vector3 a4 = A(t + dt, _v3, _a3);
-
-	dr.x = dt / 6.0 * (v1.x + 2.0 * v2.x + 2.0 * v3.x + v4.x);
-	dr.y = dt / 6.0 * (v1.y + 2.0 * v2.y + 2.0 * v3.y + v4.y);
-	dr.z = dt / 6.0 * (v1.z + 2.0 * v2.z + 2.0 * v3.z + v4.z);
-	dv.x = dt / 6.0 * (a1.x + 2.0 * a2.x + 2.0 * a3.x + a4.x);
-	dv.y = dt / 6.0 * (a1.y + 2.0 * a2.y + 2.0 * a3.y + a4.y);
-	dv.z = dt / 6.0 * (a1.z + 2.0 * a2.z + 2.0 * a3.z + a4.z);
+	r.x = r_bm * sin(th_sl);
+	r.y = r_bm * cos(th_sl);
+	r.z = DEFAULT_HP_Z;
 
 }
 
@@ -70,6 +75,7 @@ void Mob_HungLoad::init_mob(double _dt, Vector3& _r, Vector3& _v) {
 	dt = _dt;
 	r.copy(_r);
 	v.copy(_v);
+	m = 1000.0;//1 ton
 	return;
 }
 
@@ -107,7 +113,7 @@ double  Mob_HungLoad::S() {
 	double v_abs2 = v_.lengthSq();
 	Vector3 vectmp;
 	Vector3 vecL = vectmp.subVectors(r, pHP->r);
-	return -m * (v_abs2 - pHP->acc.dot(vecL) - GRAVITY_ACC * vecL.z + pHP->v_h*pHP->v_h + pHP->l_h*pHP->a_h) / (pHP->l_h*pHP->l_h);
+	return -m * (v_abs2 - pHP->acc_rec.dot(vecL) - GRAVITY_ACC * vecL.z + pHP->v_h*pHP->v_h + pHP->l_h*pHP->a_h) / (pHP->l_h*pHP->l_h);
 }
 
 

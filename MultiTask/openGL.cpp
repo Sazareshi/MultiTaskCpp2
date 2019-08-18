@@ -1,7 +1,12 @@
 #include "stdafx.h"
 #include "CPublicRelation.h"
 
+extern CIO_Table*		pIO_Table;
+
 //#################### OPEN GL ################################################
+int CPublicRelation::GL_WindowID[OpenGL_MAX_WND];
+GLint CPublicRelation::VP_mode; // Veiw Point 切り替え用
+
 void CPublicRelation::ActOpenGL() {
 
 	GL_Initialize();			//このアプリケーションでの初期化
@@ -10,9 +15,19 @@ void CPublicRelation::ActOpenGL() {
 	glutInitWindowPosition(st_gl_basic.WinPosX, st_gl_basic.WinPosY);//ウィンドウの位置の指定
 	glutInitWindowSize(st_gl_basic.WinWidth, st_gl_basic.WinHeight); //ウィンドウサイズの指定
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);//ディスプレイモードの指定
-	glutCreateWindow(st_gl_basic.WindowTitle);		//ウィンドウの作成
+	GL_WindowID[0]=glutCreateWindow(st_gl_basic.WindowTitle);		//ウィンドウの作成
 	glutDisplayFunc(GL_Display);			//描画時に呼び出される関数を指定する（関数名：Display）
+	
+#if 0
+	//2画面
+	glutInitWindowPosition(0, 0);//ウィンドウの位置の指定
+	GL_WindowID[1] = glutCreateWindow("Second Window");
+	glutDisplayFunc(GL_Display);
+#endif
+	
+	glutReshapeFunc(GL_resize);
 
+	glutMouseFunc(GL_mouse_on);
 #if 0
 	glutIdleFunc(Idle);					//プログラムアイドル状態時に呼び出される関数
 
@@ -37,10 +52,34 @@ void  CPublicRelation::GL_Initialize(void) {
 	snprintf(st_gl_basic.WindowTitle, 12, "%s", "Crame Model");
 
 	st_gl_basic.ViewPoint.x = 0.0;
-	st_gl_basic.ViewPoint.y = 500.0;
-	st_gl_basic.ViewPoint.z = 500.0;
+	st_gl_basic.ViewPoint.y = 50.0;
+	st_gl_basic.ViewPoint.z = 50.0;
+
+	st_gl_basic.ViewCenter.x = 0.0;
+	st_gl_basic.ViewCenter.y = 0.0;
+	st_gl_basic.ViewCenter.z = 20.0;
+
+	st_gl_basic.ViewUpside.x = 0.0;
+	st_gl_basic.ViewUpside.y = 0.0;
+	st_gl_basic.ViewUpside.z = 1.0;
+
+	glClearColor(0.3, 0.3, 0.3, 1.0);	//ウィンドウを塗りつぶす　GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha
+	glEnable(GL_DEPTH_TEST);			//デプスバッファを使用：glutInitDisplayMode() で GLUT_DEPTH を指定する
+										//陰影ON-----------------------------
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);//光源0を利用
 
 }
+
+void  CPublicRelation::GL_resize(int w, int h) {
+	glViewport(0,0,w,h);	//GLint x, GLint y, GLsizei width, GLsizei height
+	
+	/*変換行列初期化*/
+	glLoadIdentity();
+
+	/*スクリーン上の表示領域をビューポートの大きさに比例させる*/
+	glOrtho(-w/ st_gl_basic.WinWidth,w/st_gl_basic.WinWidth,-h/st_gl_basic.WinHeight,h/st_gl_basic.WinHeight,-1.0,1.0);// GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar
+};
 
 
 void CPublicRelation::GL_Display(void) {
@@ -50,45 +89,38 @@ void CPublicRelation::GL_Display(void) {
 	glMatrixMode(GL_PROJECTION);	//GLenum mode 行列モードの設定（GL_PROJECTION : 透視変換行列の設定、GL_MODELVIEW：モデルビュー変換行列）
 	glLoadIdentity();				//行列の初期化
 	gluPerspective(														//透視投影法の視体積gluPerspactive(th, w/h, near, far);
-		30.0,															//  GLdouble fovy, 
+		60.0,															//  GLdouble fovy, 
 		(double)st_gl_basic.WinWidth / (double)st_gl_basic.WinHeight,	//	GLdouble aspect,
 		0.1,															//	GLdouble zNear,
-		1000.0);														//	GLdouble zFar);
+		900.0);														//	GLdouble zFar);
 		
+	
+	if (VP_mode == 2) {
+	 st_gl_basic.ViewPoint = pIO_Table->physics.cp;
+	 st_gl_basic.ViewPoint.z += 10.0;
+	 st_gl_basic.ViewCenter = pIO_Table->physics.cp;
+	 st_gl_basic.ViewCenter.x += 0.1;
+	 st_gl_basic.ViewCenter.z = 0.0;
+	 st_gl_basic.ViewUpside.x = sin(pIO_Table->physics.th);
+	 st_gl_basic.ViewUpside.y = cos(pIO_Table->physics.th);
+	 st_gl_basic.ViewUpside.z = 0.0;
+	}
+	
 	gluLookAt(
 		st_gl_basic.ViewPoint.x, st_gl_basic.ViewPoint.y, st_gl_basic.ViewPoint.z,//GLdouble eyex, eyey, eyez 視点の位置x,y,z;
-		0.0, 0.0, 0.0,  //視界の中心位置の参照点座標x,y,z
-		0.0, 0.0, 1.0); 		//GLdouble upx,upy, upz 視界の上方向のベクトルx,y,z
+		st_gl_basic.ViewCenter.x, st_gl_basic.ViewCenter.y, st_gl_basic.ViewCenter.z,  //視界の中心位置の参照点座標x,y,z
+		st_gl_basic.ViewUpside.x, st_gl_basic.ViewUpside.y, st_gl_basic.ViewUpside.z
+	); 		//GLdouble upx,upy, upz 視界の上方向のベクトルx,y,z
 
 
-//モデルビュー変換行列の設定--------------------------
-	glMatrixMode(GL_MODELVIEW);//GLenum mode 行列モードの設定（GL_PROJECTION : 透視変換行列の設定、GL_MODELVIEW：モデルビュー変換行列）
-	glLoadIdentity();//行列の初期化
-	glViewport(0, 0, st_gl_basic.WinWidth, st_gl_basic.WinHeight);
+								
+								//モデルビュー変換行列の設定--------------------------
+//	glMatrixMode(GL_MODELVIEW);//GLenum mode 行列モードの設定（GL_PROJECTION : 透視変換行列の設定、GL_MODELVIEW：モデルビュー変換行列）
+//	glLoadIdentity();//行列の初期化
+//	glViewport(0, 0, st_gl_basic.WinWidth, st_gl_basic.WinHeight);
+
 
 #if 0
-//陰影ON-----------------------------
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);//光源0を利用
-
-
-//球 描画
-	glPushMatrix();
-	glMaterialfv(GL_FRONT, GL_AMBIENT, ms_ruby.ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, ms_ruby.diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, ms_ruby.specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, &ms_ruby.shininess);
-	glTranslated(pLoad->r.x, pLoad->r.y, pLoad->r.z);//平行移動値の設定
-	glutSolidSphere(1.0, 20, 20);//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
-	glPopMatrix();
-
-//立方体　描画
-	glPushMatrix();
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
-	glTranslated(pHanging->r.x, pHanging->r.y, pHanging->r.z);//平行移動値の設定
-	glutSolidCube(1.0);//引数：(一辺の長さ)
-	glPopMatrix();
-
 
 //ロープ描画
 	glColor3d(0.0, 0.0, 1.0);
@@ -133,10 +165,93 @@ void CPublicRelation::GL_Display(void) {
 	glDisable(GL_LIGHTING);
 	//-----------------------------------
 #endif
+
+
+	//球 描画
+	glPushMatrix();
+	glColor3d(1.0, 0.0, 0.0);				//色の設定
+	glTranslated(pIO_Table->physics.lp.x, pIO_Table->physics.lp.y, pIO_Table->physics.lp.z);		//平行移動値の設定
+	glutSolidSphere(1.0, 20, 20);//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
+	glPopMatrix();
+
+	//立方体
+	glPushMatrix();
+	glColor4d(0.0, 1.0, 0.0, 0.5);//色の設定
+	glTranslated(pIO_Table->physics.cp.x, pIO_Table->physics.cp.y, pIO_Table->physics.cp.z);//平行移動値の設定
+	glutSolidCube(0.5);//引数：(一辺の長さ)
+	glPopMatrix();
+
 	GL_Ground();
 
 	glutSwapBuffers(); //glutInitDisplayMode(GLUT_DOUBLE)でダブルバッファリングを利用可
 }
+
+void CPublicRelation::GL_mouse_on(int button, int state, int x, int y)
+{
+	switch (button) {
+	case GLUT_LEFT_BUTTON:
+		break;
+	case GLUT_MIDDLE_BUTTON:
+		if(state == GLUT_UP)
+			if (VP_mode++ > 2)
+				VP_mode = 0;
+
+		if (VP_mode == 1) {
+			st_gl_basic.ViewPoint.x = 0.0;
+			st_gl_basic.ViewPoint.y = 0.1;
+			st_gl_basic.ViewPoint.z = 80.0;
+
+			st_gl_basic.ViewCenter.x = 0.0;
+			st_gl_basic.ViewCenter.y = 0.0;
+			st_gl_basic.ViewCenter.z = 0.0;
+
+			st_gl_basic.ViewUpside.x = 0.0;
+			st_gl_basic.ViewUpside.y = 0.0;
+			st_gl_basic.ViewUpside.z = 1.0;
+
+		}
+		else if (VP_mode == 2) {
+			st_gl_basic.ViewPoint = pIO_Table->physics.cp;
+			st_gl_basic.ViewPoint.z += 10.0;
+			st_gl_basic.ViewCenter = pIO_Table->physics.cp;
+			st_gl_basic.ViewCenter.x += 0.1;
+			st_gl_basic.ViewCenter.z = 0.0;
+
+			st_gl_basic.ViewUpside.x = sin(pIO_Table->physics.th);
+			st_gl_basic.ViewUpside.y = cos(pIO_Table->physics.th);
+			st_gl_basic.ViewUpside.z = 0.0;
+		}
+		else {
+			st_gl_basic.ViewPoint.x = 0.0;
+			st_gl_basic.ViewPoint.y = 50.0;
+			st_gl_basic.ViewPoint.z = 5.0;
+
+			st_gl_basic.ViewCenter.x = 0.0;
+			st_gl_basic.ViewCenter.y = 0.0;
+			st_gl_basic.ViewCenter.z = 20.0;
+
+			st_gl_basic.ViewUpside.x = 0.0;
+			st_gl_basic.ViewUpside.y = 0.0;
+			st_gl_basic.ViewUpside.z = 1.0;
+		}
+		break;
+	case GLUT_RIGHT_BUTTON:
+		break;
+	default:
+		break;
+	}
+
+	switch (state) {
+	case GLUT_UP:
+		break;
+	case GLUT_DOWN:
+		break;
+	default:
+		break;
+	}
+
+}
+
 
 
 void  CPublicRelation::GL_Ground(void) {
@@ -155,6 +270,4 @@ void  CPublicRelation::GL_Ground(void) {
 	}
 	glEnd();
 } //大地の描画Keyboard
-  /*
-
-*/
+ 

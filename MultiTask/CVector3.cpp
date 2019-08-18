@@ -178,5 +178,19 @@ double Vector3::distanceToSquared(Vector3& vec) {
 bool Vector3::equals(Vector3& vec) {
 	return (x == vec.x) && (y == vec.y) && (z == vec.z);
 }
+//円筒座標→直行座標
+Vector3& Vector3::cyl2rec(Vector3& vec, double th) {
+	x = vec.x * cos(th) - vec.y * sin(th);
+	y = vec.x * sin(th) + vec.y * cos(th);
+	z = vec.z;
+	return *this;
+};
+//直行座標→円筒座標
+Vector3& Vector3::rec2cyl(Vector3& vec, double th) {
+	x = vec.x * cos(th) + vec.y * sin(th);
+	y = -vec.x * sin(th) + vec.y * cos(th);
+	z = vec.z;
+	return *this;
+};
 
 

@@ -3,6 +3,7 @@
 #include "CPublicRelation.h"
 
 extern CMODE_Table*	pMode;				//共有メモリModeクラスポインタ
+extern CORDER_Table*	pOrder;			//共有メモリOrderクラスポインタ
 
 CManager::CManager(){
 	pManObj = this;
@@ -12,17 +13,20 @@ CManager::~CManager(){}
 
 
 bool CManager::get_UI() {
-	CPublicRelation* pPR = (CPublicRelation *)VectpCTaskObj[g_itask.pr];
-	pMode->environment = pPR->ui_table.env_mode;
+	pMode->environment = pOrder->ui.env_mode;
+	pMode->operation = pOrder->ui.ope_mode;
+
 	return FALSE;
 }
 void CManager::init_task(void *pobj) {
 	set_panel_tip_txt();
-	pMode->environment = ENV_MODE_SIM1;
+	pMode->environment	= ENV_MODE_SIM1;
+	pMode->operation	= OPE_MODE_MANUAL;
+	pMode->auto_control = AUTO_MODE_STANDBY;
 };
 
 void CManager::routine_work(void *param) {
-	ws << L" working!" << *(inf.psys_counter) << L" MODE=" << pMode->environment;
+	ws << L" working!" << *(inf.psys_counter)%100 << L" E_MODE=" << pMode->environment << L" O_MODE=" << pMode->operation;
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 };
 
@@ -30,11 +34,6 @@ LRESULT CALLBACK CManager::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) 
 
 	switch (msg) {
 
-	case WM_CHAR:
-	{
-		int a = 1;
-	}
-	break;
 	case WM_COMMAND:
 		switch (LOWORD(wp)) {
 		case IDC_TASK_FUNC_RADIO1:

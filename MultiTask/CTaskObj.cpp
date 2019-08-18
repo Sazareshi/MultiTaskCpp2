@@ -56,7 +56,7 @@ unsigned CTaskObj::run(void *param) {
 
 void CTaskObj::routine_work(void *param) {
 
-	ws << L" working!"<< *(inf.psys_counter);
+	ws << L" working!"<< *(inf.psys_counter)%100;
 	tweet2owner(ws.str()); ws.str(L"") ; ws.clear();
 
 	//wstring wstr = L"ZZZ";

@@ -3,15 +3,24 @@
 #include "CPublicRelation.h"
 
 extern CORDER_Table*	pOrder;
+extern CMODE_Table*	pMode;
+extern CIO_Table*	pIO_Table;
 
 CComDevice::CComDevice(){}
 
 CComDevice::~CComDevice(){}
 
-bool CComDevice::get_UI() {
-	CPublicRelation* pPR = (CPublicRelation *) VectpCTaskObj[g_itask.pr];
-	pOrder->ui.notch_slew = pPR->ui_table.notch_slew;
-	pOrder->ui.notch_bh = pPR->ui_table.notch_bh;
 
-	return FALSE;
+void CComDevice::init_task(void *pobj) {
+	set_panel_tip_txt();
+	return;
 };
+
+void CComDevice::routine_work(void *param) {
+
+	ws << L" working!" << *(inf.psys_counter)%100;
+	tweet2owner(ws.str()); ws.str(L""); ws.clear();
+
+};
+
+

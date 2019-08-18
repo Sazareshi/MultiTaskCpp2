@@ -10,7 +10,7 @@
 #define DEFAULT_HP_Z	25.0	//Default Position Z
 #define DEFAULT_ROPE_L	15.0	//Default Rope L
 #define DEFAULT_SLEW	0.0		//Default Position SLEW
-#define DEFAULT_BH		30.0	//Default Position BH
+#define DEFAULT_BH		20.0	//Default Position BH
 
 #define HP_Tf		    0.1		//指令値に対する一次遅れ時定数
 
@@ -25,8 +25,9 @@ public:
 	Vector3 A(double t, Vector3& a, Vector3& v) ; //Model of acceleration  t:no use,a:acc ref,v:no use
 	void timeEvolution(double t);
 
-	Vector3 acc; //加速度
-	Vector3 acc_ref; //加速度指令
+	Vector3 acc_cyl;	//加速度 θ r z
+	Vector3 acc_cyl_ref; //加速度指令  θ r z
+	Vector3 acc_rec;	//加速度 θ r z
 	
 	double l_h;	//ロープ長
 	double v_h;	//巻速度;
@@ -37,8 +38,8 @@ public:
 	double dw_sl;	//旋回角加速度
 
 	double r_bm;	//引込位置
-	double v_bm;	//旋回角速度
-	double a_bm;	//旋回角加速度
+	double v_bm;	//引込速度
+	double a_bm;	//引込加速度
 
 };
 

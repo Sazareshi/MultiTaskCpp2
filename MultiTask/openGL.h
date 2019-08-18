@@ -12,15 +12,13 @@ typedef struct _gl_basic {
 	int WinHeight;			//生成するウィンドウの高さ
 	char WindowTitle[128];	//ウィンドウタイトル
 
-	Vector3 ViewPoint;		// 視点の定義	
+	Vector3 ViewPoint;		// 視点の位置	
+	Vector3 ViewCenter;		// 視野の中心位置
+	Vector3 ViewUpside;		// 視野の上方向
 
 	bool _Bitmap;
-	int tn;
-	double t;
-	double dt;
-	double omega;
+
 	gl_screenshot gs;		//bmpファイルの出力
-	double PI;
 
 	bool bGLactive;
 

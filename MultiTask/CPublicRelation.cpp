@@ -10,28 +10,20 @@ extern CIO_Table*		pIO_Table;
 CPublicRelation::CPublicRelation(){
 	st_gl_basic.bGLactive = FALSE;
 	pPRObj = this;
-	this->ui_table.env_mode = ENV_MODE_SIM1;
 }
 
 CPublicRelation::~CPublicRelation(){}
 
 ST_GL_BASIC CPublicRelation::st_gl_basic; // OpenGL 基本構造体
 
-void CPublicRelation::cal_simulation() {
-	if ((pOrder->ui.notch_mh >= 0) && (pOrder->ui.notch_mh >= 0)) {
-		if (pIO_Table->physics.cv.z < 0.0) {}
-		hp.acc_ref.z = g_spec.bh_acc[pOrder->ui.notch_mh];
-	}
 
-};
 
 void CPublicRelation::routine_work(void *param) {
 
-	ws <<  L" working!"<< *(inf.psys_counter) << L" MODE=" << this->ui_table.env_mode ;
+	if (st_gl_basic.bGLactive) glutPostRedisplay(); //glutDisplayFunc()を１回実行する
+	
+	ws <<  L" working!"<< *(inf.psys_counter)%100 ;
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
-
-	//シミュレータ計算
-	if (pMode->auto_control != ENV_MODE_SIM2) cal_simulation();
 
 };
 
@@ -39,11 +31,6 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 
 	switch (msg) {
 	
-	case WM_CHAR: 
-	{
-		int a = 1;
-	}
-				  break;
 	case WM_COMMAND:
 		switch (LOWORD(wp)) {
 		case IDC_TASK_FUNC_RADIO1:
@@ -69,24 +56,36 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 		case IDC_TASK_ITEM_RADIO6:
 			inf.panel_type_id = LOWORD(wp); set_panel_tip_txt();  SetFocus(GetDlgItem(inf.hWnd_opepane, IDC_TASK_EDIT1)); 
 			if (inf.panel_func_id == IDC_TASK_FUNC_RADIO1) {
-				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) ui_table.notch_slew = -5;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) ui_table.notch_slew = 0;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) ui_table.notch_slew = 5;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO4) ui_table.notch_bh = -5;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO5) ui_table.notch_bh = 0;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO6) ui_table.notch_bh = 5;
+				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) {
+					pOrder->ui.notch_slew = 5; pOrder->ui.notch_slew_dir = 1;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) { 
+					pOrder->ui.notch_slew = 0; pOrder->ui.notch_slew_dir = 0;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) {
+					pOrder->ui.notch_slew = 5; pOrder->ui.notch_slew_dir = -1;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO4) {
+					pOrder->ui.notch_bh = 5; pOrder->ui.notch_bh_dir = 1;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO5){
+					pOrder->ui.notch_bh = 0; pOrder->ui.notch_bh_dir = 0;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO6) {
+					pOrder->ui.notch_bh = 5; pOrder->ui.notch_bh_dir = -1;
+				}
 				else;
-
-				CComDevice* pCOMD = (CComDevice*)VectpCTaskObj[g_itask.comd];
-				pCOMD->get_UI();
 			}
 			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO6) {
-				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) ui_table.env_mode = ENV_MODE_REAL;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) ui_table.env_mode = ENV_MODE_SIM1;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) ui_table.env_mode = ENV_MODE_SIM2;
+				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) pOrder->ui.env_mode = ENV_MODE_REAL;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) pOrder->ui.env_mode = ENV_MODE_SIM1;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) pOrder->ui.env_mode = ENV_MODE_SIM2;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO4) pOrder->ui.ope_mode = OPE_MODE_MANUAL;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO5) pOrder->ui.ope_mode = OPE_MODE_AUTO;
+				else;
 
-				CManager* pMan = (CManager*)VectpCTaskObj[g_itask.comd];
-				pMan->get_UI();
+				CManager* pMan = (CManager*)VectpCTaskObj[g_itask.mng];
+				pMan->get_UI();									//環境モード設定
 			}
 			else;
 			break;
@@ -270,7 +269,7 @@ void CPublicRelation::set_panel_tip_txt()
 		}
 	}break;
 	case IDC_TASK_FUNC_RADIO6: {
-		wstr = L"Func6(Mode) \n\r 1:EnvReal 2:EnvSim1 3:EnvSim2 \n\r 4:?? 5:?? 6:??";
+		wstr = L"Func6(Mode) \n\r 1:EnvReal 2:EnvSim1 3:EnvSim2 \n\r 4:MAN 5:AUTO 6:??";
 		switch (inf.panel_type_id) {
 		case IDC_TASK_ITEM_RADIO1:
 			wstr_type += L"Param of type1 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";
@@ -302,5 +301,10 @@ void CPublicRelation::set_panel_tip_txt()
 	SetWindowText(GetDlgItem(inf.hWnd_opepane, IDC_STATIC_TASKSET3), wstr.c_str());
 	SetWindowText(GetDlgItem(inf.hWnd_opepane, IDC_STATIC_TASKSET4), wstr_type.c_str());
 }
+
+void CPublicRelation::init_task(void *pobj) {
+	set_panel_tip_txt();
+	return;
+};
 
 

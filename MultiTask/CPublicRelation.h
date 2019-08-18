@@ -4,7 +4,6 @@
 #include "CVector3.h"
 #include "CRK4.h"
 #include "openGL.h"
-#include "Mob.h"
 #include "CComDevice.h"
 #include "CManager.h"
 
@@ -12,11 +11,8 @@
 extern vector<void*>	VectpCTaskObj;	//タスクオブジェクトのポインタ
 extern ST_iTask g_itask;
 
-typedef struct st_PR_UIio{
-	int notch_slew;
-	int notch_bh;
-	int env_mode;
-}ST_PR_UIio, *P_ST_PR_UIio;
+
+#define OpenGL_MAX_WND	4
 
 class CPublicRelation :
 	public CTaskObj
@@ -30,22 +26,21 @@ public:
 	LRESULT CALLBACK PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp);
 	void set_panel_tip_txt();//タブパネルのStaticテキストを設定
 	void routine_work(void *param);
-	void cal_simulation();
 
-	ST_PR_UIio ui_table;
+	void init_task(void *pobj);
 
-// Mob
-	Mob_HoistPoint  hp;
-	Mob_HungLoad	hl;
-							 
+						 
 // Open GL
-		
+	static int GL_WindowID[OpenGL_MAX_WND];
+	
 	static ST_GL_BASIC st_gl_basic; // OpenGL 基本構造体
-
+	static GLint VP_mode; // Veiw Point 切り替え用
+	 
 	void ActOpenGL();
 	static void GL_Initialize(void);
 	static void GL_Display(void);
 	static void GL_Ground(void); //大地の描画Keyboard
+	static void GL_resize(int w, int h);//Window size変更時処理　int view port w, int view port h
 
 
 	static void GL_Idle();

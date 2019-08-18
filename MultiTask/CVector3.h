@@ -129,6 +129,8 @@ public:
 	Vector3& divideScalor(double);                   //スカラー商
 	Vector3& normalize();                            //規格化
 	Vector3& cross(Vector3&);                        //外積
+	Vector3& cyl2rec(Vector3&, double th);			//円筒座標→直行座標
+	Vector3& rec2cyl(Vector3&, double th);			//直行座標→円筒座標
 	double dot(Vector3&);                            //内積
 	double length();                                 //長さ
 	double lengthSq();                               //長さの２乗

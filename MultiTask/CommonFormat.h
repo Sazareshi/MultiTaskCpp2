@@ -98,15 +98,27 @@ typedef struct _stMANUAL_ORDER {
 
 /// ユーザインターフェイス Order
 typedef struct _stUI_ORDER {
-	WORD type;				//UI処理タイプ
-	WORD status;			//実行ステータス　-1：無効
-	int notch_mh;
-	int notch_tt;
-	int notch_gt;
-	int notch_bh;
-	int notch_slew;
-	int notch_operm;
-	int notch_hook;
+	DWORD type;				//UI処理タイプ
+	DWORD status;			//実行ステータス　-1：無効
+
+	DWORD notch_mh;
+	int notch_mh_dir;
+	DWORD notch_tt;
+	int notch_tt_dir;
+	DWORD notch_gt;
+	int notch_gt_dir;
+	DWORD notch_bh;
+	int notch_bh_dir;
+	DWORD notch_slew;
+	int notch_slew_dir;
+	DWORD notch_operm;
+	int notch_operm_dir;
+	DWORD notch_hook;
+	int notch_hook_dir;
+
+	DWORD env_mode;
+	DWORD ope_mode;
+
 }ST_UI_ORDER, *LPST_UI_ORDER;
 
 /// ステータス報告 Order
@@ -114,23 +126,6 @@ typedef struct _stSTAT_ORDER {
 	WORD type;				//UI処理タイプ
 	WORD status;			//実行ステータス　-1：無効
 }ST_STAT_ORDER, *LPST_STAT_ORDER;
-
-
-#define ORDER_MAX_ESTP	3
-#define ORDER_MAX_MODE	3
-#define ORDER_MAX_MANU	3
-#define ORDER_MAX_JOB	3
-#define ORDER_MAX_UI	3
-#define ORDER_MAX_STAT	3
-
-typedef struct _stORDERs {
-	ST_ESTOP_ORDER	_ESTP[ORDER_MAX_ESTP];
-	ST_MODE_ORDER	_MODE[ORDER_MAX_MODE];
-	ST_MANUAL_ORDER _MANUAL[ORDER_MAX_JOB];
-	ST_JOB_ORDER	_JOB[ORDER_MAX_JOB];
-	ST_UI_ORDER		_UI[ORDER_MAX_UI];
-	ST_STAT_ORDER	_STATUS[ORDER_MAX_STAT];
-}ST_ORDERs, *LPST_ORDERs;
 
 /************************************************/
 /*    SPEC LIST                                */
@@ -140,8 +135,8 @@ typedef struct _stORDERs {
 #define ACCELERATION_MAX 4
 #define FWD_ACC 0
 #define FWD_DEC 1
-#define AWD_ACC 2
-#define AWD_DEC 3
+#define REV_ACC 2
+#define REV_DEC 3
 
 
 typedef struct _stSpec {
@@ -159,3 +154,19 @@ typedef struct _stSpec {
 	double hook_acc[ACCELERATION_MAX];
 	double operm_acc[ACCELERATION_MAX];
 }ST_SPEC, *LPST_SPEC;
+
+/************************************************/
+/*    Define                                */
+/************************************************/
+
+#define	DEF_PI  3.1415265
+#define DEF_2PI 6.2831853
+#define DEF_G	9.80665
+#define COF_RAD2DEG	57.296
+
+#define ALLOWABLE_DEF_SLEW	0.003 //旋回指令とFBの許容誤差　rad/s 1ノッチの10％	
+#define ALLOWABLE_DEF_BH	0.005 //引込指令とFBの許容誤差　m/s 1ノッチの5％
+#define ALLOWABLE_DEF_HOIST	0.005 //引込指令とFBの許容誤差　m/s 1ノッチの10％
+#define MY_ABS(a)	((a)<0.0 ? -(a) : (a))
+
+inline double rad2deg(double rad) { return COF_RAD2DEG * rad; }

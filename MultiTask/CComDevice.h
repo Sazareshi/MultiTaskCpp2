@@ -12,7 +12,8 @@ public:
 	CComDevice();
 	~CComDevice();
 
-	bool get_UI();
-	bool set_UI();
+	void routine_work(void *param);
+	void init_task(void *pobj);
+
 };
 

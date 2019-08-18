@@ -22,6 +22,17 @@ public:
 #define ENV_MODE_SIM1	1
 #define ENV_MODE_SIM2	2
 
+#define OPE_MODE_MANUAL	0
+#define OPE_MODE_AUTO	1
+
+
+#define AUTO_MODE_STANDBY	0
+#define AUTO_MODE_SUSPEND	1
+#define AUTO_MODE_INTERRUPT	2
+#define AUTO_MODE_ACTIVE	3
+
+
+
 class CMODE_Table
 {
 public:
@@ -49,7 +60,7 @@ public:
 typedef struct _stIO_Physic {
 	double M_load;//吊荷質量
 
-//吊点　　座標原点　xy：旋回軸　z：起伏視点(上が+）
+//吊点　　座標原点　xy：旋回軸　z：地面(上が+）
 	Vector3 cp;		//吊点xyz
 	double R;		//軸長さ
 	double th;		//旋回角度
@@ -60,18 +71,36 @@ typedef struct _stIO_Physic {
 	double wth;		//旋回角速度
 	double wph;		//起伏角速度
 
-//吊荷点　　座標原点　吊点
-	Vector3 pos;		//吊点xyz
+//吊荷　　座標原点　xy：旋回軸　z：地面(上が+）
+	Vector3 lp;		//吊点xyz
 	double L;		//ロープ長
 	double Le;		//有効ロープ長（振れ周期）
 	double _th;		//水平面角度
 	double _ph;		//Z軸角度
 
-	Vector3 vel;		//吊点vx vy vz
+	Vector3 lv;		//吊点vx vy vz
 	double vL;		// ロープ長変化速度
 	double _wth;	//水平面角速度
 	double _wph;	//Z軸角速度
+
+	Vector3 lsway_cyl;	//円柱座標　荷振れ
+	Vector3 lvsway_cyl; //円柱座標　荷振れ速度
+
+	Vector3 lsway_rec;	//直行座標　荷振れ
+	Vector3 lvsway_rec; //直行座標　荷振れ速度
+
 }ST_IO_PHYSIC, *LPST_IO_PHYSIC;
+
+typedef struct _stIO_Ref {
+
+	double slew_w;		//旋回角速度
+	double hoist_v;		//旋回角速度
+	double bh_v;		//引込速度
+
+}ST_IO_REF, *LPST_IO_REF;
+
+
+
 
 class CIO_Table
 {
@@ -79,6 +108,7 @@ public:
 	CIO_Table() {};
 	~CIO_Table() {};
 
-	ST_IO_PHYSIC physics;
+	ST_IO_PHYSIC	physics;
+	ST_IO_REF		ref;
 
 };
