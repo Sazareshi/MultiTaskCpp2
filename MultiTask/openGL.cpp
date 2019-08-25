@@ -33,6 +33,7 @@ GLfloat shininess = 30.0;//Œõ‘ò‚Ì‹­‚³
 
 //#################### OPEN GL ################################################
 int CPublicRelation::GL_WindowID[OpenGL_MAX_WND];
+int CPublicRelation::list;
 GLint CPublicRelation::VP_mode; // Veiw Point Ø‚è‘Ö‚¦—p
 
 void CPublicRelation::ActOpenGL() {
@@ -137,6 +138,7 @@ void CPublicRelation::GL_Display(void) {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
+//Ž‹“_iƒJƒƒ‰j‚ÌÝ’è------------------------------
 	if (VP_mode == 2) {
 	 st_gl_basic.ViewPoint = pIO_Table->physics.cp;
 	 st_gl_basic.ViewPoint.z += 10.0;
@@ -147,6 +149,20 @@ void CPublicRelation::GL_Display(void) {
 	 st_gl_basic.ViewUpside.y = cos(pIO_Table->physics.th);
 	 st_gl_basic.ViewUpside.z = 0.0;
 	}
+	else if (VP_mode == 1) {
+	 st_gl_basic.ViewPoint.x = sin(pIO_Table->physics.th);
+	 st_gl_basic.ViewPoint.y = cos(pIO_Table->physics.th);
+	 st_gl_basic.ViewPoint.z = 10.0;
+
+	 st_gl_basic.ViewCenter.x = 20.0*sin(pIO_Table->physics.th);
+	 st_gl_basic.ViewCenter.y = 20.0*cos(pIO_Table->physics.th);
+	 st_gl_basic.ViewCenter.z = 10.0;
+
+	 st_gl_basic.ViewUpside.x = 0.0;
+	 st_gl_basic.ViewUpside.y = 0.0;
+	 st_gl_basic.ViewUpside.z = 1.0;
+	}
+	else;
 
 	gluLookAt(
 		st_gl_basic.ViewPoint.x, st_gl_basic.ViewPoint.y, st_gl_basic.ViewPoint.z,//GLdouble eyex, eyey, eyez Ž‹“_‚ÌˆÊ’ux,y,z;
@@ -162,40 +178,30 @@ void CPublicRelation::GL_Display(void) {
 //	glViewport(0, 0, st_gl_basic.WinWidth, st_gl_basic.WinHeight);
 
 
-#if 0
-
 
 //•¶Žš‚Ì•`‰æ
 	char t_char[20];
 	char t_char2[20];
 
-	strcpy_s(t_char2, "t = ");
-	sprintf_s(t_char, "%f", t);
-	strcat_s(t_char2, t_char);
-	DISPLAY_TEXT(5, 93, t_char2);
-
-	strcpy_s(t_char2, "ax = ");
-	sprintf_s(t_char, "%f", pHanging->a.x);
-	strcat_s(t_char2, t_char);
-	DISPLAY_TEXT(5, 88, t_char2);
-
-	strcpy_s(t_char2, "vx = ");
-	sprintf_s(t_char, "%f", pHanging->v.x);
-	strcat_s(t_char2, t_char);
-	DISPLAY_TEXT(5, 83, t_char2);
-
 	strcpy_s(t_char2, "L = ");
-	Vector3 tempL;
-	tempL = tempL.subVectors(pHanging->r, pLoad->r);
-
-	sprintf_s(t_char, "%f", tempL.length());
+	sprintf_s(t_char, "%f", pIO_Table->physics.L);
 	strcat_s(t_char2, t_char);
-	DISPLAY_TEXT(5, 78, t_char2);
+	GL_DISPLAY_TEXT(5, 93, t_char2);
 
+	strcpy_s(t_char2, "th = ");
+	sprintf_s(t_char, "%f", COF_RAD2DEG * pIO_Table->physics.th);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(5, 88, t_char2);
+
+	strcpy_s(t_char2, "bm = ");
+	sprintf_s(t_char, "%f", pIO_Table->physics.R );
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(5, 83, t_char2);
 
 	//‰A‰eOFF-----------------------------
 	glDisable(GL_LIGHTING);
 	//-----------------------------------
+#if 0
 #endif
 	//Ž² •`‰æ
 	glColor3d(0.0, 0.0, 1.0);		//F‚ÌÝ’è
@@ -263,20 +269,33 @@ void CPublicRelation::GL_mouse_on(int button, int state, int x, int y)
 				VP_mode = 0;
 
 		if (VP_mode == 1) {
-
+/*
+			st_gl_basic.fovy = 60.0;
 			st_gl_basic.ViewPoint.x = 0.0;
-			st_gl_basic.ViewPoint.y = 1.0;
-			st_gl_basic.ViewPoint.z = 80.0;
+			st_gl_basic.ViewPoint.y = 50.0;
+			st_gl_basic.ViewPoint.z = 5.0;
 
 			st_gl_basic.ViewCenter.x = 0.0;
-			st_gl_basic.ViewCenter.y = 0.1;
-			st_gl_basic.ViewCenter.z = 0.0;
+			st_gl_basic.ViewCenter.y = 0.0;
+			st_gl_basic.ViewCenter.z = 20.0;
+
+			st_gl_basic.ViewUpside.x = 0.0;
+			st_gl_basic.ViewUpside.y = 0.0;
+			st_gl_basic.ViewUpside.z = 1.0;
+*/
+			st_gl_basic.ViewPoint.x = sin(pIO_Table->physics.th);
+			st_gl_basic.ViewPoint.y = cos(pIO_Table->physics.th);
+			st_gl_basic.ViewPoint.z += 10.0;
+
+			st_gl_basic.ViewCenter.x = 20.0*sin(pIO_Table->physics.th);
+			st_gl_basic.ViewCenter.y = 20.0*cos(pIO_Table->physics.th);
+			st_gl_basic.ViewCenter.z = 10.0;
 
 			st_gl_basic.ViewUpside.x = 0.0;
 			st_gl_basic.ViewUpside.y = 0.0;
 			st_gl_basic.ViewUpside.z = 1.0;
 
-			st_gl_basic.fovy = 60.0;
+			st_gl_basic.fovy = 120.0;
 
 		}
 		else if (VP_mode == 2) {
@@ -294,20 +313,20 @@ void CPublicRelation::GL_mouse_on(int button, int state, int x, int y)
 			st_gl_basic.fovy = 30.0;
 		}
 		else {
-			st_gl_basic.fovy = 60.0;
 			st_gl_basic.ViewPoint.x = 0.0;
-			st_gl_basic.ViewPoint.y = 50.0;
-			st_gl_basic.ViewPoint.z = 5.0;
+			st_gl_basic.ViewPoint.y = 1.0;
+			st_gl_basic.ViewPoint.z = 80.0;
 
 			st_gl_basic.ViewCenter.x = 0.0;
-			st_gl_basic.ViewCenter.y = 0.0;
-			st_gl_basic.ViewCenter.z = 20.0;
+			st_gl_basic.ViewCenter.y = 0.1;
+			st_gl_basic.ViewCenter.z = 0.0;
 
 			st_gl_basic.ViewUpside.x = 0.0;
 			st_gl_basic.ViewUpside.y = 0.0;
 			st_gl_basic.ViewUpside.z = 1.0;
 
 			st_gl_basic.fovy = 60.0;
+
 		}
 		break;
 	case GLUT_RIGHT_BUTTON:
@@ -441,5 +460,43 @@ void CPublicRelation::GL_Keyboard(unsigned char key, int x, int y) {
 		unsigned char key_ = key;
 		break;
 	}
+}
+
+void CPublicRelation::GL_DRAW_STRING(int x, int y, char *string, void *font = GLUT_BITMAP_TIMES_ROMAN_24) {
+	int len, i;
+	glRasterPos2f(x, y);
+	len = (int)strlen(string);
+	for (i = 0; i < len; i++) {
+		glutBitmapCharacter(font, string[i]);
+	}
+}
+
+void CPublicRelation::GL_DISPLAY_TEXT(int x, int y, char *string) {
+	glDisable(GL_LIGHTING);
+	glDisable(GL_LIGHT0);
+
+	glPushAttrib(GL_ENABLE_BIT);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, 100, 0, 100);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glColor3f(0.0, 0.0, 0.0);
+	glCallList(list);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glPopAttrib();
+	glMatrixMode(GL_MODELVIEW);
+	list = glGenLists(1);
+	glNewList(list, GL_COMPILE);
+
+	GL_DRAW_STRING(x, y, string, GLUT_BITMAP_TIMES_ROMAN_24);
+	glEndList();
+
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
 }
  

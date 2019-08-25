@@ -33,6 +33,7 @@ public:
 						 
 // Open GL
 	static int GL_WindowID[OpenGL_MAX_WND];
+	static int list;
 	
 	static ST_GL_BASIC st_gl_basic; // OpenGL Šî–{\‘¢‘Ì
 	static GLint VP_mode; // Veiw Point Ø‚è‘Ö‚¦—p
