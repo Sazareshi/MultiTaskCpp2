@@ -4,6 +4,7 @@
 //OpenGL
 #include <glut.h>
 #include <gl_screenshot.h> 
+#include <freeglut.h> 
 
 typedef struct _gl_basic {
 	int WinPosX;			//生成するウィンドウ位置のX座標
@@ -16,6 +17,8 @@ typedef struct _gl_basic {
 	Vector3 ViewCenter;		// 視野の中心位置
 	Vector3 ViewUpside;		// 視野の上方向
 
+	GLdouble fovy, aspect, zNear, zFar;
+
 	bool _Bitmap;
 
 	gl_screenshot gs;		//bmpファイルの出力
@@ -23,4 +26,14 @@ typedef struct _gl_basic {
 	bool bGLactive;
 
 }ST_GL_BASIC, *P_ST_GL_BASIC;
+
+//----------------------------------------------------
+// 物質質感の定義
+//----------------------------------------------------
+struct MaterialStruct {
+	GLfloat ambient[4];
+	GLfloat diffuse[4];
+	GLfloat specular[4];
+	GLfloat shininess;
+};
 

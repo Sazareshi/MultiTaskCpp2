@@ -2,6 +2,34 @@
 #include "CPublicRelation.h"
 
 extern CIO_Table*		pIO_Table;
+extern CORDER_Table*	pOrder;				//共有メモリOrderクラスポインタ
+
+//----------------------------------------------------
+// 物質質感の定義
+//----------------------------------------------------
+//jade(翡翠)
+MaterialStruct ms_jade = {
+	{ 0.135,     0.2225,   0.1575,   1.0 },
+	{ 0.54,      0.89,     0.63,     1.0 },
+	{ 0.316228,  0.316228, 0.316228, 1.0 },
+	12.8 };
+//ruby(ルビー)
+MaterialStruct ms_ruby = {
+	{ 0.1745,   0.01175,  0.01175,   1.0 },
+	{ 0.61424,  0.04136,  0.04136,   1.0 },
+	{ 0.727811, 0.626959, 0.626959,  1.0 },
+	76.8 };
+//----------------------------------------------------
+// 色の定義の定義
+//----------------------------------------------------
+GLfloat red[] = { 0.8, 0.2, 0.2, 1.0 }; //赤色
+GLfloat green[] = { 0.2, 0.8, 0.2, 1.0 };//緑色
+GLfloat blue[] = { 0.2, 0.2, 0.8, 1.0 };//青色
+GLfloat yellow[] = { 0.8, 0.8, 0.2, 1.0 };//黄色
+GLfloat white[] = { 1.0, 1.0, 1.0, 1.0 };//白色
+GLfloat shininess = 30.0;//光沢の強さ
+						 //-----------------------------------------
+
 
 //#################### OPEN GL ################################################
 int CPublicRelation::GL_WindowID[OpenGL_MAX_WND];
@@ -16,7 +44,8 @@ void CPublicRelation::ActOpenGL() {
 	glutInitWindowSize(st_gl_basic.WinWidth, st_gl_basic.WinHeight); //ウィンドウサイズの指定
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);//ディスプレイモードの指定
 	GL_WindowID[0]=glutCreateWindow(st_gl_basic.WindowTitle);		//ウィンドウの作成
-	glutDisplayFunc(GL_Display);			//描画時に呼び出される関数を指定する（関数名：Display）
+	glutDisplayFunc(GL_Display);			//描画時に呼び出される関数を指定する（関数名：GL_Display）
+	glutKeyboardFunc(GL_Keyboard);			//キーボード入力時に呼び出される関数を指定する（関数名：GL_Keyboard）
 	
 #if 0
 	//2画面
@@ -63,11 +92,20 @@ void  CPublicRelation::GL_Initialize(void) {
 	st_gl_basic.ViewUpside.y = 0.0;
 	st_gl_basic.ViewUpside.z = 1.0;
 
+	st_gl_basic.fovy = 60.0;
+	st_gl_basic.aspect = (double)st_gl_basic.WinWidth / (double)st_gl_basic.WinHeight;
+	st_gl_basic.zNear = 0.1;
+	st_gl_basic.zFar = 900.0;
+
+	
 	glClearColor(0.3, 0.3, 0.3, 1.0);	//ウィンドウを塗りつぶす　GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha
 	glEnable(GL_DEPTH_TEST);			//デプスバッファを使用：glutInitDisplayMode() で GLUT_DEPTH を指定する
-										//陰影ON-----------------------------
+	//陰影ON-----------------------------
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);//光源0を利用
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);// (GLenum sfactor, GLenum dfactor)
 
 }
 
@@ -84,17 +122,21 @@ void  CPublicRelation::GL_resize(int w, int h) {
 
 void CPublicRelation::GL_Display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //バッファの消去
+	glClearColor(0.3, 0.3, 0.3, 1.0);
 
 //透視変換行列の設定------------------------------
 	glMatrixMode(GL_PROJECTION);	//GLenum mode 行列モードの設定（GL_PROJECTION : 透視変換行列の設定、GL_MODELVIEW：モデルビュー変換行列）
 	glLoadIdentity();				//行列の初期化
 	gluPerspective(														//透視投影法の視体積gluPerspactive(th, w/h, near, far);
-		60.0,															//  GLdouble fovy, 
-		(double)st_gl_basic.WinWidth / (double)st_gl_basic.WinHeight,	//	GLdouble aspect,
-		0.1,															//	GLdouble zNear,
-		900.0);														//	GLdouble zFar);
+		st_gl_basic.fovy,	//  GLdouble fovy, 
+		st_gl_basic.aspect,	//	GLdouble aspect,
+		st_gl_basic.zNear,	//	GLdouble zNear,
+		st_gl_basic.zFar	//	GLdouble zFar
+	);	
 		
-	
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
 	if (VP_mode == 2) {
 	 st_gl_basic.ViewPoint = pIO_Table->physics.cp;
 	 st_gl_basic.ViewPoint.z += 10.0;
@@ -105,7 +147,7 @@ void CPublicRelation::GL_Display(void) {
 	 st_gl_basic.ViewUpside.y = cos(pIO_Table->physics.th);
 	 st_gl_basic.ViewUpside.z = 0.0;
 	}
-	
+
 	gluLookAt(
 		st_gl_basic.ViewPoint.x, st_gl_basic.ViewPoint.y, st_gl_basic.ViewPoint.z,//GLdouble eyex, eyey, eyez 視点の位置x,y,z;
 		st_gl_basic.ViewCenter.x, st_gl_basic.ViewCenter.y, st_gl_basic.ViewCenter.z,  //視界の中心位置の参照点座標x,y,z
@@ -121,16 +163,6 @@ void CPublicRelation::GL_Display(void) {
 
 
 #if 0
-
-//ロープ描画
-	glColor3d(0.0, 0.0, 1.0);
-	glLineWidth(2.0);
-
-	glBegin(GL_LINES);
-	glVertex3d(pLoad->r.x, pLoad->r.y, pLoad->r.z);
-	glVertex3d(pHanging->r.x, pHanging->r.y, pHanging->r.z);
-	glEnd();
-
 
 
 //文字の描画
@@ -165,7 +197,36 @@ void CPublicRelation::GL_Display(void) {
 	glDisable(GL_LIGHTING);
 	//-----------------------------------
 #endif
+	//軸 描画
+	glColor3d(0.0, 0.0, 1.0);		//色の設定
+	glLineWidth(8.0);				//線幅
+	glBegin(GL_LINES);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, 0.0, 25.0);
+	glEnd();
 
+	//直方体
+	drowCuboid(2.0, 2.0, 16.0, //x軸方向の幅, y軸方向の幅, z軸方向の幅,
+		0.0, 0.0, 8.0,   //中心のx座標, 中心のy座標, 中心のz座標,
+		ms_ruby,          //色,
+		-pIO_Table->physics.th * COF_RAD2DEG,   //回転角度,
+		0.0, 0.0, 1.0);   //回転軸x座標, 回転軸y座標, 回転軸z標
+
+	//Boom 描画
+	glColor3d(0.0, 0.0, 1.0);		//色の設定
+	glLineWidth(8.0);				//線幅
+	glBegin(GL_LINES);
+	glVertex3f(0.0, 0.0, 25.0);
+	glVertex3f(pIO_Table->physics.cp.x, pIO_Table->physics.cp.y, pIO_Table->physics.cp.z);
+	glEnd();
+
+	//ロープ 描画
+	glColor3d(1.0, 1.0, 1.0);		//色の設定
+	glLineWidth(2.0);				//線幅
+	glBegin(GL_LINES);
+	glVertex3f(pIO_Table->physics.cp.x, pIO_Table->physics.cp.y, pIO_Table->physics.cp.z);
+	glVertex3f(pIO_Table->physics.lp.x, pIO_Table->physics.lp.y, pIO_Table->physics.lp.z);
+	glEnd();
 
 	//球 描画
 	glPushMatrix();
@@ -175,11 +236,16 @@ void CPublicRelation::GL_Display(void) {
 	glPopMatrix();
 
 	//立方体
+
 	glPushMatrix();
-	glColor4d(0.0, 1.0, 0.0, 0.5);//色の設定
+	GLfloat yellow[] = { 1.0, 1.0, 1.0, 1.0 };
 	glTranslated(pIO_Table->physics.cp.x, pIO_Table->physics.cp.y, pIO_Table->physics.cp.z);//平行移動値の設定
+	glRotatef(-pIO_Table->physics.th * COF_RAD2DEG, 0.0, 0.0, 1.0);
+	glColor4d(0.0, 0.0, 1.0, 1.0);//色の設定
 	glutSolidCube(0.5);//引数：(一辺の長さ)
 	glPopMatrix();
+
+
 
 	GL_Ground();
 
@@ -197,22 +263,26 @@ void CPublicRelation::GL_mouse_on(int button, int state, int x, int y)
 				VP_mode = 0;
 
 		if (VP_mode == 1) {
+
 			st_gl_basic.ViewPoint.x = 0.0;
-			st_gl_basic.ViewPoint.y = 0.1;
+			st_gl_basic.ViewPoint.y = 1.0;
 			st_gl_basic.ViewPoint.z = 80.0;
 
 			st_gl_basic.ViewCenter.x = 0.0;
-			st_gl_basic.ViewCenter.y = 0.0;
+			st_gl_basic.ViewCenter.y = 0.1;
 			st_gl_basic.ViewCenter.z = 0.0;
 
 			st_gl_basic.ViewUpside.x = 0.0;
 			st_gl_basic.ViewUpside.y = 0.0;
 			st_gl_basic.ViewUpside.z = 1.0;
 
+			st_gl_basic.fovy = 60.0;
+
 		}
 		else if (VP_mode == 2) {
 			st_gl_basic.ViewPoint = pIO_Table->physics.cp;
 			st_gl_basic.ViewPoint.z += 10.0;
+
 			st_gl_basic.ViewCenter = pIO_Table->physics.cp;
 			st_gl_basic.ViewCenter.x += 0.1;
 			st_gl_basic.ViewCenter.z = 0.0;
@@ -220,8 +290,11 @@ void CPublicRelation::GL_mouse_on(int button, int state, int x, int y)
 			st_gl_basic.ViewUpside.x = sin(pIO_Table->physics.th);
 			st_gl_basic.ViewUpside.y = cos(pIO_Table->physics.th);
 			st_gl_basic.ViewUpside.z = 0.0;
+
+			st_gl_basic.fovy = 30.0;
 		}
 		else {
+			st_gl_basic.fovy = 60.0;
 			st_gl_basic.ViewPoint.x = 0.0;
 			st_gl_basic.ViewPoint.y = 50.0;
 			st_gl_basic.ViewPoint.z = 5.0;
@@ -233,6 +306,8 @@ void CPublicRelation::GL_mouse_on(int button, int state, int x, int y)
 			st_gl_basic.ViewUpside.x = 0.0;
 			st_gl_basic.ViewUpside.y = 0.0;
 			st_gl_basic.ViewUpside.z = 1.0;
+
+			st_gl_basic.fovy = 60.0;
 		}
 		break;
 	case GLUT_RIGHT_BUTTON:
@@ -258,7 +333,7 @@ void  CPublicRelation::GL_Ground(void) {
 	double ground_max_x = 100.0; // 1.0 = 1.0m
 	double ground_max_y = 100.0;// 1.0 = 1.0m
 	glColor3d(0.8, 0.8, 0.8);  // 大地の色
-
+	glLineWidth(1.0);
 	glBegin(GL_LINES);
 	for (double ly = -ground_max_y; ly <= ground_max_y; ly += 2.0) {
 		glVertex3d(-ground_max_x, ly, 0);
@@ -270,4 +345,101 @@ void  CPublicRelation::GL_Ground(void) {
 	}
 	glEnd();
 } //大地の描画Keyboard
+
+
+  // 直方体の描画
+void CPublicRelation::drowCuboid(double a, double b, double c,
+	double x, double y, double z,
+	MaterialStruct color) {
+	GLdouble vertex[][3] = {
+		{ -a / 2.0, -b / 2.0, -c / 2.0 },
+	{ a / 2.0, -b / 2.0, -c / 2.0 },
+	{ a / 2.0,  b / 2.0, -c / 2.0 },
+	{ -a / 2.0,  b / 2.0, -c / 2.0 },
+	{ -a / 2.0, -b / 2.0,  c / 2.0 },
+	{ a / 2.0, -b / 2.0,  c / 2.0 },
+	{ a / 2.0,  b / 2.0,  c / 2.0 },
+	{ -a / 2.0,  b / 2.0,  c / 2.0 }
+	};
+	int face[][4] = {//面の定義
+		{ 3, 2, 1, 0 },
+	{ 1, 2, 6, 5 },
+	{ 4, 5, 6, 7 },
+	{ 0, 4, 7, 3 },
+	{ 0, 1, 5, 4 },
+	{ 2, 3, 7, 6 }
+	};
+	GLdouble normal[][3] = {//面の法線ベクトル
+		{ 0.0, 0.0, -1.0 },
+	{ 1.0, 0.0, 0.0 },
+	{ 0.0, 0.0, 1.0 },
+	{ -1.0, 0.0, 0.0 },
+	{ 0.0,-1.0, 0.0 },
+	{ 0.0, 1.0, 0.0 }
+	};
+	glPushMatrix();
+	glMaterialfv(GL_FRONT, GL_AMBIENT, color.ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, color.diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, color.specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, &color.shininess);
+	glTranslated(x, y, z);//平行移動値の設定
+	glBegin(GL_QUADS);
+	for (int j = 0; j < 6; ++j) {
+		glNormal3dv(normal[j]); //法線ベクトルの指定
+		for (int i = 0; i < 4; ++i) {
+			glVertex3dv(vertex[face[j][i]]);
+		}
+	}
+	glEnd();
+	glPopMatrix();
+}
+
+//----------------------------------------------------
+//回転を考慮した立方体の描画
+//----------------------------------------------------
+void CPublicRelation::drowCuboid(double a, double b, double c,
+	double x, double y, double z,
+	MaterialStruct color,
+	double theta,
+	double nx, double ny, double nz) {
+	double nn = sqrt(pow(nx, 2) + pow(ny, 2) + pow(nz, 2));
+	if (nn>0.0) {
+		nx = nx / nn;
+		ny = ny / nn;
+		nz = nz / nn;
+	}
+	glPushMatrix();
+	glTranslated(x, y, z);//平行移動値の設定
+	glPushMatrix();
+	if (theta != 0 && nn>0.0) glRotated(theta, nx, ny, nz);
+	drowCuboid(a, b, c, 0, 0, 0, color);
+	glPopMatrix();
+	glPopMatrix();
+}
+
+//----------------------------------------------------
+// キーボード入力時に呼び出される関数
+//----------------------------------------------------
+void CPublicRelation::GL_Keyboard(unsigned char key, int x, int y) {
+	switch (key)
+	{
+	case 'a':
+		pOrder->ui.notch_mh = 5; pOrder->ui.notch_mh_dir = -1;
+		break;
+	case 'd':
+		pOrder->ui.notch_mh = 5; pOrder->ui.notch_mh_dir = 1;
+		break;
+	case 's':
+		pOrder->ui.notch_mh = 0; pOrder->ui.notch_mh_dir = 0;
+		break;
+
+	case 'q':
+		exit(0);
+		break;
+
+	default:
+		unsigned char key_ = key;
+		break;
+	}
+}
  

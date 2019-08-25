@@ -73,21 +73,18 @@ typedef struct _stIO_Physic {
 
 //吊荷　　座標原点　xy：旋回軸　z：地面(上が+）
 	Vector3 lp;		//吊点xyz
-	double L;		//ロープ長
-	double Le;		//有効ロープ長（振れ周期）
-	double _th;		//水平面角度
-	double _ph;		//Z軸角度
-
 	Vector3 lv;		//吊点vx vy vz
-	double vL;		// ロープ長変化速度
-	double _wth;	//水平面角速度
-	double _wph;	//Z軸角速度
 
-	Vector3 lsway_cyl;	//円柱座標　荷振れ
-	Vector3 lvsway_cyl; //円柱座標　荷振れ速度
 
-	Vector3 lsway_rec;	//直行座標　荷振れ
-	Vector3 lvsway_rec; //直行座標　荷振れ速度
+//吊荷吊点間相対位置
+	double L;		//　ロープ長
+	double lph;		//　Z軸との角度
+	double lth;		//  XY平面角度
+	double vL;		//巻速度
+
+
+	double T;		//振れ周期
+	double w0;		//振れ角周波数(2PI()/T）
 
 }ST_IO_PHYSIC, *LPST_IO_PHYSIC;
 

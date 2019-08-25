@@ -14,6 +14,7 @@ extern ST_iTask g_itask;
 
 #define OpenGL_MAX_WND	4
 
+
 class CPublicRelation :
 	public CTaskObj
 {
@@ -59,6 +60,16 @@ public:
 	static void GL_mouse_motion(int x, int y);
 	static void GL_mouse_on(int button, int state, int x, int y);
 	static void GL_mouse_wheel(int wheel_number, int direction, int x, int y);
+
+
+	static void drowCuboid(double a, double b, double c,     // x軸方向の幅, y軸方向の幅, z軸方向の幅,
+		double x, double y, double z,     // 中心のx座標, 中心のy座標, 中心のz座標, 
+		MaterialStruct color);            // 色
+	static void drowCuboid(double a, double b, double c,     // x軸方向の幅, y軸方向の幅, z軸方向の幅,
+		double x, double y, double z,     // 中心のx座標, 中心のy座標, 中心のz座標, 
+		MaterialStruct color,             // 色,
+		double theta,                     // 回転角度, 
+		double nx, double ny, double nz); // 回転軸x座標, 回転軸y座標, 回転軸z標
 
 };
 

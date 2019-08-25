@@ -153,6 +153,10 @@ typedef struct _stSpec {
 	double gantry_acc[ACCELERATION_MAX];
 	double hook_acc[ACCELERATION_MAX];
 	double operm_acc[ACCELERATION_MAX];
+
+	double boom_height;
+
+
 }ST_SPEC, *LPST_SPEC;
 
 /************************************************/

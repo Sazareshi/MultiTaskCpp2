@@ -24,6 +24,7 @@ void CPlayer::cal_ui_order(){
 
 	pIO_Table->ref.slew_w = (double)(pOrder->ui.notch_slew_dir * g_spec.slew_notch_spd[pOrder->ui.notch_slew]);
 	pIO_Table->ref.bh_v = (double)(pOrder->ui.notch_bh_dir * g_spec.bh_notch_spd[pOrder->ui.notch_bh]);
+	pIO_Table->ref.hoist_v = (double)(pOrder->ui.notch_mh_dir * g_spec.bh_notch_spd[pOrder->ui.notch_mh]);
 
 };
 

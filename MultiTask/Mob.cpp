@@ -2,6 +2,8 @@
 #include "Mob.h"
 #include "CommonFormat.h"
 
+extern ST_SPEC			g_spec;				//クレーン仕様
+
 //Mob_HP
 Mob_HoistPoint::Mob_HoistPoint(){};
 Mob_HoistPoint::~Mob_HoistPoint() {};
@@ -25,20 +27,21 @@ void Mob_HoistPoint::init_mob(double _dt, Vector3& _r, Vector3& _v) {
 
 	
 
-	acc_cyl = Vector3(0.0, 0.0, 0.0);
-	acc_cyl_ref = Vector3(0.0, 0.0, 0.0);
-
+	acc_rec = Vector3(0.0, 0.0, 0.0);
+	a_h_ref = 0.0;		//巻加速度指令
+	dw_sl_ref = 0.0;	//旋回角速度指令
+	a_bm_ref = 0.0;		//旋回角速度指令acc_cyl_ref = Vector3(0.0, 0.0, 0.0);
 
 	return;
 }
 
 Vector3 Mob_HoistPoint::A(double t, Vector3& r, Vector3& v) {
 
-	double a_er = acc_cyl.x - r_bm * w_sl * w_sl;
-	double a_eth = r_bm * acc_cyl.y + 2.0 * v_bm * w_sl;
-	Vector3 acc_cyl2(a_er,a_eth,acc_cyl_ref.z);
+	double a_er = a_bm - r_bm * w_sl * w_sl;
+	double a_eth = r_bm *  dw_sl + 2.0 * v_bm * w_sl;
+	Vector3 acc_cyl(a_er,a_eth,0.0);
 
-	acc_rec = acc_cyl2.cyl2rec(acc_cyl2,th_sl);
+	acc_rec = acc_cyl.cyl2rec(acc_cyl,th_sl);
 	
 	return acc_rec;
 
@@ -46,23 +49,36 @@ Vector3 Mob_HoistPoint::A(double t, Vector3& r, Vector3& v) {
 
 void Mob_HoistPoint::timeEvolution(double t) {
 
-	acc_cyl = (dt*acc_cyl_ref + HP_Tf * acc_cyl) / (dt + HP_Tf); //一次遅れ
+	A(0.0, r, v);//吊点の加速度演算
 
-	v_bm = v_bm + dt * acc_cyl.x;
+	a_bm = (dt*a_bm_ref + HP_Tf * a_bm) / (dt + HP_Tf); //一次遅れ
+	dw_sl = (dt*dw_sl_ref + HP_Tf * dw_sl) / (dt + HP_Tf); //一次遅れ
+	a_h	= (dt*a_h_ref + HP_Tf * a_h) / (dt + HP_Tf); //一次遅れ
+
+	v_bm = v_bm + dt * a_bm;
 	if (v_bm* v_bm < 0.00001)v_bm = 0.0;
-	w_sl = w_sl + dt * acc_cyl.y;
+
+	w_sl = w_sl + dt * dw_sl;
 	if (w_sl* w_sl < 0.000000001)w_sl = 0.0;
 
+	v_h = v_h + dt * a_h;
+	if (v_h* v_h < 0.00001)v_h = 0.0;
+
+
 	r_bm += dt * v_bm;
+
 	th_sl += dt * w_sl;
 	if (th_sl >= DEF_2PI) th_sl -= DEF_2PI;
+
+	l_h += dt * v_h;
 	 
 	v.x = v_bm * sin(th_sl) + r_bm * w_sl * cos(th_sl);
 	v.y = v_bm * cos(th_sl) - r_bm * w_sl * sin(th_sl);
+	v.z = 0.0;
 
 	r.x = r_bm * sin(th_sl);
 	r.y = r_bm * cos(th_sl);
-	r.z = DEFAULT_HP_Z;
+	r.z = g_spec.boom_height;
 
 }
 
@@ -75,7 +91,7 @@ void Mob_HungLoad::init_mob(double _dt, Vector3& _r, Vector3& _v) {
 	dt = _dt;
 	r.copy(_r);
 	v.copy(_v);
-	m = 1000.0;//1 ton
+	m = 10000.0;//10 ton
 	return;
 }
 
@@ -87,12 +103,8 @@ Vector3 Mob_HungLoad::A(double t, Vector3& r, Vector3& v) {
 
 	double Sdivm = S() / m;
 
-	//	a.x = Sdivm * (r.x - r_box.x);
-	//	a.y = Sdivm * (r.y - r_box.y);
-	//	a.z = -G + Sdivm * (r.z - r_box.z);
-
 	a = L_.clone().multiplyScalor(Sdivm);
-	a.z -= GRAVITY_ACC;
+	a.z -= DEF_G;
 
 	//計算誤差によるロープ長ずれ補正
 	Vector3 hatL = L_.clone().normalize();
@@ -113,7 +125,9 @@ double  Mob_HungLoad::S() {
 	double v_abs2 = v_.lengthSq();
 	Vector3 vectmp;
 	Vector3 vecL = vectmp.subVectors(r, pHP->r);
-	return -m * (v_abs2 - pHP->acc_rec.dot(vecL) - GRAVITY_ACC * vecL.z + pHP->v_h*pHP->v_h + pHP->l_h*pHP->a_h) / (pHP->l_h*pHP->l_h);
+
+	return -m * (v_abs2 - pHP->acc_rec.dot(vecL) - GRAVITY_ACC * vecL.z - (pHP->a_h * pHP->l_h + pHP->v_h*pHP->v_h)) / (pHP->l_h*pHP->l_h);
+
 }
 
 

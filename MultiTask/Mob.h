@@ -25,10 +25,12 @@ public:
 	Vector3 A(double t, Vector3& a, Vector3& v) ; //Model of acceleration  t:no use,a:acc ref,v:no use
 	void timeEvolution(double t);
 
-	Vector3 acc_cyl;	//加速度 θ r z
-	Vector3 acc_cyl_ref; //加速度指令  θ r z
-	Vector3 acc_rec;	//加速度 θ r z
+	Vector3 acc_rec;	//加速度 x,y,z
 	
+	double  a_h_ref;	//巻加速度指令
+	double  dw_sl_ref;	//旋回角速度指令
+	double  a_bm_ref;	//旋回角速度指令
+
 	double l_h;	//ロープ長
 	double v_h;	//巻速度;
 	double a_h;	//巻加速度;
@@ -45,6 +47,7 @@ public:
 
 #define compensationK 0.5
 #define compensationGamma 0.5
+
 
 class Mob_HungLoad :public RK4
 {
