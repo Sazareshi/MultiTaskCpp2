@@ -59,7 +59,7 @@ void Mob_HoistPoint::timeEvolution(double t) {
 	if (v_bm* v_bm < 0.00001)v_bm = 0.0;
 
 	w_sl = w_sl + dt * dw_sl;
-	if (w_sl* w_sl < 0.000000001)w_sl = 0.0;
+	if (dw_sl_ref*dw_sl_ref < 0.00000000001 && w_sl* w_sl < 0.00002)w_sl = 0.0;
 
 	v_h = v_h + dt * a_h;
 	if (v_h* v_h < 0.00001)v_h = 0.0;

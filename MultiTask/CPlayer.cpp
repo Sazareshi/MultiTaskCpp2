@@ -12,7 +12,9 @@ CPlayer::~CPlayer(){}
 
 void CPlayer::routine_work(void *param) {
 
-	if (pMode->environment == ENV_MODE_SIM1) cal_ui_order();
+	if (pMode->environment == ENV_MODE_SIM1) {
+		cal_ui_order();
+	}
 	else ;
 			
 	ws << L" working!" << *(inf.psys_counter) % 100 << " SLEW_REF " << pIO_Table->ref.slew_w << " BH_REF " << pIO_Table->ref.bh_v;
@@ -32,3 +34,19 @@ void CPlayer::init_task(void *pobj) {
 	set_panel_tip_txt();
 	return;
 };
+
+void CPlayer::change_action(int order) {
+	if (order == AUTO_MODE_ACTIVE) {
+		pMode->auto_control = AUTO_MODE_ACTIVE;
+	}
+	else pMode->auto_control = AUTO_MODE_STANDBY;
+
+	wstring str = L"I got it";
+	txout2msg_listbox(str);
+	return;
+};
+
+void CPlayer::check_mode() {
+	return;
+};
+

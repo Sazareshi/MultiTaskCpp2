@@ -80,8 +80,18 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) pOrder->ui.env_mode = ENV_MODE_REAL;
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) pOrder->ui.env_mode = ENV_MODE_SIM1;
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) pOrder->ui.env_mode = ENV_MODE_SIM2;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO4) pOrder->ui.ope_mode = OPE_MODE_MANUAL;
-				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO5) pOrder->ui.ope_mode = OPE_MODE_AUTO;
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO4) {
+					if (pOrder->ui.ope_mode == OPE_MODE_MANUAL)pOrder->ui.ope_mode = OPE_MODE_AUTO;
+					else pOrder->ui.ope_mode = OPE_MODE_MANUAL;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO5) {
+					if(pOrder->ui.as_mode == OPE_MODE_AS_OFF)pOrder->ui.as_mode = OPE_MODE_AS_ON;
+					else pOrder->ui.as_mode = OPE_MODE_AS_OFF;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO6) {
+					if (pOrder->ui.auto_mode != AUTO_MODE_ACTIVE)pOrder->ui.auto_mode = AUTO_MODE_ACTIVE;
+					else pOrder->ui.auto_mode = AUTO_MODE_STANDBY;
+				}
 				else;
 
 				CManager* pMan = (CManager*)VectpCTaskObj[g_itask.mng];
@@ -269,7 +279,7 @@ void CPublicRelation::set_panel_tip_txt()
 		}
 	}break;
 	case IDC_TASK_FUNC_RADIO6: {
-		wstr = L"Func6(Mode) \n\r 1:EnvReal 2:EnvSim1 3:EnvSim2 \n\r 4:MAN 5:AUTO 6:??";
+		wstr = L"Func6(Mode) \n\r 1:EnvReal 2:EnvSim1 3:EnvSim2 \n\r 4:AUTO 5:AS 6:AUTO_START";
 		switch (inf.panel_type_id) {
 		case IDC_TASK_ITEM_RADIO1:
 			wstr_type += L"Param of type1 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";

@@ -150,12 +150,12 @@ void CPublicRelation::GL_Display(void) {
 	 st_gl_basic.ViewUpside.z = 0.0;
 	}
 	else if (VP_mode == 1) {
-	 st_gl_basic.ViewPoint.x = sin(pIO_Table->physics.th);
-	 st_gl_basic.ViewPoint.y = cos(pIO_Table->physics.th);
+	 st_gl_basic.ViewPoint.x = (pIO_Table->physics.R - CAM_DIST_SIDE1)*(pIO_Table->physics.th);
+	 st_gl_basic.ViewPoint.y = (pIO_Table->physics.R - CAM_DIST_SIDE1)*cos(pIO_Table->physics.th);
 	 st_gl_basic.ViewPoint.z = 10.0;
 
-	 st_gl_basic.ViewCenter.x = 20.0*sin(pIO_Table->physics.th);
-	 st_gl_basic.ViewCenter.y = 20.0*cos(pIO_Table->physics.th);
+	 st_gl_basic.ViewCenter.x = pIO_Table->physics.R*sin(pIO_Table->physics.th);
+	 st_gl_basic.ViewCenter.y = pIO_Table->physics.R*cos(pIO_Table->physics.th);
 	 st_gl_basic.ViewCenter.z = 10.0;
 
 	 st_gl_basic.ViewUpside.x = 0.0;
@@ -179,24 +179,7 @@ void CPublicRelation::GL_Display(void) {
 
 
 
-//•¶Žš‚Ì•`‰æ
-	char t_char[20];
-	char t_char2[20];
 
-	strcpy_s(t_char2, "L = ");
-	sprintf_s(t_char, "%f", pIO_Table->physics.L);
-	strcat_s(t_char2, t_char);
-	GL_DISPLAY_TEXT(5, 93, t_char2);
-
-	strcpy_s(t_char2, "th = ");
-	sprintf_s(t_char, "%f", COF_RAD2DEG * pIO_Table->physics.th);
-	strcat_s(t_char2, t_char);
-	GL_DISPLAY_TEXT(5, 88, t_char2);
-
-	strcpy_s(t_char2, "bm = ");
-	sprintf_s(t_char, "%f", pIO_Table->physics.R );
-	strcat_s(t_char2, t_char);
-	GL_DISPLAY_TEXT(5, 83, t_char2);
 
 	//‰A‰eOFF-----------------------------
 	glDisable(GL_LIGHTING);
@@ -218,13 +201,6 @@ void CPublicRelation::GL_Display(void) {
 		-pIO_Table->physics.th * COF_RAD2DEG,   //‰ñ“]Šp“x,
 		0.0, 0.0, 1.0);   //‰ñ“]Ž²xÀ•W, ‰ñ“]Ž²yÀ•W, ‰ñ“]Ž²z•W
 
-	//Boom •`‰æ
-	glColor3d(0.0, 0.0, 1.0);		//F‚ÌÝ’è
-	glLineWidth(8.0);				//ü•
-	glBegin(GL_LINES);
-	glVertex3f(0.0, 0.0, 25.0);
-	glVertex3f(pIO_Table->physics.cp.x, pIO_Table->physics.cp.y, pIO_Table->physics.cp.z);
-	glEnd();
 
 	//ƒ[ƒv •`‰æ
 	glColor3d(1.0, 1.0, 1.0);		//F‚ÌÝ’è
@@ -252,8 +228,36 @@ void CPublicRelation::GL_Display(void) {
 	glPopMatrix();
 
 
+	//Boom •`‰æ
+	glColor3d(0.0, 0.0, 1.0);		//F‚ÌÝ’è
+	glLineWidth(8.0);				//ü•
+	glBegin(GL_LINES);
+	glVertex3f(0.0, 0.0, 25.0);
+	glVertex3f(pIO_Table->physics.cp.x, pIO_Table->physics.cp.y, pIO_Table->physics.cp.z);
+	glEnd();
 
 	GL_Ground();
+
+
+	//•¶Žš‚Ì•`‰æ
+	char t_char[20];
+	char t_char2[20];
+
+	strcpy_s(t_char2, "L = ");
+	sprintf_s(t_char, "%f", pIO_Table->physics.L);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(5, 93, t_char2);
+
+	strcpy_s(t_char2, "th = ");
+	sprintf_s(t_char, "%f", COF_RAD2DEG * pIO_Table->physics.th);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(5, 88, t_char2);
+
+	strcpy_s(t_char2, "bm = ");
+	sprintf_s(t_char, "%f", pIO_Table->physics.R);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(5, 83, t_char2);
+
 
 	glutSwapBuffers(); //glutInitDisplayMode(GLUT_DOUBLE)‚Åƒ_ƒuƒ‹ƒoƒbƒtƒ@ƒŠƒ“ƒO‚ð—˜—p‰Â
 }
@@ -283,12 +287,12 @@ void CPublicRelation::GL_mouse_on(int button, int state, int x, int y)
 			st_gl_basic.ViewUpside.y = 0.0;
 			st_gl_basic.ViewUpside.z = 1.0;
 */
-			st_gl_basic.ViewPoint.x = sin(pIO_Table->physics.th);
-			st_gl_basic.ViewPoint.y = cos(pIO_Table->physics.th);
+			st_gl_basic.ViewPoint.x = (pIO_Table->physics.R - CAM_DIST_SIDE1)*sin(pIO_Table->physics.th);
+			st_gl_basic.ViewPoint.y = (pIO_Table->physics.R - CAM_DIST_SIDE1)*cos(pIO_Table->physics.th);
 			st_gl_basic.ViewPoint.z += 10.0;
 
-			st_gl_basic.ViewCenter.x = 20.0*sin(pIO_Table->physics.th);
-			st_gl_basic.ViewCenter.y = 20.0*cos(pIO_Table->physics.th);
+			st_gl_basic.ViewCenter.x = pIO_Table->physics.R*sin(pIO_Table->physics.th);
+			st_gl_basic.ViewCenter.y = pIO_Table->physics.R*cos(pIO_Table->physics.th);
 			st_gl_basic.ViewCenter.z = 10.0;
 
 			st_gl_basic.ViewUpside.x = 0.0;

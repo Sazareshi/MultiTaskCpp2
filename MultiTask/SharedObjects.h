@@ -22,14 +22,17 @@ public:
 #define ENV_MODE_SIM1	1
 #define ENV_MODE_SIM2	2
 
-#define OPE_MODE_MANUAL	0
-#define OPE_MODE_AUTO	1
+#define OPE_MODE_MANUAL	0x0000
+#define OPE_MODE_AUTO	0x0100
+
+#define OPE_MODE_AS_ON	0x0001
+#define OPE_MODE_AS_OFF	0x0000
 
 
-#define AUTO_MODE_STANDBY	0
-#define AUTO_MODE_SUSPEND	1
-#define AUTO_MODE_INTERRUPT	2
-#define AUTO_MODE_ACTIVE	3
+#define AUTO_MODE_STANDBY	0x0000
+#define AUTO_MODE_SUSPEND	0x0001
+#define AUTO_MODE_INTERRUPT	0x0002
+#define AUTO_MODE_ACTIVE	0x0003
 
 
 
@@ -39,7 +42,8 @@ public:
 	CMODE_Table() {};
 	~CMODE_Table() {};
 	
-	DWORD operation;
+	DWORD operation;//AUTO MANUAL 
+	DWORD antisway; //Antisway ON / OFF
 	DWORD auto_control;
 	DWORD environment;
 };
@@ -77,14 +81,21 @@ typedef struct _stIO_Physic {
 
 
 //吊荷吊点間相対位置
-	double L;		//　ロープ長
-	double lph;		//　Z軸との角度
-	double lth;		//  XY平面角度
-	double vL;		//巻速度
+	double L;		//ロープ長
+	double lph;		//Z軸との角度
+	double lth;		//XY平面角度
 
+	double vL;		//巻速度
+	double vlph;	//Z軸との角速度
+	double vlth;	//XY平面角速度
 
 	double T;		//振れ周期
 	double w0;		//振れ角周波数(2PI()/T）
+
+	Vector3 PhPlane_r;	//Z軸角度の位相平面 x:OmegaTheata y:TheataDot
+	Vector3 PhPlane_n;	//xy平面半径方向の位相平面 x:OmegaTheata y:TheataDot
+	Vector3 PhPlane_t;	//xy平面接線方向の位相平面 x:OmegaTheata y:TheataDot
+
 
 }ST_IO_PHYSIC, *LPST_IO_PHYSIC;
 

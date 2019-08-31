@@ -12,7 +12,9 @@ public:
 	~CPlayer();
 
 	void cal_ui_order();
+	void check_mode();
 	void routine_work(void *param);
 	void init_task(void *pobj);
+	void change_action(int order);
 };
 

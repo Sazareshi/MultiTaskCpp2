@@ -72,26 +72,45 @@ void CAnalyst::cal_simulation() {
 	Vector3 rel_lp = hp.r - hl.r;		//’Ý‰×‘Š‘Îxyz
 	Vector3 rel_lvp = hp.v - hl.v;		//’Ý‰×‘Š‘Î‘¬“xvx vy vz
 
-	//ƒ[ƒv’·
+	
 	double last_L = pIO_Table->physics.L;
+	//ƒ[ƒv’·
 	pIO_Table->physics.L = hp.l_h;	
 	pIO_Table->physics.vL = hp.v_h;	//Šª‘¬“x
 	
 	//@ZŽ²‚Æ‚ÌŠp“x
+	double last_ph = pIO_Table->physics.lph;
 	double temp_f = sqrt(rel_lp.x * rel_lp.x + rel_lp.y * rel_lp.y);
-	pIO_Table->physics.lph = asin(temp_f);		
+	pIO_Table->physics.lph = asin(temp_f/ pIO_Table->physics.L);
+	
+	//ZŽ²Šp“x‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot
+	pIO_Table->physics.PhPlane_r.x = pIO_Table->physics.lph * pIO_Table->physics.w0;
+	pIO_Table->physics.PhPlane_r.y = (pIO_Table->physics.lph - last_ph) / (double)inf.period / 1000.0;
+	pIO_Table->physics.PhPlane_r.z = 0.0;
+
 
 	//  XY•½–ÊŠp“x
-	if(hp.r.x > 0.001 && hp.r.x > -0.001) 
-		pIO_Table->physics.lth = atan(hp.r.y/hp.r.x);	
-	else pIO_Table->physics.lth = 0.0;
-	if (hp.r.y < 0.0) pIO_Table->physics.lth += DEF_2PI;
+	double R = pIO_Table->physics.L * sin(pIO_Table->physics.lph);
+	if (R < 0.0001) R = 0.0001;
 
-
+	double last_th = pIO_Table->physics.lth;
+	pIO_Table->physics.lth = acos(rel_lp.x);
+	
 	
 	if(pIO_Table->physics.L < 1.0)
 		pIO_Table->physics.w0 = sqrt(DEF_G / pIO_Table->physics.L);//U‚êŠpŽü”g”
 	pIO_Table->physics.T = DEF_2PI / pIO_Table->physics.w0;			//U‚êŽüŠú
+
+	//xy•½–Ê”¼Œa•ûŒü‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot
+	pIO_Table->physics.PhPlane_n.x = rel_lp.x * cos(-pIO_Table->physics.th) - rel_lp.y *sin(-pIO_Table->physics.th) / pIO_Table->physics.L;
+	pIO_Table->physics.PhPlane_n.y = (rel_lvp.x * cos(-pIO_Table->physics.th) - rel_lvp.y *sin(-pIO_Table->physics.th))/ pIO_Table->physics.L;
+	pIO_Table->physics.PhPlane_n.z = 0.0;
+
+	//xy•½–ÊÚü•ûŒü‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot
+	pIO_Table->physics.PhPlane_t.x = rel_lp.x * sin(-pIO_Table->physics.th) + rel_lp.y *cos(-pIO_Table->physics.th) / pIO_Table->physics.L;;
+	pIO_Table->physics.PhPlane_t.y = rel_lvp.x * sin(-pIO_Table->physics.th) - rel_lvp.y *cos(-pIO_Table->physics.th) / pIO_Table->physics.L;;
+	pIO_Table->physics.PhPlane_t.z= 0.0;
+	
 	
 };
 
@@ -121,5 +140,8 @@ void CAnalyst::routine_work(void *param) {
 
 };
 
+int CAnalyst::cal_job_recipe(int job_type) {
+	return 0;
+};
 
 

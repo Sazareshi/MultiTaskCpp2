@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CManager.h"
 #include "CPublicRelation.h"
+#include "CPlayer.h"
 
 extern CMODE_Table*	pMode;				//共有メモリModeクラスポインタ
 extern CORDER_Table*	pOrder;			//共有メモリOrderクラスポインタ
@@ -15,6 +16,10 @@ CManager::~CManager(){}
 bool CManager::get_UI() {
 	pMode->environment = pOrder->ui.env_mode;
 	pMode->operation = pOrder->ui.ope_mode;
+//	if (pOrder->ui.auto_mode == AUTO_MODE_ACTIVE) {
+		CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
+		pPly->change_action(pOrder->ui.auto_mode);
+//	}
 
 	return FALSE;
 }

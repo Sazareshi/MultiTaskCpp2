@@ -10,7 +10,8 @@
 #define DEFAULT_HP_Z	25.0	//Default Position Z
 #define DEFAULT_ROPE_L	15.0	//Default Rope L
 #define DEFAULT_SLEW	0.0		//Default Position SLEW
-#define DEFAULT_BH		20.0	//Default Position BH
+#define DEFAULT_BH		40.0	//Default Position BH
+
 
 #define HP_Tf		    0.1		//w—ß’l‚É‘Î‚·‚éˆêŸ’x‚ê’è”
 

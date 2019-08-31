@@ -118,6 +118,8 @@ typedef struct _stUI_ORDER {
 
 	DWORD env_mode;
 	DWORD ope_mode;
+	DWORD as_mode;
+	DWORD auto_mode;
 
 }ST_UI_ORDER, *LPST_UI_ORDER;
 
@@ -162,7 +164,7 @@ typedef struct _stSpec {
 /************************************************/
 /*    Define                                */
 /************************************************/
-
+#define	DEF_HARF_PI  1.57079632
 #define	DEF_PI  3.1415265
 #define DEF_2PI 6.2831853
 #define DEF_G	9.80665

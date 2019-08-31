@@ -6,6 +6,8 @@
 #include <gl_screenshot.h> 
 #include <freeglut.h> 
 
+#define CAM_DIST_SIDE1	15.0	//カメラの吊点からの水平設置距離
+
 typedef struct _gl_basic {
 	int WinPosX;			//生成するウィンドウ位置のX座標
 	int WinPosY;			//生成するウィンドウ位置のY座標
