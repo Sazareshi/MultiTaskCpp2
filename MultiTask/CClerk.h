@@ -21,6 +21,9 @@ public:
 
 	void init_task(void *pobj);
 	HWND CreateOwnWindow(HWND h_parent_wnd);
+	BOOL InitWorkWnd(HINSTANCE hInst, WNDPROC WndProc, LPCTSTR lpzClassName);
+
+	static LRESULT CALLBACK ChartWndProc(HWND, UINT, WPARAM, LPARAM);
 
 
 };

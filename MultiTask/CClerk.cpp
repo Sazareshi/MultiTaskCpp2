@@ -1,18 +1,16 @@
 #include "stdafx.h"
 #include "CClerk.h"
+#include "Chart.h"
 
 extern CORDER_Table*	pOrder;				//共有メモリOrderクラスポインタ
 extern CMODE_Table*		pMode;				//共有メモリModeクラスポインタ
 extern ST_SPEC			g_spec;				//クレーン仕様
 extern CIO_Table*		pIO_Table;
-extern WCHAR szWindowClass[];
-extern HINSTANCE hInst;
 
-CClerk::CClerk(){
-}
 
-CClerk::~CClerk(){
-}
+CClerk::CClerk(){}
+
+CClerk::~CClerk(){}
 
 void CClerk::routine_work(void *param) {
 
@@ -30,7 +28,7 @@ LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 		case IDC_TASK_FUNC_RADIO1:
 		{
 			inf.panel_func_id = LOWORD(wp); set_panel_tip_txt(); set_PNLparam_value(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-			CreateOwnWindow(inf.hWnd_parent);
+			Chart::open_chart(inf.hInstance,inf.hWnd_parent);
 			break;
 		}
 
@@ -72,8 +70,6 @@ LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 			}
 			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO6) {
 
-				CManager* pMan = (CManager*)VectpCTaskObj[g_itask.mng];
-				pMan->get_UI();									//環境モード設定
 			}
 			else;
 			break;
@@ -137,7 +133,7 @@ void CClerk::set_panel_tip_txt()
 	wstring wstr_type; wstring wstr;
 	switch (inf.panel_func_id) {
 	case IDC_TASK_FUNC_RADIO1: {
-		wstr = L"Type for Func1 \n\r 1:Slew- 2:0 3:Slew+ \n\r 4:Bh- 5:0 6:Bh+";
+		wstr = L"Type for Func1 \n\r 1:Open Chart 2:?? 3:?? \n\r 4:?? 5:?? 6:??";
 		switch (inf.panel_type_id) {
 		case IDC_TASK_ITEM_RADIO1:
 			wstr_type += L"Param of type1 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";
@@ -257,7 +253,7 @@ void CClerk::set_panel_tip_txt()
 		}
 	}break;
 	case IDC_TASK_FUNC_RADIO6: {
-		wstr = L"Func6(Mode) \n\r 1:?? 2:?? 3:?? \n\r 4:?? 5:?? 6:??";
+		wstr = L"Type for Func6 \n\r 1:?? 2:?? 3:?? \n\r 4:?? 5:?? 6:??";
 		switch (inf.panel_type_id) {
 		case IDC_TASK_ITEM_RADIO1:
 			wstr_type += L"Param of type1 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";
@@ -296,16 +292,6 @@ void CClerk::init_task(void *pobj) {
 };
 
 HWND CClerk::CreateOwnWindow(HWND h_parent_wnd) {
-
-	//if (inf.hWnd_work == nullptr) {
-		inf.hWnd_work = CreateWindowW(szWindowClass, szWindowClass, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
-			500, 300, 200, 200, nullptr, nullptr, hInst, nullptr);
-
-		if (!inf.hWnd_work) return FALSE;
-
-		ShowWindow(inf.hWnd_work, SW_SHOW);
-		UpdateWindow(inf.hWnd_work);
-	//}
 	return inf.hWnd_work;
 };
 

@@ -71,6 +71,8 @@ typedef struct {
 	HWND			hWnd_msgList;					//自メインウィンドウのメッセージ表示用リストコントロールへのハンドル
 	HWND			hWnd_work;						//自専用作業用ウィンドウのハンドル
 
+	HINSTANCE		hInstance;
+
     //-操作パネル関連
 	int				cnt_PNLlist_msg = 0;			//パネルメッセージリストのカウント数
 	int				panel_func_id = 1;				//パネルfunctionボタンの選択内容
