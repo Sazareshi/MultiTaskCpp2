@@ -12,10 +12,14 @@ CPlayer::~CPlayer(){}
 
 void CPlayer::routine_work(void *param) {
 
+	chk_as_status();			//振止状態更新
+	
 	if (pMode->environment == ENV_MODE_SIM1) {
 		cal_ui_order();
 	}
 	else ;
+
+	int set_table_out();			//出力セット
 			
 	ws << L" working!" << *(inf.psys_counter) % 100 << " SLEW_REF " << pIO_Table->ref.slew_w << " BH_REF " << pIO_Table->ref.bh_v;
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
@@ -35,18 +39,62 @@ void CPlayer::init_task(void *pobj) {
 	return;
 };
 
-void CPlayer::change_action(int order) {
-	if (order == AUTO_MODE_ACTIVE) {
+int CPlayer::auto_start(LPST_JOB_ORDER recipe,int type) {
+	if (type == AUTO_MODE_ACTIVE) {
 		pMode->auto_control = AUTO_MODE_ACTIVE;
 	}
 	else pMode->auto_control = AUTO_MODE_STANDBY;
 
 	wstring str = L"I got it";
 	txout2msg_listbox(str);
-	return;
+	return 0;
 };
 
-void CPlayer::check_mode() {
-	return;
+/* ############################ */
+/* PLAYERで管理するMODEの更新	*/
+/* auto control mode			*/
+/* antisway mode				*/
+/* ############################ */
+
+int CPlayer::update_mode(int order_type) {
+	if (pMode->antisway != ON) {
+		pMode->antisway_control = AS_MODE_DEACTIVATE;
+	}
+	else {
+		switch (pMode->antisway_control) {
+		case AS_MODE_ACTIVE:
+			if(chk_as_status()) pMode->antisway_control = AS_MODE_STANDBY;
+			break;
+		case AS_MODE_DEACTIVATE:
+			if (pMode->antisway == ON) {
+				pMode->antisway_control = AS_MODE_STANDBY;
+			}
+			break;
+		case AS_MODE_STANDBY:
+			break;
+		default:
+			pMode->antisway_control = AS_MODE_DEACTIVATE;
+			break;
+		}
+	}
+	
+	if (order_type == ORDER_TYPE_UI) {
+		if ((pOrder->ui.anti_sway_trigger == ON)&&(pMode->antisway_control == AS_MODE_STANDBY)) {
+			pMode->antisway_control = AS_MODE_ACTIVE;
+		}
+	}
+
+	if (order_type == ORDER_TYPE_MANU) {
+
+	}
+
+	return 0;
+};
+int CPlayer::chk_as_status() {
+	return 0;
+};
+
+int CPlayer::set_table_out(){
+	return 0;
 };
 

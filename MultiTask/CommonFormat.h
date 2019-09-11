@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CodeDef.h"
+#include "CVector3.h"
 
 /************************************************/
 /*    # タスクオブジェクトインデックス構造体    */
@@ -58,6 +59,7 @@ typedef struct _stJOB_Report {	//JOB完了報告フォーマット
 	WORD status;
 }ST_JOB_REPRORT, *LPST_JOB_REPRORT;
 
+/// MODE Order
 typedef struct _stJOB_ORDER {	//JOB　ORDER構造体
 	WORD type;					//JOBタイプ
 	WORD property;				//実行条件
@@ -87,13 +89,27 @@ typedef struct _stESTOP_ORDER {
 
 /// 手動操作 Order
 typedef struct _stMANUAL_ORDER {
-	WORD type;				//手動操作タイプ
-	WORD status;			//実行ステータス　-1：無効
-	double mh;
-	double tt;
-	double gt;
-	double bh;
-	double slew;
+	int type;				//手動操作タイプ
+	int status;				//実行ステータス　-1：無効
+	int anti_sway_mode;		//振止めモード設定PB
+	int ope_mode;			//操作モード設定PB
+	int remote_mode;		//遠隔運転モード設定PB
+	int anti_sway_trigger;	//振れ止め起動PB
+	int auto_start;			//自動起動PB
+	DWORD notch_mh;
+	int notch_mh_dir;
+	DWORD notch_tt;
+	int notch_tt_dir;
+	DWORD notch_gt;
+	int notch_gt_dir;
+	DWORD notch_bh;
+	int notch_bh_dir;
+	DWORD notch_slew;
+	int notch_slew_dir;
+	DWORD notch_operm;
+	int notch_operm_dir;
+	DWORD notch_hook;
+	int notch_hook_dir;
 }ST_MANUAL_ORDER, *LPST_MANUAL_ORDER;
 
 /// ユーザインターフェイス Order
@@ -116,10 +132,13 @@ typedef struct _stUI_ORDER {
 	DWORD notch_hook;
 	int notch_hook_dir;
 
-	DWORD env_mode;
-	DWORD ope_mode;
-	DWORD as_mode;
-	DWORD auto_mode;
+	int env_mode;
+	int ope_mode;
+	int as_mode;
+	int auto_mode;
+	int remote_mode;		//遠隔運転モード設定PB
+	int anti_sway_trigger;	//振れ止め起動PB
+	int auto_start;			//自動起動PB
 
 }ST_UI_ORDER, *LPST_UI_ORDER;
 
@@ -129,8 +148,73 @@ typedef struct _stSTAT_ORDER {
 	WORD status;			//実行ステータス　-1：無効
 }ST_STAT_ORDER, *LPST_STAT_ORDER;
 
+
 /************************************************/
-/*    SPEC LIST                                */
+/*   IO TABLE                                   */
+/************************************************/
+
+typedef struct _stIO_Physic {
+	double M_load;//吊荷質量
+
+				  //吊点　　座標原点　xy：旋回軸　z：地面(上が+）
+	Vector3 cp;		//吊点xyz
+	double R;		//軸長さ
+	double th;		//旋回角度
+	double ph;		//起伏角度
+
+	Vector3 cv;		//吊点vx vy vz
+	double vR;		//軸長さ変化速度
+	double wth;		//旋回角速度
+	double wph;		//起伏角速度
+
+					//吊荷　　座標原点　xy：旋回軸　z：地面(上が+）
+	Vector3 lp;		//吊点xyz
+	Vector3 lv;		//吊点vx vy vz
+
+
+					//吊荷吊点間相対位置
+	double L;		//ロープ長
+	double lph;		//Z軸との角度
+	double lth;		//XY平面角度
+
+	double vL;		//巻速度
+	double vlph;	//Z軸との角速度
+	double vlth;	//XY平面角速度
+
+	double T;		//振れ周期
+	double w0;		//振れ角周波数(2PI()/T）
+
+	Vector3 PhPlane_r;	//Z軸角度の位相平面 x:OmegaTheata y:TheataDot z:Amplitude
+	Vector3 PhPlane_n;	//回転座標半径方向の位相平面 x:OmegaTheata y:TheataDot z:Amplitude
+	Vector3 PhPlane_t;	//回転座標接線方向の位相平面 x:OmegaTheata y:TheataDot z:Amplitude
+	
+}ST_IO_PHYSIC, *LPST_IO_PHYSIC;
+
+typedef struct _stIO_Ref {
+
+	double slew_w;		//旋回角速度
+	double hoist_v;		//旋回角速度
+	double bh_v;		//引込速度
+
+}ST_IO_REF, *LPST_IO_REF;
+
+#define AS_SLEW_ID 0
+#define AS_BH_ID	1
+#define AS_MH_ID	2
+
+typedef struct _stAS_CTRL {
+	double tg_pos[3];				//目標位置
+
+	//INCHING MODE
+	double inching_gain_spd[3];		//振止ゲイン　目標速度
+	double inching_gain_phase[3];	//振止ゲイン　位相平面での振止時回転角	rad
+	int	inch_step[3];				//1:振止 2:位置合わせ
+	double trigger_phase[3];		//振止動作のトリガを掛ける目標位相
+
+}ST_AS_CTRL, *LPST_AS_CTRL;
+
+/************************************************/
+/*    SPEC LIST                                 */
 /************************************************/
 
 #define NOTCH_MAX 6

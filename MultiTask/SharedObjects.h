@@ -22,17 +22,22 @@ public:
 #define ENV_MODE_SIM1	1
 #define ENV_MODE_SIM2	2
 
-#define OPE_MODE_MANUAL	0x0000
-#define OPE_MODE_AUTO	0x0100
+#define OPE_MODE_MANUAL			0x0000
+#define OPE_MODE_REMOTE_MANUAL	0x0001
+#define OPE_MODE_AUTO_ENABLE	0x0003
 
 #define OPE_MODE_AS_ON	0x0001
 #define OPE_MODE_AS_OFF	0x0000
 
+#define AS_MODE_DEACTIVATE		0x0000
+#define AS_MODE_STANDBY			0x0001
+#define AS_MODE_ACTIVE			0x0004
 
-#define AUTO_MODE_STANDBY	0x0000
-#define AUTO_MODE_SUSPEND	0x0001
-#define AUTO_MODE_INTERRUPT	0x0002
-#define AUTO_MODE_ACTIVE	0x0003
+#define AUTO_MODE_DEACTIVATE	0x0000
+#define AUTO_MODE_STANDBY		0x0001
+#define AUTO_MODE_SUSPEND		0x0002
+#define AUTO_MODE_INTERRUPT		0x0003
+#define AUTO_MODE_ACTIVE		0x0004
 
 
 
@@ -42,10 +47,11 @@ public:
 	CMODE_Table() {};
 	~CMODE_Table() {};
 	
-	DWORD operation;//AUTO MANUAL 
-	DWORD antisway; //Antisway ON / OFF
-	DWORD auto_control;
-	DWORD environment;
+	int operation;			//AUTO MANUAL 
+	int antisway;			//Antisway ON / OFF
+	int antisway_control;	//
+	int auto_control;
+	int environment;
 };
 
 #define NUM_OF_TASK_FAULT	100
@@ -61,55 +67,9 @@ public:
 };
 
 
-typedef struct _stIO_Physic {
-	double M_load;//吊荷質量
-
-//吊点　　座標原点　xy：旋回軸　z：地面(上が+）
-	Vector3 cp;		//吊点xyz
-	double R;		//軸長さ
-	double th;		//旋回角度
-	double ph;		//起伏角度
-
-	Vector3 cv;		//吊点vx vy vz
-	double vR;		//軸長さ変化速度
-	double wth;		//旋回角速度
-	double wph;		//起伏角速度
-
-//吊荷　　座標原点　xy：旋回軸　z：地面(上が+）
-	Vector3 lp;		//吊点xyz
-	Vector3 lv;		//吊点vx vy vz
-
-
-//吊荷吊点間相対位置
-	double L;		//ロープ長
-	double lph;		//Z軸との角度
-	double lth;		//XY平面角度
-
-	double vL;		//巻速度
-	double vlph;	//Z軸との角速度
-	double vlth;	//XY平面角速度
-
-	double T;		//振れ周期
-	double w0;		//振れ角周波数(2PI()/T）
-
-	Vector3 PhPlane_r;	//Z軸角度の位相平面 x:OmegaTheata y:TheataDot
-	Vector3 PhPlane_n;	//xy平面半径方向の位相平面 x:OmegaTheata y:TheataDot
-	Vector3 PhPlane_t;	//xy平面接線方向の位相平面 x:OmegaTheata y:TheataDot
-
-
-}ST_IO_PHYSIC, *LPST_IO_PHYSIC;
-
-typedef struct _stIO_Ref {
-
-	double slew_w;		//旋回角速度
-	double hoist_v;		//旋回角速度
-	double bh_v;		//引込速度
-
-}ST_IO_REF, *LPST_IO_REF;
-
-
-
-
+/************************************************/
+/*    IO TABLE		 L                          */
+/************************************************/
 class CIO_Table
 {
 public:
@@ -118,5 +78,6 @@ public:
 
 	ST_IO_PHYSIC	physics;
 	ST_IO_REF		ref;
+	ST_AS_CTRL		as_ctrl;
 
 };

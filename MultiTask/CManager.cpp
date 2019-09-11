@@ -2,9 +2,10 @@
 #include "CManager.h"
 #include "CPublicRelation.h"
 #include "CPlayer.h"
+#include "CAnalyst.h"
 
 extern CMODE_Table*	pMode;				//共有メモリModeクラスポインタ
-extern CORDER_Table*	pOrder;			//共有メモリOrderクラスポインタ
+extern CORDER_Table* pOrder;			//共有メモリOrderクラスポインタ
 
 CManager::CManager(){
 	pManObj = this;
@@ -16,10 +17,20 @@ CManager::~CManager(){}
 bool CManager::get_UI() {
 	pMode->environment = pOrder->ui.env_mode;
 	pMode->operation = pOrder->ui.ope_mode;
-//	if (pOrder->ui.auto_mode == AUTO_MODE_ACTIVE) {
+	pMode->antisway = pOrder->ui.as_mode;
+
+	if ((pMode->antisway == OPE_MODE_AS_ON) && (pOrder->ui.anti_sway_trigger == ON)) {
+
+	}
+
+	if (pOrder->ui.auto_mode == AUTO_MODE_ACTIVE) {
+		CAnalyst* pAna = (CAnalyst*)VectpCTaskObj[g_itask.ana];
+		pAna->cal_job_recipe(pOrder->ui.auto_mode);
+
 		CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
-		pPly->change_action(pOrder->ui.auto_mode);
-//	}
+		pPly->auto_start(&(pOrder->job_A),pOrder->ui.auto_mode);
+	}
+
 
 	return FALSE;
 }
@@ -28,10 +39,11 @@ void CManager::init_task(void *pobj) {
 	pMode->environment	= ENV_MODE_SIM1;
 	pMode->operation	= OPE_MODE_MANUAL;
 	pMode->auto_control = AUTO_MODE_STANDBY;
+	pMode->antisway = OPE_MODE_AS_OFF;
 };
 
 void CManager::routine_work(void *param) {
-	ws << L" working!" << *(inf.psys_counter)%100 << L" E_MODE=" << pMode->environment << L" O_MODE=" << pMode->operation;
+	ws << L" working!" << *(inf.psys_counter)%100 << L" Env=" << pMode->environment << L" Ope=" << pMode->operation << L" AS=" << pMode->antisway << L" AUTO=" << pMode->auto_control;
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 };
 

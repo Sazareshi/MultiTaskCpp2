@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "CAnalyst.h"
+#include "SharedObjects.h"
 
 extern CORDER_Table*	pOrder;				//共有メモリOrderクラスポインタ
 extern CMODE_Table*		pMode;				//共有メモリModeクラスポインタ
@@ -140,8 +141,8 @@ void CAnalyst::routine_work(void *param) {
 
 };
 
-int CAnalyst::cal_job_recipe(int job_type) {
-	return 0;
+LPST_JOB_ORDER CAnalyst::cal_job_recipe(int job_type) {
+	return &(pOrder->job_A);
 };
 
 

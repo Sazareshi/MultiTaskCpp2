@@ -29,14 +29,16 @@ void CPublicRelation::routine_work(void *param) {
 
 LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 
+	CManager* pMan = (CManager*)VectpCTaskObj[g_itask.mng];
+
 	switch (msg) {
 	
 	case WM_COMMAND:
 		switch (LOWORD(wp)) {
 		case IDC_TASK_FUNC_RADIO1:
 		{
-			if(st_gl_basic.bGLactive != TRUE) ActOpenGL();
 			inf.panel_func_id = LOWORD(wp); set_panel_tip_txt(); set_PNLparam_value(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+			if(st_gl_basic.bGLactive != TRUE) ActOpenGL();
 			break;
 		}
 
@@ -76,12 +78,16 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 				}
 				else;
 			}
+			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO4) {
+				pOrder->ui.anti_sway_trigger = true;
+				pMan->get_UI();	//環境モード設定
+			}
 			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO6) {
 				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) pOrder->ui.env_mode = ENV_MODE_REAL;
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) pOrder->ui.env_mode = ENV_MODE_SIM1;
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) pOrder->ui.env_mode = ENV_MODE_SIM2;
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO4) {
-					if (pOrder->ui.ope_mode == OPE_MODE_MANUAL)pOrder->ui.ope_mode = OPE_MODE_AUTO;
+					if (pOrder->ui.ope_mode == OPE_MODE_MANUAL)pOrder->ui.ope_mode = OPE_MODE_AUTO_ENABLE;
 					else pOrder->ui.ope_mode = OPE_MODE_MANUAL;
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO5) {
@@ -93,8 +99,6 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 					else pOrder->ui.auto_mode = AUTO_MODE_STANDBY;
 				}
 				else;
-
-				CManager* pMan = (CManager*)VectpCTaskObj[g_itask.mng];
 				pMan->get_UI();									//環境モード設定
 			}
 			else;
@@ -219,7 +223,7 @@ void CPublicRelation::set_panel_tip_txt()
 			wstr_type += L"Param of type3 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";
 			break;
 		case IDC_TASK_ITEM_RADIO4:
-			wstr_type += L"Param of type4 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";
+			wstr_type += L"Param of type4 \n\r 1:AS_ACT 2:??  3:?? \n\r 4:?? 5:?? 6:??";
 			break;
 		case IDC_TASK_ITEM_RADIO5:
 			wstr_type += L"Param of type5 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";
@@ -313,6 +317,12 @@ void CPublicRelation::set_panel_tip_txt()
 }
 
 void CPublicRelation::init_task(void *pobj) {
+	pOrder->ui.env_mode = ENV_MODE_SIM1;
+	pOrder->ui.as_mode = OPE_MODE_AS_OFF;
+	pOrder->ui.auto_mode = AUTO_MODE_STANDBY;
+	pOrder->ui.ope_mode = OPE_MODE_MANUAL;
+
+
 	set_panel_tip_txt();
 	return;
 };
