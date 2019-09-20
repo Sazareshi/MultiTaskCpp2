@@ -69,6 +69,7 @@ void Mob_HoistPoint::timeEvolution(double t) {
 
 	th_sl += dt * w_sl;
 	if (th_sl >= DEF_2PI) th_sl -= DEF_2PI;
+	if (th_sl <= -DEF_2PI) th_sl += DEF_2PI;
 
 	l_h += dt * v_h;
 	 

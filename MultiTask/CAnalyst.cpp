@@ -70,8 +70,8 @@ void CAnalyst::cal_simulation() {
 	pIO_Table->physics.lp = hl.r;		//吊荷xyz
 	pIO_Table->physics.lv = hl.v;		//吊荷速度vx vy vz
 		
-	Vector3 rel_lp = hp.r - hl.r;		//吊荷相対xyz
-	Vector3 rel_lvp = hp.v - hl.v;		//吊荷相対速度vx vy vz
+	Vector3 rel_lp =  hl.r - hp.r;		//吊荷相対xyz
+	Vector3 rel_lvp = hl.v - hp.v;		//吊荷相対速度vx vy vz
 
 	
 	double last_L = pIO_Table->physics.L;
@@ -81,7 +81,7 @@ void CAnalyst::cal_simulation() {
 	
 	//　Z軸との角度
 	double last_ph = pIO_Table->physics.lph;
-	double temp_f = sqrt(rel_lp.x * rel_lp.x + rel_lp.y * rel_lp.y);
+	double temp_f = sqrt(rel_lp.x * rel_lp.x + rel_lp.y * rel_lp.y);//XY平面半径
 	pIO_Table->physics.lph = asin(temp_f/ pIO_Table->physics.L);
 	
 	//Z軸角度の位相平面  x:OmegaTheata y:TheataDot
@@ -91,26 +91,35 @@ void CAnalyst::cal_simulation() {
 
 
 	//  XY平面角度
-	double R = pIO_Table->physics.L * sin(pIO_Table->physics.lph);
+//	double R = pIO_Table->physics.L * sin(pIO_Table->physics.lph);
+	double R = sqrt(temp_f);
 	if (R < 0.0001) R = 0.0001;
 
 	double last_th = pIO_Table->physics.lth;
-	pIO_Table->physics.lth = acos(rel_lp.x);
+	pIO_Table->physics.lth = acos(rel_lp.x/R);
 	
 	
-	if(pIO_Table->physics.L < 1.0)
+	if(pIO_Table->physics.L > 1.0)
 		pIO_Table->physics.w0 = sqrt(DEF_G / pIO_Table->physics.L);//振れ角周波数
 	pIO_Table->physics.T = DEF_2PI / pIO_Table->physics.w0;			//振れ周期
 
-	//xy平面半径方向の位相平面  x:OmegaTheata y:TheataDot
-	pIO_Table->physics.PhPlane_n.x = rel_lp.x * cos(-pIO_Table->physics.th) - rel_lp.y *sin(-pIO_Table->physics.th) / pIO_Table->physics.L;
-	pIO_Table->physics.PhPlane_n.y = (rel_lvp.x * cos(-pIO_Table->physics.th) - rel_lvp.y *sin(-pIO_Table->physics.th))/ pIO_Table->physics.L;
-	pIO_Table->physics.PhPlane_n.z = 0.0;
-
-	//xy平面接線方向の位相平面  x:OmegaTheata y:TheataDot
-	pIO_Table->physics.PhPlane_t.x = rel_lp.x * sin(-pIO_Table->physics.th) + rel_lp.y *cos(-pIO_Table->physics.th) / pIO_Table->physics.L;;
-	pIO_Table->physics.PhPlane_t.y = rel_lvp.x * sin(-pIO_Table->physics.th) - rel_lvp.y *cos(-pIO_Table->physics.th) / pIO_Table->physics.L;;
-	pIO_Table->physics.PhPlane_t.z= 0.0;
+	//xy平面半径方向の位相平面  x:OmegaTheata y:TheataDot　z:Phi
+	pIO_Table->physics.PhPlane_n.x = (rel_lp.x * sin(pIO_Table->physics.th) + rel_lp.y *cos(pIO_Table->physics.th)) / pIO_Table->physics.L * pIO_Table->physics.w0;
+	pIO_Table->physics.PhPlane_n.y = (rel_lvp.x * sin(pIO_Table->physics.th) + rel_lvp.y *cos(pIO_Table->physics.th))/ pIO_Table->physics.L;
+	pIO_Table->physics.PhPlane_n.z = atan(pIO_Table->physics.PhPlane_n.y/pIO_Table->physics.PhPlane_n.x);
+	if (pIO_Table->physics.PhPlane_n.x < 0.0) {
+		if (pIO_Table->physics.PhPlane_n.y < 0.0) pIO_Table->physics.PhPlane_n.z -= DEF_PI;
+		else pIO_Table->physics.PhPlane_n.z += DEF_PI;
+	}
+	
+	//xy平面接線方向の位相平面  x:OmegaTheata y:TheataDot　z:Phi
+	pIO_Table->physics.PhPlane_t.x = (rel_lp.x * cos(pIO_Table->physics.th) - rel_lp.y *sin(pIO_Table->physics.th)) / pIO_Table->physics.L* pIO_Table->physics.w0;
+	pIO_Table->physics.PhPlane_t.y = (rel_lvp.x * cos(pIO_Table->physics.th) - rel_lvp.y *sin(pIO_Table->physics.th)) / pIO_Table->physics.L;
+	pIO_Table->physics.PhPlane_t.z= atan(pIO_Table->physics.PhPlane_t.y / pIO_Table->physics.PhPlane_t.x);
+	if (pIO_Table->physics.PhPlane_t.x < 0.0) {
+		if (pIO_Table->physics.PhPlane_t.y < 0.0) pIO_Table->physics.PhPlane_t.z -= DEF_PI;
+		else pIO_Table->physics.PhPlane_t.z += DEF_PI;
+	}
 	
 	
 };
@@ -132,8 +141,9 @@ void CAnalyst::init_task(void *pobj) {
 };
 
 void CAnalyst::routine_work(void *param) {
+	Vector3 rel_lp = hl.r - hp.r;		//吊荷相対xyz
 
-	ws << L" working!" << *(inf.psys_counter) % 100 << " x:y ; " << hp.r.x << ":" << hp.r.y;
+	ws << L" working!" << *(inf.psys_counter) % 100 << "  Ph tx:nx ; " << pIO_Table->physics.PhPlane_t.z << ":" << pIO_Table->physics.PhPlane_n.z ;
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 
 	//シミュレータ計算

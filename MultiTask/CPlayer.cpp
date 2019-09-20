@@ -12,14 +12,9 @@ CPlayer::~CPlayer(){}
 
 void CPlayer::routine_work(void *param) {
 
-	chk_as_status();			//振止状態更新
-	
-	if (pMode->environment == ENV_MODE_SIM1) {
-		cal_ui_order();
-	}
-	else ;
-
-	int set_table_out();			//出力セット
+	update_mode(ORDER_TYPE_CONST);	//自動実行、振止モード更新
+	update_as_status();				//振止状態更新
+	set_table_out();				//出力セット
 			
 	ws << L" working!" << *(inf.psys_counter) % 100 << " SLEW_REF " << pIO_Table->ref.slew_w << " BH_REF " << pIO_Table->ref.bh_v;
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
@@ -63,7 +58,7 @@ int CPlayer::update_mode(int order_type) {
 	else {
 		switch (pMode->antisway_control) {
 		case AS_MODE_ACTIVE:
-			if(chk_as_status()) pMode->antisway_control = AS_MODE_STANDBY;
+			if(update_as_status()) pMode->antisway_control = AS_MODE_STANDBY;
 			break;
 		case AS_MODE_DEACTIVATE:
 			if (pMode->antisway == ON) {
@@ -90,11 +85,17 @@ int CPlayer::update_mode(int order_type) {
 
 	return 0;
 };
-int CPlayer::chk_as_status() {
+int CPlayer::update_as_status() {
 	return 0;
 };
 
 int CPlayer::set_table_out(){
+
+	if (pMode->environment == ENV_MODE_SIM1) {
+		cal_ui_order();
+	}
+	else;
+
 	return 0;
 };
 
