@@ -184,9 +184,15 @@ typedef struct _stIO_Physic {
 	double T;		//振れ周期
 	double w0;		//振れ角周波数(2PI()/T）
 
-	Vector3 PhPlane_r;	//Z軸角度の位相平面 x:OmegaTheata y:TheataDot z:Amplitude
-	Vector3 PhPlane_n;	//回転座標半径方向の位相平面 x:OmegaTheata y:TheataDot z:Amplitude
-	Vector3 PhPlane_t;	//回転座標接線方向の位相平面 x:OmegaTheata y:TheataDot z:Amplitude
+	Vector3 PhPlane_r;	//Z軸角度の位相平面 x:OmegaTheata y:TheataDot z:angle
+	Vector3 PhPlane_n;	//回転座標半径方向の位相平面 x:OmegaTheata y:TheataDot z:angle
+	Vector3 PhPlane_t;	//回転座標接線方向の位相平面 x:OmegaTheata y:TheataDot z:angle
+
+	double sway_amp_r;	//位相平面半径
+	double sway_amp_n;	//位相平面半径　法線方向
+	double sway_amp_t;	//位相平面半径　接線方向
+
+
 	
 }ST_IO_PHYSIC, *LPST_IO_PHYSIC;
 
@@ -203,11 +209,23 @@ typedef struct _stIO_Ref {
 #define AS_MH_ID	2
 
 typedef struct _stAS_CTRL {
-	double tg_pos[3];				//目標位置
+	double tgpos_h;					//巻目標位置
+	double tgpos_gt;				//走行目標位置
+	double tgpos_slew;				//旋回目標位置
+	double tgpos_bh;				//引込目標位置
+
+	double tgspd_h;					//巻目標速度
+	double tgspd_gt;				//走行目標速度
+	double tgspd_slew;				//旋回目標速度
+	double tgspd_bh;				//引込目標速度
 
 	//INCHING MODE
 	double inching_gain_spd[3];		//振止ゲイン　目標速度
-	double inching_gain_phase[3];	//振止ゲイン　位相平面での振止時回転角	rad
+	double inch_gain_t_pos;			//振止ゲイン　位置合わせ用　接線方向rad
+	double inch_gain_t_sway;		//振止ゲイン　振れ止め用	接線方向rad
+	double inch_gain_n_pos;			//振止ゲイン　位置合わせ用　法線方向rad
+	double inch_gain_n_sway;		//振止ゲイン　振れ止め用	法線方向rad
+
 	int	inch_step[3];				//1:振止 2:位置合わせ
 	double trigger_phase[3];		//振止動作のトリガを掛ける目標位相
 
@@ -223,6 +241,10 @@ typedef struct _stAS_CTRL {
 #define FWD_DEC 1
 #define REV_ACC 2
 #define REV_DEC 3
+
+#define I_AS_LV_COMPLE		0
+#define I_AS_LV_TRIGGER		1
+#define I_AS_LV_ANTISWAY	2
 
 
 typedef struct _stSpec {
@@ -242,6 +264,10 @@ typedef struct _stSpec {
 
 	double boom_height;
 
+	double as_compl_swayLv[3];		// rad  0:complete 1:trigger 2:antisway
+	double as_compl_swayLv_sq[3];	// rad2 0:complete 1:trigger 2:antisway 
+	double as_compl_nposLv[3];		// m    0:complete 1:trigger 2:spare
+	double as_compl_tposLv[3];		// rad  0:complete 1:trigger 2:spare
 
 }ST_SPEC, *LPST_SPEC;
 

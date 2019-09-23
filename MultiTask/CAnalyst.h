@@ -16,6 +16,9 @@ public:
 	void routine_work(void *param);
 	void cal_simulation();
 	LPST_JOB_ORDER cal_job_recipe(int job_type);
+	void cal_as_target();
+	void update_as_ctrl();
+	void cal_as_gain();
 
 	// Mob
 	Mob_HoistPoint  hp;

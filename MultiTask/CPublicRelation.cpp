@@ -79,8 +79,9 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 				else;
 			}
 			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO4) {
-				pOrder->ui.anti_sway_trigger = true;
+				pOrder->ui.anti_sway_trigger = ON;
 				pMan->get_UI();	//ŠÂ‹«ƒ‚[ƒhÝ’è
+				pOrder->ui.anti_sway_trigger = OFF;
 			}
 			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO6) {
 				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) pOrder->ui.env_mode = ENV_MODE_REAL;

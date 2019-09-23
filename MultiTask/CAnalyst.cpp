@@ -80,48 +80,53 @@ void CAnalyst::cal_simulation() {
 	pIO_Table->physics.vL = hp.v_h;	//Šª‘¬“x
 	
 	//@ZŽ²‚Æ‚ÌŠp“x
-	double last_ph = pIO_Table->physics.lph;
+	
 	double temp_f = sqrt(rel_lp.x * rel_lp.x + rel_lp.y * rel_lp.y);//XY•½–Ê”¼Œa
 	pIO_Table->physics.lph = asin(temp_f/ pIO_Table->physics.L);
 	
-	//ZŽ²Šp“x‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot
-	pIO_Table->physics.PhPlane_r.x = pIO_Table->physics.lph * pIO_Table->physics.w0;
-	pIO_Table->physics.PhPlane_r.y = (pIO_Table->physics.lph - last_ph) / (double)inf.period / 1000.0;
-	pIO_Table->physics.PhPlane_r.z = 0.0;
+//ZŽ²Šp“x‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot
+pIO_Table->physics.PhPlane_r.x = temp_f / pIO_Table->physics.L * pIO_Table->physics.w0;
+pIO_Table->physics.PhPlane_r.y = sqrt(rel_lvp.x * rel_lvp.x + rel_lvp.y * rel_lvp.y) / pIO_Table->physics.L;
+if (pIO_Table->physics.PhPlane_r.x < 0.0) {
+	if (pIO_Table->physics.PhPlane_r.y < 0.0) pIO_Table->physics.PhPlane_r.z -= DEF_PI;
+	else pIO_Table->physics.PhPlane_r.z += DEF_PI;
+}
+pIO_Table->physics.sway_amp_r = pIO_Table->physics.PhPlane_r.x * pIO_Table->physics.PhPlane_r.x + pIO_Table->physics.PhPlane_r.y * pIO_Table->physics.PhPlane_r.y;
+
+//  XY•½–ÊŠp“x
+double radious = pIO_Table->physics.L * sin(pIO_Table->physics.lph);
+
+if (radious < 0.0001) radious = 0.0001;
+
+double last_th = pIO_Table->physics.lth;
+pIO_Table->physics.lth = acos(rel_lp.x / radious);
 
 
-	//  XY•½–ÊŠp“x
-//	double R = pIO_Table->physics.L * sin(pIO_Table->physics.lph);
-	double R = sqrt(temp_f);
-	if (R < 0.0001) R = 0.0001;
+if (pIO_Table->physics.L > 1.0)
+pIO_Table->physics.w0 = sqrt(DEF_G / pIO_Table->physics.L);//U‚êŠpŽü”g”
+pIO_Table->physics.T = DEF_2PI / pIO_Table->physics.w0;			//U‚êŽüŠú
 
-	double last_th = pIO_Table->physics.lth;
-	pIO_Table->physics.lth = acos(rel_lp.x/R);
-	
-	
-	if(pIO_Table->physics.L > 1.0)
-		pIO_Table->physics.w0 = sqrt(DEF_G / pIO_Table->physics.L);//U‚êŠpŽü”g”
-	pIO_Table->physics.T = DEF_2PI / pIO_Table->physics.w0;			//U‚êŽüŠú
+//xy•½–Ê”¼Œa•ûŒü‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot@z:Phi
+pIO_Table->physics.PhPlane_n.x = (rel_lp.x * sin(pIO_Table->physics.th) + rel_lp.y *cos(pIO_Table->physics.th)) / pIO_Table->physics.L * pIO_Table->physics.w0;
+pIO_Table->physics.PhPlane_n.y = (rel_lvp.x * sin(pIO_Table->physics.th) + rel_lvp.y *cos(pIO_Table->physics.th)) / pIO_Table->physics.L;
+pIO_Table->physics.PhPlane_n.z = atan(pIO_Table->physics.PhPlane_n.y / pIO_Table->physics.PhPlane_n.x);
+if (pIO_Table->physics.PhPlane_n.x < 0.0) {
+	if (pIO_Table->physics.PhPlane_n.y < 0.0) pIO_Table->physics.PhPlane_n.z -= DEF_PI;
+	else pIO_Table->physics.PhPlane_n.z += DEF_PI;
+}
+pIO_Table->physics.sway_amp_n = pIO_Table->physics.PhPlane_n.x * pIO_Table->physics.PhPlane_n.x + pIO_Table->physics.PhPlane_n.y * pIO_Table->physics.PhPlane_n.y;
 
-	//xy•½–Ê”¼Œa•ûŒü‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot@z:Phi
-	pIO_Table->physics.PhPlane_n.x = (rel_lp.x * sin(pIO_Table->physics.th) + rel_lp.y *cos(pIO_Table->physics.th)) / pIO_Table->physics.L * pIO_Table->physics.w0;
-	pIO_Table->physics.PhPlane_n.y = (rel_lvp.x * sin(pIO_Table->physics.th) + rel_lvp.y *cos(pIO_Table->physics.th))/ pIO_Table->physics.L;
-	pIO_Table->physics.PhPlane_n.z = atan(pIO_Table->physics.PhPlane_n.y/pIO_Table->physics.PhPlane_n.x);
-	if (pIO_Table->physics.PhPlane_n.x < 0.0) {
-		if (pIO_Table->physics.PhPlane_n.y < 0.0) pIO_Table->physics.PhPlane_n.z -= DEF_PI;
-		else pIO_Table->physics.PhPlane_n.z += DEF_PI;
-	}
-	
-	//xy•½–ÊÚü•ûŒü‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot@z:Phi
-	pIO_Table->physics.PhPlane_t.x = (rel_lp.x * cos(pIO_Table->physics.th) - rel_lp.y *sin(pIO_Table->physics.th)) / pIO_Table->physics.L* pIO_Table->physics.w0;
-	pIO_Table->physics.PhPlane_t.y = (rel_lvp.x * cos(pIO_Table->physics.th) - rel_lvp.y *sin(pIO_Table->physics.th)) / pIO_Table->physics.L;
-	pIO_Table->physics.PhPlane_t.z= atan(pIO_Table->physics.PhPlane_t.y / pIO_Table->physics.PhPlane_t.x);
-	if (pIO_Table->physics.PhPlane_t.x < 0.0) {
-		if (pIO_Table->physics.PhPlane_t.y < 0.0) pIO_Table->physics.PhPlane_t.z -= DEF_PI;
-		else pIO_Table->physics.PhPlane_t.z += DEF_PI;
-	}
-	
-	
+//xy•½–ÊÚü•ûŒü‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot@z:Phi
+pIO_Table->physics.PhPlane_t.x = (rel_lp.x * cos(pIO_Table->physics.th) - rel_lp.y *sin(pIO_Table->physics.th)) / pIO_Table->physics.L* pIO_Table->physics.w0;
+pIO_Table->physics.PhPlane_t.y = (rel_lvp.x * cos(pIO_Table->physics.th) - rel_lvp.y *sin(pIO_Table->physics.th)) / pIO_Table->physics.L;
+pIO_Table->physics.PhPlane_t.z = atan(pIO_Table->physics.PhPlane_t.y / pIO_Table->physics.PhPlane_t.x);
+if (pIO_Table->physics.PhPlane_t.x < 0.0) {
+	if (pIO_Table->physics.PhPlane_t.y < 0.0) pIO_Table->physics.PhPlane_t.z -= DEF_PI;
+	else pIO_Table->physics.PhPlane_t.z += DEF_PI;
+}
+
+pIO_Table->physics.sway_amp_t = pIO_Table->physics.PhPlane_t.x * pIO_Table->physics.PhPlane_t.x + pIO_Table->physics.PhPlane_t.y * pIO_Table->physics.PhPlane_t.y;
+
 };
 
 void CAnalyst::init_task(void *pobj) {
@@ -143,16 +148,67 @@ void CAnalyst::init_task(void *pobj) {
 void CAnalyst::routine_work(void *param) {
 	Vector3 rel_lp = hl.r - hp.r;		//’Ý‰×‘Š‘Îxyz
 
-	ws << L" working!" << *(inf.psys_counter) % 100 << "  Ph tx:nx ; " << pIO_Table->physics.PhPlane_t.z << ":" << pIO_Table->physics.PhPlane_n.z ;
+	ws << L" working!" << *(inf.psys_counter) % 100 << "  Amp t:n ;"  << pIO_Table->physics.sway_amp_t << ":" << pIO_Table->physics.sway_amp_n << " Mode  t:n ;  " << pMode->antisway_control_t << ":" << pMode->antisway_control_n;
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 
 	//ƒVƒ~ƒ…ƒŒ[ƒ^ŒvŽZ
 	if (pMode->auto_control != ENV_MODE_SIM2) cal_simulation();
 
+	update_as_ctrl();
+	cal_as_gain();
+	cal_as_target();
+
+
 };
 
 LPST_JOB_ORDER CAnalyst::cal_job_recipe(int job_type) {
 	return &(pOrder->job_A);
+};
+
+void CAnalyst::cal_as_target() {
+	if (pMode->antisway != OPE_MODE_AS_ON) {
+		pIO_Table->as_ctrl.tgpos_bh = pIO_Table->physics.R;
+		pIO_Table->as_ctrl.tgpos_slew = pIO_Table->physics.th;
+	}
+	return;
+};
+
+void CAnalyst::update_as_ctrl() {
+	if (pMode->antisway != OPE_MODE_AS_ON) {
+		pMode->antisway_control_h = pMode->antisway_control_t = pMode->antisway_control_n = AS_MODE_DEACTIVATE;
+		return;
+	}
+	else {
+		pMode->antisway_control_h = pMode->antisway_control_t = pMode->antisway_control_n = AS_MODE_STANDBY;
+	}
+
+	if (pMode->auto_control != AUTO_MODE_ACTIVE) {
+		if (pIO_Table->physics.sway_amp_n > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]) {
+			if (abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) 
+				pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_SWAY;
+			else if(pIO_Table->physics.sway_amp_n > g_spec.as_compl_swayLv_sq[I_AS_LV_ANTISWAY])
+				pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_SWAY;
+			else
+				pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_POS;
+		}
+		if (pIO_Table->physics.sway_amp_t > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]) {
+			if (abs(pIO_Table->physics.th - pIO_Table->as_ctrl.tgpos_slew) < g_spec.as_compl_tposLv[I_AS_LV_TRIGGER])
+				pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_SWAY;
+			else if (pIO_Table->physics.sway_amp_t > g_spec.as_compl_swayLv_sq[I_AS_LV_ANTISWAY])
+				pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_SWAY;
+			else
+				pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_POS;
+		}
+	}
+	else {
+		;
+	}
+
+	return;
+};
+void CAnalyst::cal_as_gain() {
+
+	return;
 };
 
 

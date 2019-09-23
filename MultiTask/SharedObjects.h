@@ -26,12 +26,15 @@ public:
 #define OPE_MODE_REMOTE_MANUAL	0x0001
 #define OPE_MODE_AUTO_ENABLE	0x0003
 
-#define OPE_MODE_AS_ON	0x0001
-#define OPE_MODE_AS_OFF	0x0000
+#define OPE_MODE_AS_ON			0x0001
+#define OPE_MODE_AS_OFF			0x0000
 
-#define AS_MODE_DEACTIVATE		0x0000
-#define AS_MODE_STANDBY			0x0001
-#define AS_MODE_ACTIVE			0x0004
+#define AS_MODE_DEACTIVATE				0x0000
+#define AS_MODE_STANDBY					0x0001
+#define AS_MODE_ACTIVE_MOVE_LONG		0x0002
+#define AS_MODE_ACTIVE_MOVE_SHORT		0x0004
+#define AS_MODE_ACTIVE_INCH_SWAY		0x0008
+#define AS_MODE_ACTIVE_INCH_POS			0x0010
 
 #define AUTO_MODE_DEACTIVATE	0x0000
 #define AUTO_MODE_STANDBY		0x0001
@@ -49,7 +52,9 @@ public:
 	
 	int operation;			//AUTO MANUAL 
 	int antisway;			//Antisway ON / OFF
-	int antisway_control;	//
+	int antisway_control_h;	//
+	int antisway_control_t;	//
+	int antisway_control_n;	//
 	int auto_control;
 	int environment;
 };

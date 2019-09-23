@@ -52,31 +52,9 @@ int CPlayer::auto_start(LPST_JOB_ORDER recipe,int type) {
 /* ############################ */
 
 int CPlayer::update_mode(int order_type) {
-	if (pMode->antisway != ON) {
-		pMode->antisway_control = AS_MODE_DEACTIVATE;
-	}
-	else {
-		switch (pMode->antisway_control) {
-		case AS_MODE_ACTIVE:
-			if(update_as_status()) pMode->antisway_control = AS_MODE_STANDBY;
-			break;
-		case AS_MODE_DEACTIVATE:
-			if (pMode->antisway == ON) {
-				pMode->antisway_control = AS_MODE_STANDBY;
-			}
-			break;
-		case AS_MODE_STANDBY:
-			break;
-		default:
-			pMode->antisway_control = AS_MODE_DEACTIVATE;
-			break;
-		}
-	}
 	
 	if (order_type == ORDER_TYPE_UI) {
-		if ((pOrder->ui.anti_sway_trigger == ON)&&(pMode->antisway_control == AS_MODE_STANDBY)) {
-			pMode->antisway_control = AS_MODE_ACTIVE;
-		}
+
 	}
 
 	if (order_type == ORDER_TYPE_MANU) {
