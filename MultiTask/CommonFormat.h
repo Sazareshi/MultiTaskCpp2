@@ -204,7 +204,9 @@ typedef struct _stIO_Ref {
 
 }ST_IO_REF, *LPST_IO_REF;
 
-#define AS_SLEW_ID 0
+
+#define NUM_OF_AS	3
+#define AS_SLEW_ID  0
 #define AS_BH_ID	1
 #define AS_MH_ID	2
 
@@ -220,14 +222,17 @@ typedef struct _stAS_CTRL {
 	double tgspd_bh;				//ˆø–Ú•W‘¬“x
 
 	//INCHING MODE
-	double inching_gain_spd[3];		//U~ƒQƒCƒ“@–Ú•W‘¬“x
-	double inch_gain_t_pos;			//U~ƒQƒCƒ“@ˆÊ’u‡‚í‚¹—p@Úü•ûŒürad
-	double inch_gain_t_sway;		//U~ƒQƒCƒ“@U‚ê~‚ß—p	Úü•ûŒürad
-	double inch_gain_n_pos;			//U~ƒQƒCƒ“@ˆÊ’u‡‚í‚¹—p@–@ü•ûŒürad
-	double inch_gain_n_sway;		//U~ƒQƒCƒ“@U‚ê~‚ß—p	–@ü•ûŒürad
+	double inching_gain_spd[NUM_OF_AS];		//U~@–Ú•W‘¬“x 0:slew 1:bh 2:mh
+	double inch_gain_t_pos;			//U~ƒQƒCƒ“@ˆÊ’u‡‚í‚¹—p@Úü•ûŒü @‰Á‘¬ŠÔsec
+	double inch_gain_t_sway;		//U~ƒQƒCƒ“@U‚ê~‚ß—p	Úü•ûŒü@‰Á‘¬ŠÔsec
+	double inch_gain_n_pos;			//U~ƒQƒCƒ“@ˆÊ’u‡‚í‚¹—p@–@ü•ûŒü@‰Á‘¬ŠÔsec
+	double inch_gain_n_sway;		//U~ƒQƒCƒ“@U‚ê~‚ß—p	–@ü•ûŒü@‰Á‘¬ŠÔsec
 
-	int	inch_step[3];				//1:U~ 2:ˆÊ’u‡‚í‚¹
-	double trigger_phase[3];		//U~“®ì‚ÌƒgƒŠƒK‚ğŠ|‚¯‚é–Ú•WˆÊ‘Š
+	int	inch_step[NUM_OF_AS];				//1:U~ 2:ˆÊ’u‡‚í‚¹  0:slew 1:bh 2:mh
+	double trigger_phase[NUM_OF_AS];		//U~“®ì‚ÌƒgƒŠƒK‚ğŠ|‚¯‚é–Ú•WˆÊ‘Š 0:slew 1:bh 2:mh
+
+	double phase_acc_offset[NUM_OF_AS];		//Offset of center of phase plane on acceleration
+	double phase_dec_offset[NUM_OF_AS];		//Offset of center of phase plane on deceleration
 
 }ST_AS_CTRL, *LPST_AS_CTRL;
 
@@ -274,7 +279,8 @@ typedef struct _stSpec {
 /************************************************/
 /*    Define                                */
 /************************************************/
-#define	DEF_HARF_PI  1.57079632
+#define	DEF_QPI  0.7854			//45deg
+#define	DEF_HPI  1.5708			//90deg
 #define	DEF_PI  3.1415265
 #define DEF_2PI 6.2831853
 #define DEF_G	9.80665
