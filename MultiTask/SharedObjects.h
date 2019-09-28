@@ -51,7 +51,7 @@ public:
 	~CMODE_Table() {};
 	
 	int operation;			//AUTO MANUAL 
-	int antisway;			//Antisway ON / OFF
+	int antisway;			//Antisway OPE_MODE_AS_ON / OPE_MODE_AS_OFF
 	int antisway_control_h;	//
 	int antisway_control_t;	//
 	int antisway_control_n;	//

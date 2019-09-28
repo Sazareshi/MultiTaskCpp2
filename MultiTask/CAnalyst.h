@@ -19,6 +19,7 @@ public:
 	void cal_as_target();
 	void update_as_ctrl();
 	void cal_as_gain();
+	int cal_as_inch_recipe(int motion_id,ST_MOTION_ELEMENT* target);
 
 	// Mob
 	Mob_HoistPoint  hp;

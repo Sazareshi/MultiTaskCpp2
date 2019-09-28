@@ -132,14 +132,6 @@ void CAnalyst::cal_simulation() {
 	pIO_Table->as_ctrl.phase_acc_offset[AS_BH_ID] = g_spec.bh_acc[FWD_ACC] / temp_lw;			//Offset of center of phase plane on acceleration
 	pIO_Table->as_ctrl.phase_dec_offset[AS_BH_ID] = g_spec.bh_acc[FWD_DEC] / temp_lw;			//Offset of center of phase plane on deceleration
 
-	//###Inching‚ÌƒQƒCƒ“ŒvŽZ
-	double temp_dist;
-	temp_dist = abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh);
-	pIO_Table->as_ctrl.inch_gain_n_pos = sqrt(temp_dist/ g_spec.bh_acc[FWD_ACC]);
-	pIO_Table->as_ctrl.inch_gain_n_sway = DEF_QPI/ pIO_Table->physics.w0;
-	pIO_Table->as_ctrl.inch_gain_t_pos = sqrt(temp_dist / g_spec.slew_acc[FWD_ACC]);;
-	pIO_Table->as_ctrl.inch_gain_t_sway = DEF_QPI/pIO_Table->physics.w0;
-
 };
 
 void CAnalyst::init_task(void *pobj) {
@@ -168,7 +160,7 @@ void CAnalyst::routine_work(void *param) {
 	if (pMode->auto_control != ENV_MODE_SIM2) cal_simulation();
 
 	update_as_ctrl();
-	cal_as_gain();
+	//cal_as_gain();
 	cal_as_target();
 
 
@@ -184,6 +176,77 @@ void CAnalyst::cal_as_target() {
 		pIO_Table->as_ctrl.tgpos_slew = pIO_Table->physics.th;
 	}
 	return;
+};
+
+int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_ELEMENT* target) {
+
+	cal_as_gain();
+		
+	switch (motion_id) {
+	case MOTION_ID_BH: {
+		target->type = CTR_TYPE_AS_INCHING_BH;
+		// _p
+		target->_p = pIO_Table->as_ctrl.tgpos_bh;
+
+		// _t
+		if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_SWAY) {
+			target->_t = pIO_Table->as_ctrl.inch_gain_n_sway;
+		}
+		else if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_POS) {
+			target->_t = pIO_Table->as_ctrl.inch_gain_n_pos;
+		}
+		else {
+			target->_t = 0.0;
+		}
+		// _v
+		if (pIO_Table->physics.R > target->_p) {
+			target->_v = pIO_Table->physics.vR - g_spec.bh_acc[FWD_ACC] * target->_t;
+			if (target->_v < -g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
+				target->_v = -g_spec.bh_notch_spd[NOTCH_MAX - 1];
+			}
+		}
+		else {
+			target->_v = pIO_Table->physics.vR + g_spec.bh_acc[FWD_ACC] * target->_t;
+			if (target->_v < g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
+				target->_v = g_spec.bh_notch_spd[NOTCH_MAX - 1];
+			}
+		}
+	}break;
+	case MOTION_ID_SLEW: {
+		target->type = CTR_TYPE_AS_INCHING_SLEW;
+		//_p
+		target->_p = pIO_Table->as_ctrl.tgpos_slew;
+
+		//_t
+		if (pMode->antisway_control_t == AS_MODE_ACTIVE_INCH_SWAY) {
+			target->_t = pIO_Table->as_ctrl.inch_gain_t_sway;
+		}
+		else if (pMode->antisway_control_t == AS_MODE_ACTIVE_INCH_POS) {
+			target->_t = pIO_Table->as_ctrl.inch_gain_t_pos;
+		}
+		else {
+			target->_t = 0.0;
+		}
+		target->_v = g_spec.bh_acc[FWD_ACC];
+
+		// _v
+		if (pIO_Table->physics.th > target->_p) {
+			target->_v = pIO_Table->physics.wth - g_spec.slew_acc[FWD_ACC] * target->_t;
+			if (target->_v < -g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
+				target->_v = -g_spec.slew_notch_spd[NOTCH_MAX - 1];
+			}
+		}
+		else {
+			target->_v = pIO_Table->physics.wth + g_spec.slew_acc[FWD_ACC] * target->_t;
+			if (target->_v < g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
+				target->_v = g_spec.slew_notch_spd[NOTCH_MAX - 1];
+			}
+		}
+
+	}break;
+	default: return 1;
+	}
+	return 0;
 };
 
 //# Update Anti-sway Control Mode
@@ -222,7 +285,14 @@ void CAnalyst::update_as_ctrl() {
 	return;
 };
 void CAnalyst::cal_as_gain() {
+	//###Inching‚ÌƒQƒCƒ“ŒvŽZ
+	double temp_dist;
+	temp_dist = abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh);
+	pIO_Table->as_ctrl.inch_gain_n_pos = sqrt(temp_dist / g_spec.bh_acc[FWD_ACC]);
+	pIO_Table->as_ctrl.inch_gain_n_sway = DEF_QPI / pIO_Table->physics.w0;
 
+	pIO_Table->as_ctrl.inch_gain_t_pos = sqrt(temp_dist / g_spec.slew_acc[FWD_ACC]);;
+	pIO_Table->as_ctrl.inch_gain_t_sway = DEF_QPI / pIO_Table->physics.w0;
 	return;
 };
 

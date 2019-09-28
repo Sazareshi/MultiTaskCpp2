@@ -4,6 +4,29 @@
 #include "CVector3.h"
 
 /************************************************/
+/*    Define                                */
+/************************************************/
+#define	DEF_QPI  0.7854			//45deg
+#define	DEF_HPI  1.5708			//90deg
+#define	DEF_PI  3.1415265
+#define DEF_2PI 6.2831853
+#define DEF_G	9.80665
+#define COF_RAD2DEG	57.296
+
+#define ALLOWABLE_DEF_SLEW	0.003 //旋回指令とFBの許容誤差　rad/s 1ノッチの10％	
+#define ALLOWABLE_DEF_BH	0.005 //引込指令とFBの許容誤差　m/s 1ノッチの5％
+#define ALLOWABLE_DEF_HOIST	0.005 //引込指令とFBの許容誤差　m/s 1ノッチの10％
+#define MY_ABS(a)	((a)<0.0 ? -(a) : (a))
+
+#define MOTION_NUM		6
+#define MOTION_ID_MH	1
+#define MOTION_ID_BH	2
+#define MOTION_ID_SLEW	3
+
+inline double rad2deg(double rad) { return COF_RAD2DEG * rad; }
+
+
+/************************************************/
 /*    # タスクオブジェクトインデックス構造体    */
 /************************************************/
 
@@ -24,6 +47,11 @@ typedef struct _st_iTask {
 #define ORDER_MAX		8
 
 /// JOB Order
+#define CTR_TYPE_AS_INCHING_MH			0x0001
+#define CTR_TYPE_AS_INCHING_BH			0x0002
+#define CTR_TYPE_AS_INCHING_SLEW		0x0003
+
+
 typedef struct _stMotion_Element {	//運動要素
 	int type;		//制御種別
 	int status;		//制御種状態
@@ -276,19 +304,3 @@ typedef struct _stSpec {
 
 }ST_SPEC, *LPST_SPEC;
 
-/************************************************/
-/*    Define                                */
-/************************************************/
-#define	DEF_QPI  0.7854			//45deg
-#define	DEF_HPI  1.5708			//90deg
-#define	DEF_PI  3.1415265
-#define DEF_2PI 6.2831853
-#define DEF_G	9.80665
-#define COF_RAD2DEG	57.296
-
-#define ALLOWABLE_DEF_SLEW	0.003 //旋回指令とFBの許容誤差　rad/s 1ノッチの10％	
-#define ALLOWABLE_DEF_BH	0.005 //引込指令とFBの許容誤差　m/s 1ノッチの5％
-#define ALLOWABLE_DEF_HOIST	0.005 //引込指令とFBの許容誤差　m/s 1ノッチの10％
-#define MY_ABS(a)	((a)<0.0 ? -(a) : (a))
-
-inline double rad2deg(double rad) { return COF_RAD2DEG * rad; }
