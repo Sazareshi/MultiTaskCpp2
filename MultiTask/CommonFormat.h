@@ -46,15 +46,21 @@ typedef struct _st_iTask {
 
 #define ORDER_MAX		8
 
-/// JOB Order
-#define CTR_TYPE_AS_INCHING_MH			0x0001
-#define CTR_TYPE_AS_INCHING_BH			0x0002
-#define CTR_TYPE_AS_INCHING_SLEW		0x0003
-
+// Control Type
+#define CTR_TYPE_TIME_WAIT					0x0000  //Specified time acceleration
+#define CTR_TYPE_CONST_V_TIME				0x0100  //Keep specified speed ref for specified time
+#define CTR_TYPE_ACC_TIME					0x0200  //Specified time acceleration
+#define CTR_TYPE_ACC_V						0x0201  //Toward specified speed acceleration
+#define CTR_TYPE_ACC_TIME_OR_V				0x0202  //Specified time acceleration or reach specified speed
+#define CTR_TYPE_DEC_TIME					0x0300  //Specified time deceleration
+#define CTR_TYPE_DEC_V						0x0301  //Toward specified speed deceleration
+#define CTR_TYPE_DEC_TIME_OR_V				0x0302  //Specified time acceleration or reach specified speed
 
 typedef struct _stMotion_Element {	//運動要素
 	int type;		//制御種別
 	int status;		//制御種状態
+	int time_count;	//予定継続時間のカウンタ返還値
+	int act_counter;//実行回数
 	double _a;		//目標加減速度
 	double _v;		//目標速度
 	double _p;		//目標位置
@@ -69,18 +75,41 @@ typedef struct _stMotion_Element {	//運動要素
 
 #define M_ELEMENT_MAX	32
 #define M_AXIS			8	//動作軸
-#define MH_AXIS			0	//主巻動作
-#define TT_AXIS			1	//横行動作
-#define GT_AXIS			2	//走行動作
-#define BH_AXIS			3	//起伏動作
-#define SLW_AXIS		4	//旋回動作
-#define SKW_AXIS		5	//スキュー動作
-#define LFT_AXIS		6	//吊具操作
+#define MH_AXIS			1	//主巻動作
+#define TT_AXIS			2	//横行動作
+#define GT_AXIS			3	//走行動作
+#define BH_AXIS			4	//起伏動作
+#define SLW_AXIS		5	//旋回動作
+#define SKW_AXIS		6	//スキュー動作
+#define LFT_AXIS		7	//吊具操作
+
+#define PTN_UNIT_FIN	-1	//Completed
+#define PTN_NOTHING		0	//No Motion
+#define PTN_STANDBY		1	//Waiting Triggr
+#define PTN_ACTIVE		2	//On Going
+#define PTN_PAUSE		3	//Paused
+
+typedef struct _stMOTION_UNIT {	//動作パターン
+	int type;					//動作軸種別　MH_AXIS,TT_AXIS,GT_AXIS,BH_AXIS..... 
+	int n_step;					//動作パターン構成要素数
+	int ptn_status;				//動作パターン実行状況
+	int iAct;					//実行中index -1で完了
+	ST_MOTION_ELEMENT motions[M_ELEMENT_MAX];
+}ST_MOTION_UNIT, *LPST_MOTION_UNIT;
+
+
+#define JOBTYPE_PICK	1
+#define JOBTYPE_GRND	2
+#define JOBTYPE_PARK	3
+#define JOBTYPE_AS_POS	4
+#define JOBTYPE_AS_SWAY	5
+
 typedef struct _stJOB_UNIT {	//作業要素（PICK、GROUND、PARK）
-	int type;		//動作種別
-	int mAct[M_AXIS];//実行対象　配列[0]から動作コードセット-1セットで終わり
-	int iAct[M_AXIS];//実行中index -1で完了
-	ST_MOTION_ELEMENT motions[M_AXIS][M_ELEMENT_MAX];
+	int type;					//JOB種別
+	int job_status;				//JOB実行状況
+	int mAct[M_AXIS];			//実行対象　配列[0]から動作コードセット-1セットで終わり
+	int iAct[M_AXIS];			//実行中index -1で完了
+	ST_MOTION_UNIT motions[M_AXIS];
 }ST_JOB_UNIT, *LPST_JOB_UNIT;
 
 typedef struct _stJOB_Report {	//JOB完了報告フォーマット
@@ -226,9 +255,12 @@ typedef struct _stIO_Physic {
 
 typedef struct _stIO_Ref {
 
-	double slew_w;		//旋回角速度
-	double hoist_v;		//旋回角速度
-	double bh_v;		//引込速度
+	double slew_w;				//旋回角速度
+	double hoist_v;				//巻速度
+	double bh_v;				//引込速度
+	bool	b_bh_manual_ctrl;	//手動操作中
+	bool	b_slew_manual_ctrl;	//手動操作中
+	bool	b_mh_manual_ctrl;	//手動操作中
 
 }ST_IO_REF, *LPST_IO_REF;
 

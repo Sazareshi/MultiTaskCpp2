@@ -5,6 +5,8 @@
 extern vector<void*>	VectpCTaskObj;	//タスクオブジェクトのポインタ
 extern ST_iTask g_itask;
 
+#define PTN_CONFIRMATION_TIME		0.2 //	Confirmation time of pattern output
+
 class CAnalyst :
 	public CTaskObj
 {
@@ -19,7 +21,7 @@ public:
 	void cal_as_target();
 	void update_as_ctrl();
 	void cal_as_gain();
-	int cal_as_inch_recipe(int motion_id,ST_MOTION_ELEMENT* target);
+	int cal_as_inch_recipe(int motion_id,ST_MOTION_UNIT* target);
 
 	// Mob
 	Mob_HoistPoint  hp;

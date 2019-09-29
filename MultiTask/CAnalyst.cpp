@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CAnalyst.h"
 #include "SharedObjects.h"
+#include "CPlayer.h"
 
 extern CORDER_Table*	pOrder;				//共有メモリOrderクラスポインタ
 extern CMODE_Table*		pMode;				//共有メモリModeクラスポインタ
@@ -175,73 +176,149 @@ void CAnalyst::cal_as_target() {
 		pIO_Table->as_ctrl.tgpos_bh = pIO_Table->physics.R;
 		pIO_Table->as_ctrl.tgpos_slew = pIO_Table->physics.th;
 	}
+	else{
+		if(pMode->antisway_control_n == AS_MODE_INTERRUPT)	pIO_Table->as_ctrl.tgpos_bh = pIO_Table->physics.R;
+		if (pMode->antisway_control_t == AS_MODE_INTERRUPT)	pIO_Table->as_ctrl.tgpos_slew = pIO_Table->physics.th;
+	}
 	return;
 };
 
-int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_ELEMENT* target) {
+int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 
 	cal_as_gain();
+	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
+	unsigned int play_scan_ms = pPly->inf.cycle_ms;
 		
 	switch (motion_id) {
 	case MOTION_ID_BH: {
-		target->type = CTR_TYPE_AS_INCHING_BH;
+		target->n_step = 3;
+		target->type = BH_AXIS;
+		target->ptn_status = PTN_STANDBY;
+		//Step 1
+		target->motions[0].type = CTR_TYPE_ACC_TIME;
 		// _p
-		target->_p = pIO_Table->as_ctrl.tgpos_bh;
-
+		target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
 		// _t
 		if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_SWAY) {
-			target->_t = pIO_Table->as_ctrl.inch_gain_n_sway;
+			target->motions[0]._t = pIO_Table->as_ctrl.inch_gain_n_sway;
 		}
 		else if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_POS) {
-			target->_t = pIO_Table->as_ctrl.inch_gain_n_pos;
+			target->motions[0]._t = pIO_Table->as_ctrl.inch_gain_n_pos;
 		}
 		else {
-			target->_t = 0.0;
+			target->motions[0]._t = 0.0;
 		}
+		//time_count
+		target->motions[0].time_count =(int) (target->motions[0]._t * 1000) /(int) play_scan_ms;
 		// _v
-		if (pIO_Table->physics.R > target->_p) {
-			target->_v = pIO_Table->physics.vR - g_spec.bh_acc[FWD_ACC] * target->_t;
-			if (target->_v < -g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
-				target->_v = -g_spec.bh_notch_spd[NOTCH_MAX - 1];
+		if (pIO_Table->physics.R > target->motions[0]._p) {
+			target->motions[0]._v = pIO_Table->physics.vR - g_spec.bh_acc[FWD_ACC] * target->motions[0]._t;
+			if (target->motions[0]._v < -g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
+				target->motions[0]._v = -g_spec.bh_notch_spd[NOTCH_MAX - 1];
 			}
 		}
 		else {
-			target->_v = pIO_Table->physics.vR + g_spec.bh_acc[FWD_ACC] * target->_t;
-			if (target->_v < g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
-				target->_v = g_spec.bh_notch_spd[NOTCH_MAX - 1];
+			target->motions[0]._v = pIO_Table->physics.vR + g_spec.bh_acc[FWD_ACC] * target->motions[0]._t;
+			if (target->motions[0]._v < g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
+				target->motions[0]._v = g_spec.bh_notch_spd[NOTCH_MAX - 1];
 			}
 		}
+
+		//Step 2
+		target->motions[1].type = CTR_TYPE_DEC_V;
+		// _p
+		target->motions[1]._p = pIO_Table->as_ctrl.tgpos_bh;
+		// _t
+		if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_SWAY) {
+			target->motions[1]._t = pIO_Table->as_ctrl.inch_gain_n_sway;
+		}
+		else if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_POS) {
+			target->motions[1]._t = pIO_Table->as_ctrl.inch_gain_n_pos;
+		}
+		else {
+			target->motions[1]._t = 0.0;
+		}
+		//time_count
+		target->motions[1].time_count = (int)(target->motions[1]._t * 1000) / (int)play_scan_ms;
+		// _v
+		target->motions[1]._v = pIO_Table->physics.vR;
+
+		//Step 3
+		target->motions[2].type = CTR_TYPE_TIME_WAIT;
+		// _p
+		target->motions[2]._p = pIO_Table->as_ctrl.tgpos_bh;
+		// _t
+		target->motions[2]._t = PTN_CONFIRMATION_TIME;
+		//time_count
+		target->motions[2].time_count = (int)(target->motions[2]._t * 1000) / (int)play_scan_ms;
+		// _v
+		target->motions[2]._v = pIO_Table->physics.vR;
+
 	}break;
 	case MOTION_ID_SLEW: {
-		target->type = CTR_TYPE_AS_INCHING_SLEW;
-		//_p
-		target->_p = pIO_Table->as_ctrl.tgpos_slew;
-
-		//_t
+		target->n_step = 3;
+		target->type = SLW_AXIS;
+		target->ptn_status = PTN_STANDBY;
+		//Step 1
+		target->motions[0].type = CTR_TYPE_ACC_TIME;
+		// _p
+		target->motions[0]._p = pIO_Table->as_ctrl.tgpos_slew;
+		// _t
 		if (pMode->antisway_control_t == AS_MODE_ACTIVE_INCH_SWAY) {
-			target->_t = pIO_Table->as_ctrl.inch_gain_t_sway;
+			target->motions[0]._t = pIO_Table->as_ctrl.inch_gain_t_sway;
 		}
 		else if (pMode->antisway_control_t == AS_MODE_ACTIVE_INCH_POS) {
-			target->_t = pIO_Table->as_ctrl.inch_gain_t_pos;
+			target->motions[0]._t = pIO_Table->as_ctrl.inch_gain_t_pos;
 		}
 		else {
-			target->_t = 0.0;
+			target->motions[0]._t = 0.0;
 		}
-		target->_v = g_spec.bh_acc[FWD_ACC];
-
+		//time_count
+		target->motions[0].time_count = (int)(target->motions[0]._t * 1000) / (int)play_scan_ms;
 		// _v
-		if (pIO_Table->physics.th > target->_p) {
-			target->_v = pIO_Table->physics.wth - g_spec.slew_acc[FWD_ACC] * target->_t;
-			if (target->_v < -g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
-				target->_v = -g_spec.slew_notch_spd[NOTCH_MAX - 1];
+		if (pIO_Table->physics.th > target->motions[0]._p) {
+			target->motions[0]._v = pIO_Table->physics.wth - g_spec.slew_acc[FWD_ACC] * target->motions[0]._t;
+			if (target->motions[0]._v < -g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
+				target->motions[0]._v = -g_spec.slew_notch_spd[NOTCH_MAX - 1];
 			}
 		}
 		else {
-			target->_v = pIO_Table->physics.wth + g_spec.slew_acc[FWD_ACC] * target->_t;
-			if (target->_v < g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
-				target->_v = g_spec.slew_notch_spd[NOTCH_MAX - 1];
+			target->motions[0]._v = pIO_Table->physics.wth + g_spec.slew_acc[FWD_ACC] * target->motions[0]._t;
+			if (target->motions[0]._v < g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
+				target->motions[0]._v = g_spec.slew_notch_spd[NOTCH_MAX - 1];
 			}
 		}
+
+		//Step 2
+		target->motions[1].type = CTR_TYPE_ACC_TIME;
+		// _p
+		target->motions[1]._p = pIO_Table->as_ctrl.tgpos_slew;
+		// _t
+		if (pMode->antisway_control_t == AS_MODE_ACTIVE_INCH_SWAY) {
+			target->motions[1]._t = pIO_Table->as_ctrl.inch_gain_t_sway;
+		}
+		else if (pMode->antisway_control_t == AS_MODE_ACTIVE_INCH_POS) {
+			target->motions[1]._t = pIO_Table->as_ctrl.inch_gain_t_pos;
+		}
+		else {
+			target->motions[1]._t = 0.0;
+		}
+		//time_count
+		target->motions[1].time_count = (int)(target->motions[1]._t * 1000) / (int)play_scan_ms;
+		// _v
+		target->motions[1]._v = pIO_Table->physics.wth;
+
+
+		//Step 3
+		target->motions[2].type = CTR_TYPE_TIME_WAIT;
+		// _p
+		target->motions[2]._p = pIO_Table->as_ctrl.tgpos_slew;
+		// _t
+		target->motions[2]._t = PTN_CONFIRMATION_TIME;
+		//time_count
+		target->motions[2].time_count = (int)(target->motions[2]._t * 1000) / (int)play_scan_ms;
+		// _v
+		target->motions[2]._v = pIO_Table->physics.wth;
 
 	}break;
 	default: return 1;
@@ -252,31 +329,70 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_ELEMENT* target) {
 //# Update Anti-sway Control Mode
 void CAnalyst::update_as_ctrl() {
 
-// ``` Update Anti-Sway Control mode
+// Update Anti-Sway Control mode
 	if (pMode->antisway != OPE_MODE_AS_ON) {
 		pMode->antisway_control_h = pMode->antisway_control_t = pMode->antisway_control_n = AS_MODE_DEACTIVATE;
 		return;
 	}
-	else {
-		pMode->antisway_control_h = pMode->antisway_control_t = pMode->antisway_control_n = AS_MODE_STANDBY;
-	}
+	else;
+
 	if (pMode->auto_control != AUTO_MODE_ACTIVE) {
-		if (pIO_Table->physics.sway_amp_n > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]) {
-			if (abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) 
+		// Normal direction
+		if (pIO_Table->ref.b_bh_manual_ctrl) {
+			pMode->antisway_control_n = AS_MODE_INTERRUPT;
+		}
+		else if (pIO_Table->physics.vR != 0.0){
+			pMode->antisway_control_n = AS_MODE_STANDBY;
+		}
+		else if (pIO_Table->physics.sway_amp_n > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]) {								//振幅（2乗）が、判定値越え
+			if (abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER])		//位置決めはOK
 				pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_SWAY;
-			else if(pIO_Table->physics.sway_amp_n > g_spec.as_compl_swayLv_sq[I_AS_LV_ANTISWAY])
+			else if (pIO_Table->physics.sway_amp_n > g_spec.as_compl_swayLv_sq[I_AS_LV_ANTISWAY])						//振れが振れ重視判定値以上
 				pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_SWAY;
+			else																										//残りは位置合わせタイプ
+				pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_POS;
+		}
+		else if (pMode->antisway_control_n != AS_MODE_COMPLETED) {														//振れはトリガレベル以下だが未完了
+			if ((abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) <= g_spec.as_compl_nposLv[I_AS_LV_COMPLE]) &&	//位置決めは完了レベル
+				(pIO_Table->physics.sway_amp_n < g_spec.as_compl_swayLv_sq[I_AS_LV_COMPLE])) {							//振れも完了レベル
+				pMode->antisway_control_n = AS_MODE_COMPLETED;
+			}
+			else if (abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) <= g_spec.as_compl_nposLv[I_AS_LV_COMPLE]) { //位置決めは完了レベル
+				pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_SWAY;
+			}
 			else
 				pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_POS;
 		}
-		if (pIO_Table->physics.sway_amp_t > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]) {
-			if (abs(pIO_Table->physics.th - pIO_Table->as_ctrl.tgpos_slew) < g_spec.as_compl_tposLv[I_AS_LV_TRIGGER])
+		else;
+
+		// Tangent direction
+		if (pIO_Table->ref.b_slew_manual_ctrl) {
+			pMode->antisway_control_t = AS_MODE_INTERRUPT;
+		}
+		else if (pIO_Table->physics.wth != 0.0) {
+			pMode->antisway_control_t= AS_MODE_STANDBY;
+		}
+		else if (pIO_Table->physics.sway_amp_t > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]) {									//振幅（2乗）が、判定値越え
+			if (abs(pIO_Table->physics.th - pIO_Table->as_ctrl.tgpos_slew) < g_spec.as_compl_tposLv[I_AS_LV_TRIGGER])		//位置決めはOK
 				pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_SWAY;
-			else if (pIO_Table->physics.sway_amp_t > g_spec.as_compl_swayLv_sq[I_AS_LV_ANTISWAY])
+			else if (pIO_Table->physics.sway_amp_t > g_spec.as_compl_swayLv_sq[I_AS_LV_ANTISWAY])							//振れが振れ重視判定値以上
 				pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_SWAY;
+			else																											//残りは位置合わせタイプ
+				pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_POS;
+		}
+		else if (pMode->antisway_control_t != AS_MODE_COMPLETED) {															//振れはトリガレベル以下だが未完了
+			if ((abs(pIO_Table->physics.th - pIO_Table->as_ctrl.tgpos_slew) <= g_spec.as_compl_nposLv[I_AS_LV_COMPLE]) &&	//位置決めは完了レベル
+				(pIO_Table->physics.sway_amp_t < g_spec.as_compl_swayLv_sq[I_AS_LV_COMPLE])) {								//振れも完了レベル
+				pMode->antisway_control_t = AS_MODE_COMPLETED;
+			}
+			else if (abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) <= g_spec.as_compl_nposLv[I_AS_LV_COMPLE]) {	//位置決めは完了レベル
+				pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_SWAY;
+			}
 			else
 				pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_POS;
 		}
+		else;
+
 	}
 	else {
 		;
