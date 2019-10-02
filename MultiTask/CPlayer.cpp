@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "CPlayer.h"
+#include "CAnalyst.h"
 
 extern CMODE_Table*	pMode;				//共有メモリModeクラスポインタ
 extern CORDER_Table*	pOrder;			//共有メモリOrderクラスポインタ
@@ -133,17 +134,47 @@ double CPlayer::act_mh_steps(int mode, ST_MOTION_UNIT* recipe) {
 
 //# Caliculate PC reference
 void CPlayer::cal_auto_ref() {
+	
+	CAnalyst* pAna = (CAnalyst*)VectpCTaskObj[g_itask.ana];
 
 	if (pMode->auto_control == AUTO_MODE_ACTIVE) {
 		;
 	}
 	else if (pMode->antisway == OPE_MODE_AS_ON){
+		update_as_status(); //Check Current Pattern Handling Situation
 		//## normal derection
-		if ((bh_motion_ptn.ptn_status == PTN_UNIT_FIN) || (bh_motion_ptn.ptn_status == PTN_NOTHING)) {
+		if ((bh_motion_ptn.ptn_status == PTN_UNIT_FIN) || (bh_motion_ptn.ptn_status == PTN_NOTHING)) {//A pattern not running
 			auto_vref[MOTION_ID_BH] = 0.0;
 			if (pMode->antisway_control_n != AS_MODE_DEACTIVATE) {
-
+				;
+				if (pAna->cal_as_inch_recipe(MOTION_ID_BH, &(this->bh_motion_ptn)) == NO_ERROR) {
+					bh_motion_ptn.ptn_status = PTN_STANDBY;
+				}
 			}
+		}
+		else if (bh_motion_ptn.ptn_status == PTN_PAUSE){
+			auto_vref[MOTION_ID_BH] = 0.0;
+		}
+		else if (bh_motion_ptn.ptn_status == PTN_STANDBY) {
+			bh_motion_ptn.ptn_status = PTN_ACTIVE;
+		}
+		else if (bh_motion_ptn.ptn_status == PTN_ACTIVE) {
+			if (bh_motion_ptn.iAct > bh_motion_ptn.n_step) {
+				bh_motion_ptn.ptn_status = PTN_UNIT_FIN;
+				auto_vref[MOTION_ID_BH] = 0.0;
+			}
+			else if (bh_motion_ptn.type != BH_AXIS) {
+				bh_motion_ptn.ptn_status = PTN_NOTHING;
+				auto_vref[MOTION_ID_BH] = 0.0;
+			}
+			else{
+				switch (bh_motion_ptn.motions[bh_motion_ptn.iAct].type) {
+				default: break;
+				}
+			}
+		}
+		else {
+			auto_vref[MOTION_ID_BH] = 0.0;
 		}
 
 		//## tangent derection

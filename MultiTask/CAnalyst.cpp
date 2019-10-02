@@ -191,41 +191,20 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		
 	switch (motion_id) {
 	case MOTION_ID_BH: {
-		target->n_step = 3;
+		target->n_step = 4;
 		target->type = BH_AXIS;
 		target->ptn_status = PTN_STANDBY;
+		target->iAct = 0; //Initialize activated pattern
+
 		//Step 1
-		target->motions[0].type = CTR_TYPE_ACC_TIME;
+		target->motions[0].type = CTR_TYPE_PHASE_WAIT;
 		// _p
 		target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
 		// _t
-		if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_SWAY) {
-			target->motions[0]._t = pIO_Table->as_ctrl.inch_gain_n_sway;
-		}
-		else if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_POS) {
-			target->motions[0]._t = pIO_Table->as_ctrl.inch_gain_n_pos;
-		}
-		else {
-			target->motions[0]._t = 0.0;
-		}
-		//time_count
-		target->motions[0].time_count =(int) (target->motions[0]._t * 1000) /(int) play_scan_ms;
-		// _v
-		if (pIO_Table->physics.R > target->motions[0]._p) {
-			target->motions[0]._v = pIO_Table->physics.vR - g_spec.bh_acc[FWD_ACC] * target->motions[0]._t;
-			if (target->motions[0]._v < -g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
-				target->motions[0]._v = -g_spec.bh_notch_spd[NOTCH_MAX - 1];
-			}
-		}
-		else {
-			target->motions[0]._v = pIO_Table->physics.vR + g_spec.bh_acc[FWD_ACC] * target->motions[0]._t;
-			if (target->motions[0]._v < g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
-				target->motions[0]._v = g_spec.bh_notch_spd[NOTCH_MAX - 1];
-			}
-		}
+		target->motions[0]._t = pIO_Table->physics.T*2.0;
 
 		//Step 2
-		target->motions[1].type = CTR_TYPE_DEC_V;
+		target->motions[1].type = CTR_TYPE_ACC_TIME;
 		// _p
 		target->motions[1]._p = pIO_Table->as_ctrl.tgpos_bh;
 		// _t
@@ -239,55 +218,68 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 			target->motions[1]._t = 0.0;
 		}
 		//time_count
-		target->motions[1].time_count = (int)(target->motions[1]._t * 1000) / (int)play_scan_ms;
+		target->motions[1].time_count =(int) (target->motions[1]._t * 1000) /(int) play_scan_ms;
 		// _v
-		target->motions[1]._v = pIO_Table->physics.vR;
+		if (pIO_Table->physics.R > target->motions[0]._p) {
+			target->motions[1]._v = pIO_Table->physics.vR - g_spec.bh_acc[FWD_ACC] * target->motions[0]._t;
+			if (target->motions[1]._v < -g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
+				target->motions[1]._v = -g_spec.bh_notch_spd[NOTCH_MAX - 1];
+			}
+		}
+		else {
+			target->motions[1]._v = pIO_Table->physics.vR + g_spec.bh_acc[FWD_ACC] * target->motions[0]._t;
+			if (target->motions[1]._v < g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
+				target->motions[1]._v = g_spec.bh_notch_spd[NOTCH_MAX - 1];
+			}
+		}
 
 		//Step 3
-		target->motions[2].type = CTR_TYPE_TIME_WAIT;
+		target->motions[2].type = CTR_TYPE_DEC_V;
 		// _p
 		target->motions[2]._p = pIO_Table->as_ctrl.tgpos_bh;
 		// _t
-		target->motions[2]._t = PTN_CONFIRMATION_TIME;
+		if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_SWAY) {
+			target->motions[2]._t = pIO_Table->as_ctrl.inch_gain_n_sway;
+		}
+		else if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_POS) {
+			target->motions[2]._t = pIO_Table->as_ctrl.inch_gain_n_pos;
+		}
+		else {
+			target->motions[2]._t = 0.0;
+		}
 		//time_count
 		target->motions[2].time_count = (int)(target->motions[2]._t * 1000) / (int)play_scan_ms;
 		// _v
 		target->motions[2]._v = pIO_Table->physics.vR;
 
+		//Step 4
+		target->motions[3].type = CTR_TYPE_TIME_WAIT;
+		// _p
+		target->motions[3]._p = pIO_Table->as_ctrl.tgpos_bh;
+		// _t
+		target->motions[3]._t = PTN_CONFIRMATION_TIME;
+		//time_count
+		target->motions[3].time_count = (int)(target->motions[3]._t * 1000) / (int)play_scan_ms;
+		// _v
+		target->motions[3]._v = pIO_Table->physics.vR;
+
+		for (int i = 0; i < 4; i++) {
+			target->motions[i].act_counter = 0;
+			target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
+		}
+
 	}break;
 	case MOTION_ID_SLEW: {
-		target->n_step = 3;
+		target->n_step = 4;
 		target->type = SLW_AXIS;
 		target->ptn_status = PTN_STANDBY;
+	
 		//Step 1
-		target->motions[0].type = CTR_TYPE_ACC_TIME;
+		target->motions[0].type = CTR_TYPE_PHASE_WAIT;
 		// _p
 		target->motions[0]._p = pIO_Table->as_ctrl.tgpos_slew;
 		// _t
-		if (pMode->antisway_control_t == AS_MODE_ACTIVE_INCH_SWAY) {
-			target->motions[0]._t = pIO_Table->as_ctrl.inch_gain_t_sway;
-		}
-		else if (pMode->antisway_control_t == AS_MODE_ACTIVE_INCH_POS) {
-			target->motions[0]._t = pIO_Table->as_ctrl.inch_gain_t_pos;
-		}
-		else {
-			target->motions[0]._t = 0.0;
-		}
-		//time_count
-		target->motions[0].time_count = (int)(target->motions[0]._t * 1000) / (int)play_scan_ms;
-		// _v
-		if (pIO_Table->physics.th > target->motions[0]._p) {
-			target->motions[0]._v = pIO_Table->physics.wth - g_spec.slew_acc[FWD_ACC] * target->motions[0]._t;
-			if (target->motions[0]._v < -g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
-				target->motions[0]._v = -g_spec.slew_notch_spd[NOTCH_MAX - 1];
-			}
-		}
-		else {
-			target->motions[0]._v = pIO_Table->physics.wth + g_spec.slew_acc[FWD_ACC] * target->motions[0]._t;
-			if (target->motions[0]._v < g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
-				target->motions[0]._v = g_spec.slew_notch_spd[NOTCH_MAX - 1];
-			}
-		}
+		target->motions[0]._t = pIO_Table->physics.T*2.0;
 
 		//Step 2
 		target->motions[1].type = CTR_TYPE_ACC_TIME;
@@ -303,27 +295,58 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		else {
 			target->motions[1]._t = 0.0;
 		}
-		//time_count
-		target->motions[1].time_count = (int)(target->motions[1]._t * 1000) / (int)play_scan_ms;
-		// _v
-		target->motions[1]._v = pIO_Table->physics.wth;
 
+		// _v
+		if (pIO_Table->physics.th > target->motions[0]._p) {
+			target->motions[1]._v = pIO_Table->physics.wth - g_spec.slew_acc[FWD_ACC] * target->motions[0]._t;
+			if (target->motions[1]._v < -g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
+				target->motions[1]._v = -g_spec.slew_notch_spd[NOTCH_MAX - 1];
+			}
+		}
+		else {
+			target->motions[1]._v = pIO_Table->physics.wth + g_spec.slew_acc[FWD_ACC] * target->motions[0]._t;
+			if (target->motions[1]._v < g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
+				target->motions[1]._v = g_spec.slew_notch_spd[NOTCH_MAX - 1];
+			}
+		}
 
 		//Step 3
-		target->motions[2].type = CTR_TYPE_TIME_WAIT;
+		target->motions[2].type = CTR_TYPE_ACC_TIME;
 		// _p
 		target->motions[2]._p = pIO_Table->as_ctrl.tgpos_slew;
 		// _t
-		target->motions[2]._t = PTN_CONFIRMATION_TIME;
-		//time_count
-		target->motions[2].time_count = (int)(target->motions[2]._t * 1000) / (int)play_scan_ms;
+		if (pMode->antisway_control_t == AS_MODE_ACTIVE_INCH_SWAY) {
+			target->motions[2]._t = pIO_Table->as_ctrl.inch_gain_t_sway;
+		}
+		else if (pMode->antisway_control_t == AS_MODE_ACTIVE_INCH_POS) {
+			target->motions[2]._t = pIO_Table->as_ctrl.inch_gain_t_pos;
+		}
+		else {
+			target->motions[2]._t = 0.0;
+		}
 		// _v
 		target->motions[2]._v = pIO_Table->physics.wth;
+
+
+		//Step 4
+		target->motions[3].type = CTR_TYPE_TIME_WAIT;
+		// _p
+		target->motions[3]._p = pIO_Table->as_ctrl.tgpos_slew;
+		// _t
+		target->motions[3]._t = PTN_CONFIRMATION_TIME;
+		// _v
+		target->motions[3]._v = pIO_Table->physics.wth;
+
+		//time_count
+		for (int i = 0; i < 4; i++) {
+			target->motions[i].act_counter = 0;
+			target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
+		}
 
 	}break;
 	default: return 1;
 	}
-	return 0;
+	return NO_ERROR;
 };
 
 //# Update Anti-sway Control Mode
