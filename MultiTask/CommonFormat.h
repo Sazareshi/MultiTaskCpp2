@@ -23,7 +23,7 @@
 #define MOTION_ID_BH	2
 #define MOTION_ID_SLEW	3
 
-#define NO_ERROR		0
+#define NO_ERR_EXIST	0
 
 inline double rad2deg(double rad) { return COF_RAD2DEG * rad; }
 
@@ -50,14 +50,16 @@ typedef struct _st_iTask {
 
 // Control Type
 #define CTR_TYPE_TIME_WAIT					0x0000  //Keep condition for specified time
-#define CTR_TYPE_PHASE_WAIT					0x0001  //Keep condition awaiting sway phase
-#define CTR_TYPE_BH_WAIT					0x0002	//Keep condition awaiting BH position
-#define CTR_TYPE_SLEW_WAIT					0x0003	//Keep condition awaiting SLEW position
-#define CTR_TYPE_MH_WAIT					0x0004	//Keep condition awaiting HOIST position
+#define CTR_TYPE_SINGLE_PHASE_WAIT			0x0001  //Keep condition awaiting one sway phase
+#define CTR_TYPE_DOUBLE_PHASE_WAIT			0x0002  //Keep condition awaiting two sway phase
+#define CTR_TYPE_BH_WAIT					0x0003	//Keep condition awaiting BH position
+#define CTR_TYPE_SLEW_WAIT					0x0004	//Keep condition awaiting SLEW position
+#define CTR_TYPE_MH_WAIT					0x0005	//Keep condition awaiting HOIST position
 #define CTR_TYPE_CONST_V_TIME				0x0100  //Keep specified speed ref for specified time
 #define CTR_TYPE_ACC_TIME					0x0200  //Specified time acceleration
 #define CTR_TYPE_ACC_V						0x0201  //Toward specified speed acceleration
 #define CTR_TYPE_ACC_TIME_OR_V				0x0202  //Specified time acceleration or reach specified speed
+#define CTR_TYPE_ACC_AS_INCHING				0x0203 //Toward specified speed acceleration for inching antisway
 #define CTR_TYPE_DEC_TIME					0x0300  //Specified time deceleration
 #define CTR_TYPE_DEC_V						0x0301  //Toward specified speed deceleration
 #define CTR_TYPE_DEC_TIME_OR_V				0x0302  //Specified time acceleration or reach specified speed
@@ -73,8 +75,8 @@ typedef struct _stMotion_Element {	//運動要素
 	double _t;		//継続時間
 	double vh_lim;	//速度制限High
 	double vl_lim;	//速度制限Low
-	double phase1;	//起動位相１
-	double phase2;	//起動位相 2
+	double phase_low;	//起動位相１
+	double phase_high;	//起動位相 2
 	double opt_d1;	//オプションdouble
 	double opt_d2;	//オプションdouble
 	int opt_i1;		//オプションint

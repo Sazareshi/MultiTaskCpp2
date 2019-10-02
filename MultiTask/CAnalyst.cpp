@@ -197,14 +197,18 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		target->iAct = 0; //Initialize activated pattern
 
 		//Step 1
-		target->motions[0].type = CTR_TYPE_PHASE_WAIT;
+		target->motions[0].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
 		// _p
 		target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
 		// _t
 		target->motions[0]._t = pIO_Table->physics.T*2.0;
+		// low phase
+		target->motions[0].phase_low = DEF_PI * 0.02;
+		// high phase
+		target->motions[0].phase_high = DEF_PI * 0.98;
 
 		//Step 2
-		target->motions[1].type = CTR_TYPE_ACC_TIME;
+		target->motions[1].type = CTR_TYPE_ACC_AS_INCHING;
 		// _p
 		target->motions[1]._p = pIO_Table->as_ctrl.tgpos_bh;
 		// _t
@@ -275,14 +279,19 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		target->ptn_status = PTN_STANDBY;
 	
 		//Step 1
-		target->motions[0].type = CTR_TYPE_PHASE_WAIT;
+		target->motions[0].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
 		// _p
 		target->motions[0]._p = pIO_Table->as_ctrl.tgpos_slew;
 		// _t
 		target->motions[0]._t = pIO_Table->physics.T*2.0;
+		// low phase
+		target->motions[0].phase_low = DEF_PI * 0.02;
+		// high phase
+		target->motions[0].phase_high = DEF_PI * 0.98;
+
 
 		//Step 2
-		target->motions[1].type = CTR_TYPE_ACC_TIME;
+		target->motions[1].type = CTR_TYPE_ACC_AS_INCHING;
 		// _p
 		target->motions[1]._p = pIO_Table->as_ctrl.tgpos_slew;
 		// _t
@@ -311,7 +320,7 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		}
 
 		//Step 3
-		target->motions[2].type = CTR_TYPE_ACC_TIME;
+		target->motions[2].type = CTR_TYPE_DEC_V;
 		// _p
 		target->motions[2]._p = pIO_Table->as_ctrl.tgpos_slew;
 		// _t
@@ -346,7 +355,7 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 	}break;
 	default: return 1;
 	}
-	return NO_ERROR;
+	return NO_ERR_EXIST;
 };
 
 //# Update Anti-sway Control Mode

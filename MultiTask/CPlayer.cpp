@@ -147,7 +147,7 @@ void CPlayer::cal_auto_ref() {
 			auto_vref[MOTION_ID_BH] = 0.0;
 			if (pMode->antisway_control_n != AS_MODE_DEACTIVATE) {
 				;
-				if (pAna->cal_as_inch_recipe(MOTION_ID_BH, &(this->bh_motion_ptn)) == NO_ERROR) {
+				if (pAna->cal_as_inch_recipe(MOTION_ID_BH, &(this->bh_motion_ptn)) == NO_ERR_EXIST) {
 					bh_motion_ptn.ptn_status = PTN_STANDBY;
 				}
 			}
