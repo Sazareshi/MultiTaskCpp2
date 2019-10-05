@@ -39,10 +39,15 @@ public:
 	ST_MOTION_UNIT slew_motion_ptn;
 	ST_MOTION_UNIT mh_motion_ptn;
 
-	double act_slew_steps(int mode, ST_MOTION_UNIT* recipe);
-	double act_bh_steps(int mode, ST_MOTION_UNIT* recipe);
-	double act_mh_steps(int mode, ST_MOTION_UNIT* recipe);
+	double act_slew_steps(ST_MOTION_UNIT* pRecipe);
+	double act_bh_steps(ST_MOTION_UNIT* pRecipe);
+	double act_mh_steps(ST_MOTION_UNIT* pRecipe);
 		
+	int check_step_status_slew(LPST_MOTION_ELEMENT pStep);
+	int check_step_status_bh(LPST_MOTION_ELEMENT pStep);
+	int check_step_status_mh(LPST_MOTION_ELEMENT pStep);
+
+
 	void routine_work(void *param);
 	void init_task(void *pobj);
 	int auto_start(LPST_JOB_ORDER recipe, int type);

@@ -65,22 +65,22 @@ typedef struct _st_iTask {
 #define CTR_TYPE_DEC_TIME_OR_V				0x0302  //Specified time acceleration or reach specified speed
 
 typedef struct _stMotion_Element {	//運動要素
-	int type;		//制御種別
-	int status;		//制御種状態
-	int time_count;	//予定継続時間のカウンタ返還値
-	int act_counter;//実行回数
-	double _a;		//目標加減速度
-	double _v;		//目標速度
-	double _p;		//目標位置
-	double _t;		//継続時間
-	double vh_lim;	//速度制限High
-	double vl_lim;	//速度制限Low
-	double phase_low;	//起動位相１
-	double phase_high;	//起動位相 2
-	double opt_d1;	//オプションdouble
-	double opt_d2;	//オプションdouble
-	int opt_i1;		//オプションint
-	int opt_i2;		//オプションint
+	int type;				//制御種別
+	int status;				//制御種状態
+	int time_count;			//予定継続時間のカウンタ返還値
+	int act_counter;		//実行回数
+	double _a;				//目標加減速度
+	double _v;				//目標速度
+	double _p;				//目標位置
+	double _t;				//継続時間
+	double vh_lim;			//速度制限High
+	double vl_lim;			//速度制限Low
+	double phase1;			//起動位相１
+	double phase2;			//起動位相 2
+	double opt_d1;			//オプションdouble
+	double opt_d2;			//オプションdouble
+	int opt_i1;				//オプションint
+	int opt_i2;				//オプションint
 }ST_MOTION_ELEMENT, *LPST_MOTION_ELEMENT;
 
 #define M_ELEMENT_MAX	32
@@ -281,28 +281,30 @@ typedef struct _stIO_Ref {
 #define AS_MH_ID	2
 
 typedef struct _stAS_CTRL {
-	double tgpos_h;					//巻目標位置
-	double tgpos_gt;				//走行目標位置
-	double tgpos_slew;				//旋回目標位置
-	double tgpos_bh;				//引込目標位置
+	double tgpos_h;							//巻目標位置
+	double tgpos_gt;						//走行目標位置
+	double tgpos_slew;						//旋回目標位置
+	double tgpos_bh;						//引込目標位置
 
-	double tgspd_h;					//巻目標速度
-	double tgspd_gt;				//走行目標速度
-	double tgspd_slew;				//旋回目標速度
-	double tgspd_bh;				//引込目標速度
+	double tgspd_h;							//巻目標速度
+	double tgspd_gt;						//走行目標速度
+	double tgspd_slew;						//旋回目標速度
+	double tgspd_bh;						//引込目標速度
 
 	//INCHING MODE
 	double inching_gain_spd[NUM_OF_AS];		//振止　目標速度 0:slew 1:bh 2:mh
-	double inch_gain_t_pos;			//振止ゲイン　位置合わせ用　接線方向 　加速時間sec
-	double inch_gain_t_sway;		//振止ゲイン　振れ止め用	接線方向　加速時間sec
-	double inch_gain_n_pos;			//振止ゲイン　位置合わせ用　法線方向　加速時間sec
-	double inch_gain_n_sway;		//振止ゲイン　振れ止め用	法線方向　加速時間sec
+	double inch_gain_t_pos;					//振止ゲイン　位置合わせ用　接線方向 　加速時間sec
+	double inch_gain_t_sway;				//振止ゲイン　振れ止め用	接線方向　加速時間sec
+	double inch_gain_n_pos;					//振止ゲイン　位置合わせ用　法線方向　加速時間sec
+	double inch_gain_n_sway;				//振止ゲイン　振れ止め用	法線方向　加速時間sec
 
 	int	inch_step[NUM_OF_AS];				//1:振止 2:位置合わせ  0:slew 1:bh 2:mh
 	double trigger_phase[NUM_OF_AS];		//振止動作のトリガを掛ける目標位相 0:slew 1:bh 2:mh
 
 	double phase_acc_offset[NUM_OF_AS];		//Offset of center of phase plane on acceleration
 	double phase_dec_offset[NUM_OF_AS];		//Offset of center of phase plane on deceleration
+
+	double phase_chk_range[NUM_OF_AS];		//振れ止め位相確認許容誤差	
 
 }ST_AS_CTRL, *LPST_AS_CTRL;
 

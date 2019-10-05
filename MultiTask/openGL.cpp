@@ -81,9 +81,9 @@ void  CPublicRelation::GL_Initialize(void) {
 
 	snprintf(st_gl_basic.WindowTitle, 12, "%s", "Crame Model");
 
-	st_gl_basic.ViewPoint.x = 0.0;
+	st_gl_basic.ViewPoint.x = 10.0;
 	st_gl_basic.ViewPoint.y = 50.0;
-	st_gl_basic.ViewPoint.z = 50.0;
+	st_gl_basic.ViewPoint.z = 100.0;
 
 	st_gl_basic.ViewCenter.x = 0.0;
 	st_gl_basic.ViewCenter.y = 0.0;
@@ -186,6 +186,8 @@ void CPublicRelation::GL_Display(void) {
 	//-----------------------------------
 #if 0
 #endif
+	GL_Ground();
+
 	//Ž² •`‰æ
 	glColor3d(0.0, 0.0, 1.0);		//F‚ÌÝ’è
 	glLineWidth(8.0);				//ü•
@@ -236,8 +238,6 @@ void CPublicRelation::GL_Display(void) {
 	glVertex3f(pIO_Table->physics.cp.x, pIO_Table->physics.cp.y, pIO_Table->physics.cp.z);
 	glEnd();
 
-	GL_Ground();
-
 
 	//•¶Žš‚Ì•`‰æ
 	char t_char[20];
@@ -287,8 +287,10 @@ void CPublicRelation::GL_mouse_on(int button, int state, int x, int y)
 			st_gl_basic.ViewUpside.y = 0.0;
 			st_gl_basic.ViewUpside.z = 1.0;
 */
-			st_gl_basic.ViewPoint.x = (pIO_Table->physics.R - CAM_DIST_SIDE1)*sin(pIO_Table->physics.th);
-			st_gl_basic.ViewPoint.y = (pIO_Table->physics.R - CAM_DIST_SIDE1)*cos(pIO_Table->physics.th);
+			double temp_R = pIO_Table->physics.R - CAM_DIST_SIDE1;
+			if (temp_R < 1.0)temp_R = 1.0;
+			st_gl_basic.ViewPoint.x = temp_R*sin(pIO_Table->physics.th);
+			st_gl_basic.ViewPoint.y = temp_R*cos(pIO_Table->physics.th);
 			st_gl_basic.ViewPoint.z += 10.0;
 
 			st_gl_basic.ViewCenter.x = pIO_Table->physics.R*sin(pIO_Table->physics.th);
@@ -319,7 +321,7 @@ void CPublicRelation::GL_mouse_on(int button, int state, int x, int y)
 		else {
 			st_gl_basic.ViewPoint.x = 0.0;
 			st_gl_basic.ViewPoint.y = 1.0;
-			st_gl_basic.ViewPoint.z = 80.0;
+			st_gl_basic.ViewPoint.z = 100.0;
 
 			st_gl_basic.ViewCenter.x = 0.0;
 			st_gl_basic.ViewCenter.y = 0.1;

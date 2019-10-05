@@ -10,6 +10,7 @@ extern CIO_Table*		pIO_Table;
 
 
 CAnalyst::CAnalyst(){
+	for (int i = 0; i < NUM_OF_AS; i++)	pIO_Table->as_ctrl.phase_chk_range[i] = DEF_PI / 50.0;
 }
 
 CAnalyst::~CAnalyst(){
@@ -154,7 +155,7 @@ void CAnalyst::init_task(void *pobj) {
 void CAnalyst::routine_work(void *param) {
 	Vector3 rel_lp = hl.r - hp.r;		//吊荷相対xyz
 
-	ws << L" working!" << *(inf.psys_counter) % 100 << "  Amp t:n ;"  << pIO_Table->physics.sway_amp_t << ":" << pIO_Table->physics.sway_amp_n << " Mode  t:n ;  " << pMode->antisway_control_t << ":" << pMode->antisway_control_n;
+	ws << L" working!" << *(inf.psys_counter) % 100 << "  Phse t:n ;"  << pIO_Table->physics.PhPlane_t.z << ":" << pIO_Table->physics.PhPlane_n.z << " Mode  t:n ;  " << pMode->antisway_control_t << ":" << pMode->antisway_control_n;
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 
 	//シミュレータ計算
@@ -203,9 +204,9 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		// _t
 		target->motions[0]._t = pIO_Table->physics.T*2.0;
 		// low phase
-		target->motions[0].phase_low = DEF_PI * 0.02;
+		target->motions[0].phase1 = DEF_PI*0.1;
 		// high phase
-		target->motions[0].phase_high = DEF_PI * 0.98;
+		target->motions[0].phase2 = -DEF_PI*0.9;
 
 		//Step 2
 		target->motions[1].type = CTR_TYPE_ACC_AS_INCHING;
@@ -224,18 +225,7 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		//time_count
 		target->motions[1].time_count =(int) (target->motions[1]._t * 1000) /(int) play_scan_ms;
 		// _v
-		if (pIO_Table->physics.R > target->motions[0]._p) {
-			target->motions[1]._v = pIO_Table->physics.vR - g_spec.bh_acc[FWD_ACC] * target->motions[0]._t;
-			if (target->motions[1]._v < -g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
-				target->motions[1]._v = -g_spec.bh_notch_spd[NOTCH_MAX - 1];
-			}
-		}
-		else {
-			target->motions[1]._v = pIO_Table->physics.vR + g_spec.bh_acc[FWD_ACC] * target->motions[0]._t;
-			if (target->motions[1]._v < g_spec.bh_notch_spd[NOTCH_MAX - 1]) {
-				target->motions[1]._v = g_spec.bh_notch_spd[NOTCH_MAX - 1];
-			}
-		}
+			target->motions[1]._v = g_spec.bh_acc[FWD_ACC] * target->motions[0]._t;
 
 		//Step 3
 		target->motions[2].type = CTR_TYPE_DEC_V;
@@ -254,7 +244,7 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		//time_count
 		target->motions[2].time_count = (int)(target->motions[2]._t * 1000) / (int)play_scan_ms;
 		// _v
-		target->motions[2]._v = pIO_Table->physics.vR;
+		target->motions[2]._v = pIO_Table->ref.bh_v;
 
 		//Step 4
 		target->motions[3].type = CTR_TYPE_TIME_WAIT;
@@ -277,6 +267,7 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		target->n_step = 4;
 		target->type = SLW_AXIS;
 		target->ptn_status = PTN_STANDBY;
+		target->iAct = 0; //Initialize activated pattern
 	
 		//Step 1
 		target->motions[0].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
@@ -285,9 +276,9 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		// _t
 		target->motions[0]._t = pIO_Table->physics.T*2.0;
 		// low phase
-		target->motions[0].phase_low = DEF_PI * 0.02;
+		target->motions[0].phase1 = DEF_PI*0.1;
 		// high phase
-		target->motions[0].phase_high = DEF_PI * 0.98;
+		target->motions[0].phase2 = -DEF_PI*0.9;
 
 
 		//Step 2
@@ -306,18 +297,7 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		}
 
 		// _v
-		if (pIO_Table->physics.th > target->motions[0]._p) {
-			target->motions[1]._v = pIO_Table->physics.wth - g_spec.slew_acc[FWD_ACC] * target->motions[0]._t;
-			if (target->motions[1]._v < -g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
-				target->motions[1]._v = -g_spec.slew_notch_spd[NOTCH_MAX - 1];
-			}
-		}
-		else {
-			target->motions[1]._v = pIO_Table->physics.wth + g_spec.slew_acc[FWD_ACC] * target->motions[0]._t;
-			if (target->motions[1]._v < g_spec.slew_notch_spd[NOTCH_MAX - 1]) {
-				target->motions[1]._v = g_spec.slew_notch_spd[NOTCH_MAX - 1];
-			}
-		}
+			target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[0]._t;
 
 		//Step 3
 		target->motions[2].type = CTR_TYPE_DEC_V;
