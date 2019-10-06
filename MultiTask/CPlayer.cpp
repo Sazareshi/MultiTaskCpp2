@@ -21,7 +21,7 @@ void CPlayer::routine_work(void *param) {
 
 	set_table_out();				//出力セット
 			
-	ws << L" working!" << *(inf.psys_counter) % 100 << " SLEW_REF " << pIO_Table->ref.slew_w << " BH_REF " << pIO_Table->ref.bh_v;
+	ws << L" working!" << *(inf.psys_counter) % 100 << " SLEW_REF " << pIO_Table->ref.slew_w << " BH_REF " << pIO_Table->ref.bh_v<<"AS N POS16/SWAY8: "<< pMode->antisway_control_n;
 tweet2owner(ws.str()); ws.str(L""); ws.clear();
 
 };

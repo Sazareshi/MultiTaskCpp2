@@ -5,7 +5,7 @@
 extern vector<void*>	VectpCTaskObj;	//タスクオブジェクトのポインタ
 extern ST_iTask g_itask;
 
-#define PTN_CONFIRMATION_TIME		0.2 //	Confirmation time of pattern output
+#define PTN_CONFIRMATION_TIME		0.1 //	Confirmation time of pattern output
 
 class CAnalyst :
 	public CTaskObj
