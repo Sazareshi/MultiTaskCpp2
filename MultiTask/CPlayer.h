@@ -24,6 +24,7 @@ extern ST_iTask g_itask;
 #define STEP_STANDBY			1
 #define STEP_ON_GOING			2
 #define STEP_PAUSE				3
+#define STEP_ERROR				0xffff
 
 class CPlayer :	public CTaskObj
 {

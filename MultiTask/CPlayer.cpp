@@ -150,42 +150,59 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 	}break;
 
 	case CTR_TYPE_DOUBLE_PHASE_WAIT: {
-		double temp_chk1 = pStep->phase1 + pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
-		double temp_chk2 = pStep->phase1 - pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+		double temp_chk1 = pStep->phase1+pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+		double temp_chk2 = pStep->phase1-pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
 
-		if (temp_chk1 > DEF_PI) {
-			if ((pIO_Table->physics.PhPlane_t.z < (temp_chk1 - DEF_2PI)) || (pIO_Table->physics.PhPlane_t.z > temp_chk2))
+		//Low phase
+		if (temp_chk1 < -DEF_PI) {
+//			if ((pIO_Table->physics.PhPlane_t.z < (temp_chk1 - DEF_2PI)) || (pIO_Table->physics.PhPlane_t.z > temp_chk2))
 				status = STEP_FIN;
 		}
-		else if (temp_chk2 < -DEF_PI) {
-			if ((pIO_Table->physics.PhPlane_t.z >(-temp_chk2 + DEF_2PI)) || (pIO_Table->physics.PhPlane_t.z < temp_chk1))
+		else if (temp_chk2 > DEF_PI) {
+//			if ((pIO_Table->physics.PhPlane_t.z >(-temp_chk2 + DEF_2PI)) || (pIO_Table->physics.PhPlane_t.z < temp_chk1))
 				status = STEP_FIN;
 		}
 		else {
-			if ((pIO_Table->physics.PhPlane_n.z < temp_chk1) && (pIO_Table->physics.PhPlane_n.z > temp_chk2))
+			if ((pIO_Table->physics.PhPlane_t.z < temp_chk1) && (pIO_Table->physics.PhPlane_t.z > temp_chk2))
 				status = STEP_FIN;
 		}
-
-		temp_chk1 = pStep->phase2 + pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
-		temp_chk2 = pStep->phase2 - pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
-
-		if (temp_chk1 > DEF_PI) {
-			if ((pIO_Table->physics.PhPlane_t.z < (temp_chk1 - DEF_2PI)) || (pIO_Table->physics.PhPlane_t.z > temp_chk2))
-				status = STEP_FIN;
+		
+		//High phase	
+		if (abs(pStep->phase2) >= DEF_PI) {
+			status = STEP_ERROR;
 		}
-		else if (temp_chk2 < -DEF_PI) {
-			if ((pIO_Table->physics.PhPlane_t.z >(-temp_chk2 + DEF_2PI)) || (pIO_Table->physics.PhPlane_t.z < temp_chk1))
-				status = STEP_FIN;
+		else if (pStep->phase2 > 0.0) {
+			temp_chk1 = pStep->phase2 - pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+			if (pIO_Table->physics.PhPlane_t.z > temp_chk1) {
+				temp_chk2 = pStep->phase2 + pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+				if (temp_chk2 < DEF_PI) {
+					if (pIO_Table->physics.PhPlane_t.z < temp_chk2) 
+						status = STEP_FIN;
+				}
+				else {
+					if (pIO_Table->physics.PhPlane_t.z < -DEF_2PI + temp_chk2) 
+						status = STEP_FIN;
+				}
+			}
 		}
 		else {
-			if ((pIO_Table->physics.PhPlane_n.z < temp_chk1) && (pIO_Table->physics.PhPlane_n.z > temp_chk2))
-				status = STEP_FIN;
+			temp_chk1 = pStep->phase2 + pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+			if (pIO_Table->physics.PhPlane_t.z < temp_chk1) {
+				temp_chk2 = pStep->phase2 - pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+				if (temp_chk2 > -DEF_PI) {
+					if (pIO_Table->physics.PhPlane_t.z > temp_chk2) 
+						status = STEP_FIN;
+				}
+				else {
+					if (pIO_Table->physics.PhPlane_t.z > DEF_2PI - temp_chk2) 
+						status = STEP_FIN;
+				}
+			}
 		}
-
-		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
+		if (pStep->act_counter > pStep->time_count) 
+			status = STEP_ERROR;
 	}break;
 	case CTR_TYPE_ACC_AS_INCHING: {
-	//	if (abs(pIO_Table->physics.wth) > abs(pStep->_v)) status = STEP_FIN;
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 	}break;
 	case CTR_TYPE_DEC_V: {
@@ -225,6 +242,7 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 		double temp_chk1 = pStep->phase1 + pIO_Table->as_ctrl.phase_chk_range[AS_BH_ID];
 		double temp_chk2 = pStep->phase1 - pIO_Table->as_ctrl.phase_chk_range[AS_BH_ID];
 
+		//Low Phase
 		if (temp_chk1 > DEF_PI) {
 			if((pIO_Table->physics.PhPlane_n.z < (temp_chk1 - DEF_2PI )) ||	(pIO_Table->physics.PhPlane_n.z > temp_chk2))
 				status = STEP_FIN;
@@ -246,6 +264,7 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 		double temp_chk1 = pStep->phase1 + pIO_Table->as_ctrl.phase_chk_range[AS_BH_ID];
 		double temp_chk2 = pStep->phase1 - pIO_Table->as_ctrl.phase_chk_range[AS_BH_ID];
 
+		//LOW PHASE
 		if (temp_chk1 > DEF_PI) {
 			if ((pIO_Table->physics.PhPlane_n.z < (temp_chk1 - DEF_2PI)) || (pIO_Table->physics.PhPlane_n.z > temp_chk2))
 				status = STEP_FIN;
@@ -258,23 +277,34 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 			if ((pIO_Table->physics.PhPlane_n.z < temp_chk1) && (pIO_Table->physics.PhPlane_n.z > temp_chk2))
 				status = STEP_FIN;
 		}
-
-		temp_chk1 = pStep->phase2 + pIO_Table->as_ctrl.phase_chk_range[AS_BH_ID];
-		temp_chk2 = pStep->phase2 - pIO_Table->as_ctrl.phase_chk_range[AS_BH_ID];
-
-		if (temp_chk1 > DEF_PI) {
-			if ((pIO_Table->physics.PhPlane_n.z < (temp_chk1 - DEF_2PI)) || (pIO_Table->physics.PhPlane_n.z > temp_chk2))
-				status = STEP_FIN;
+		//HIGH PHASE
+		if (abs(pStep->phase2) >= DEF_PI) {
+			status = STEP_ERROR;
 		}
-		else if (temp_chk2 < -DEF_PI) {
-			if ((pIO_Table->physics.PhPlane_n.z >(-temp_chk2 + DEF_2PI)) || (pIO_Table->physics.PhPlane_n.z < temp_chk1))
-				status = STEP_FIN;
+		else if (pStep->phase2 > 0.0) {
+			temp_chk1 = pStep->phase2 - pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+			if (pIO_Table->physics.PhPlane_n.z > temp_chk1) {
+				temp_chk2 = pStep->phase2 + pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+				if (temp_chk2 < DEF_PI) {
+					if (pIO_Table->physics.PhPlane_n.z < temp_chk2) status = STEP_FIN;
+				}
+				else {
+					if (pIO_Table->physics.PhPlane_n.z < -DEF_2PI + temp_chk2) status = STEP_FIN;
+				}
+			}
 		}
 		else {
-			if ((pIO_Table->physics.PhPlane_n.z < temp_chk1) && (pIO_Table->physics.PhPlane_n.z > temp_chk2))
-				status = STEP_FIN;
+			temp_chk1 = pStep->phase2 + pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+			if (pIO_Table->physics.PhPlane_n.z < temp_chk1) {
+				temp_chk2 = pStep->phase2 - pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+				if (temp_chk2 > -DEF_PI) {
+					if (pIO_Table->physics.PhPlane_n.z > temp_chk2) status = STEP_FIN;
+				}
+				else {
+					if (pIO_Table->physics.PhPlane_n.z > DEF_2PI - temp_chk2) status = STEP_FIN;
+				}
+			}
 		}
-
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 	}break;
 	case CTR_TYPE_ACC_AS_INCHING: {
@@ -333,12 +363,9 @@ double CPlayer::act_slew_steps(ST_MOTION_UNIT* pRecipe) {
 		output_v = pStep->_v;
 	}break;
 	case CTR_TYPE_ACC_AS_INCHING: {
-	//	if (pIO_Table->as_ctrl.as_out_dir_slew == 0) {
 			if (abs(pIO_Table->physics.PhPlane_t.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir_slew = +1;
 			else  pIO_Table->as_ctrl.as_out_dir_slew = -1;
-	//	}
-		output_v = (double)pIO_Table->as_ctrl.as_out_dir_slew * pStep->_v;
-		//output_v = (double)pIO_Table->as_ctrl.as_out_dir_slew * g_spec.slew_notch_spd[NOTCH_MAX - 1];
+			output_v = (double)pIO_Table->as_ctrl.as_out_dir_slew * pStep->_v;
 	}break;
 	case CTR_TYPE_DEC_V: {
 		output_v = pStep->_v;

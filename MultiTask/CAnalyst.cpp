@@ -212,9 +212,10 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 			// _t
 			target->motions[0]._t = pIO_Table->physics.T*2.0;
 			// low phase
-			target->motions[0].phase1 = DEF_PI * 0.25;
+			double start_offset = pIO_Table->as_ctrl.inch_gain_n_sway *  pIO_Table->physics.w0;
+			target->motions[0].phase1 = start_offset;//DEF_PI * 0.25;
 			// high phase
-			target->motions[0].phase2 = -DEF_PI * 0.75;
+			target->motions[0].phase2 = -DEF_PI + start_offset; //* 0.75;
 
 			//Step 2
 			target->motions[1].type = CTR_TYPE_ACC_AS_INCHING;
@@ -298,20 +299,11 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		// _t
 		target->motions[0]._t = pIO_Table->physics.T*2.0;
 	
-	    double 	sway_now = sqrt(pIO_Table->physics.sway_amp_t) / pIO_Table->physics.w0;
-
+		double start_offset = pIO_Table->as_ctrl.inch_gain_t_sway *  pIO_Table->physics.w0;
 			// low phase
-			target->motions[0].phase1 = DEF_PI * 0.25;
+		target->motions[0].phase1 = start_offset;//DEF_PI * 0.25;
 			// high phase
-			target->motions[0].phase2 = -DEF_PI * 0.75;
-
-			if (sway_now < 0.001) {
-				// low phase
-				target->motions[0].phase1 = DEF_PI*0.1;
-				// high phase
-				target->motions[0].phase2 = -DEF_PI*0.95;
-			}
-
+		target->motions[0].phase2 = -DEF_PI + start_offset;// *0.75;
 
 		//Step 2
 		target->motions[1].type = CTR_TYPE_ACC_AS_INCHING;
@@ -470,16 +462,17 @@ void CAnalyst::cal_as_gain() {
 
 
 	//sway0 = g_spec.slew_acc[FWD_ACC] / DEF_G * pIO_Table->physics.R;
-	sway0 = g_spec.slew_acc[FWD_ACC] / DEF_G;
-	sway_now = sqrt(pIO_Table->physics.sway_amp_t)/pIO_Table->physics.w0;
-
+	sway0 = g_spec.slew_acc[FWD_ACC] * pIO_Table->physics.R / DEF_G;
+	//sway_now = sqrt(pIO_Table->physics.sway_amp_t)/pIO_Table->physics.w0;
+	sway_now = sqrt(pIO_Table->physics.sway_amp_t) / pIO_Table->physics.w0;
 
 	if (sway0 < sway_now) {
 		temp_angle = DEF_HPI * 0.8;
 	}
 	else {
 		temp_angle = DEF_HPI * 0.8 * sway_now / sway0;
-		if (temp_angle < DEF_PI / 8.0) temp_angle = DEF_PI / 8.0;
+		//‰ºŒÀÝ’è
+		if (temp_angle < DEF_PI / 6.0) temp_angle = DEF_PI / 6.0;
 	}
 	pIO_Table->as_ctrl.inch_gain_t_sway = temp_angle / pIO_Table->physics.w0;
 

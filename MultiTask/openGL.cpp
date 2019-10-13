@@ -58,6 +58,7 @@ void CPublicRelation::ActOpenGL() {
 	glutReshapeFunc(GL_resize);
 
 	glutMouseFunc(GL_mouse_on);
+	glutMouseWheelFunc(GL_mouse_wheel);
 #if 0
 	glutIdleFunc(Idle);					//プログラムアイドル状態時に呼び出される関数
 
@@ -84,6 +85,11 @@ void  CPublicRelation::GL_Initialize(void) {
 	st_gl_basic.ViewPoint.x = 10.0;
 	st_gl_basic.ViewPoint.y = 50.0;
 	st_gl_basic.ViewPoint.z = 100.0;
+
+	st_gl_basic.VP_Offset.x = 0.0;
+	st_gl_basic.VP_Offset.y = 0.0;
+	st_gl_basic.VP_Offset.z = 0.0;
+
 
 	st_gl_basic.ViewCenter.x = 0.0;
 	st_gl_basic.ViewCenter.y = 0.0;
@@ -141,7 +147,7 @@ void CPublicRelation::GL_Display(void) {
 //視点（カメラ）の設定------------------------------
 	if (VP_mode == 2) {
 	 st_gl_basic.ViewPoint = pIO_Table->physics.cp;
-	 st_gl_basic.ViewPoint.z += 10.0;
+	 st_gl_basic.ViewPoint.z += (10.0 + st_gl_basic.VP_Offset.z);
 	 st_gl_basic.ViewCenter = pIO_Table->physics.cp;
 	 st_gl_basic.ViewCenter.x += 0.1;
 	 st_gl_basic.ViewCenter.z = 0.0;
@@ -156,7 +162,7 @@ void CPublicRelation::GL_Display(void) {
 
 	 st_gl_basic.ViewCenter.x = pIO_Table->physics.R*sin(pIO_Table->physics.th);
 	 st_gl_basic.ViewCenter.y = pIO_Table->physics.R*cos(pIO_Table->physics.th);
-	 st_gl_basic.ViewCenter.z = 10.0;
+	 st_gl_basic.ViewCenter.z = 10.0 + st_gl_basic.VP_Offset.z;
 
 	 st_gl_basic.ViewUpside.x = 0.0;
 	 st_gl_basic.ViewUpside.y = 0.0;
@@ -226,7 +232,7 @@ void CPublicRelation::GL_Display(void) {
 	glTranslated(pIO_Table->physics.cp.x, pIO_Table->physics.cp.y, pIO_Table->physics.cp.z);//平行移動値の設定
 	glRotatef(-pIO_Table->physics.th * COF_RAD2DEG, 0.0, 0.0, 1.0);
 	glColor4d(0.0, 0.0, 1.0, 1.0);//色の設定
-	glutSolidCube(0.5);//引数：(一辺の長さ)
+	glutSolidCube(0.1);//引数：(一辺の長さ)
 	glPopMatrix();
 
 
@@ -257,12 +263,12 @@ void CPublicRelation::GL_Display(void) {
 	strcpy_s(t_char2, "as_tg = ");
 	sprintf_s(t_char, "%f", COF_RAD2DEG * pIO_Table->as_ctrl.tgpos_slew);
 	strcat_s(t_char2, t_char);
-	GL_DISPLAY_TEXT(30, 88, t_char2);
+	GL_DISPLAY_TEXT(28, 88, t_char2);
 
 	strcpy_s(t_char2, "as_dir = ");
 	sprintf_s(t_char, "%d", pIO_Table->as_ctrl.as_out_dir_slew);
 	strcat_s(t_char2, t_char);
-	GL_DISPLAY_TEXT(55, 88, t_char2);
+	GL_DISPLAY_TEXT(52, 88, t_char2);
 
 
 	strcpy_s(t_char2, "bm = ");
@@ -273,12 +279,12 @@ void CPublicRelation::GL_Display(void) {
 	strcpy_s(t_char2, "as_tg = ");
 	sprintf_s(t_char, "%f", pIO_Table->as_ctrl.tgpos_bh);
 	strcat_s(t_char2, t_char);
-	GL_DISPLAY_TEXT(30, 83, t_char2);
+	GL_DISPLAY_TEXT(28, 83, t_char2);
 
 	strcpy_s(t_char2, "as_dir = ");
 	sprintf_s(t_char, "%d", pIO_Table->as_ctrl.as_out_dir_bh);
 	strcat_s(t_char2, t_char);
-	GL_DISPLAY_TEXT(55, 83, t_char2);
+	GL_DISPLAY_TEXT(52, 83, t_char2);
 
 
 
@@ -375,21 +381,30 @@ void CPublicRelation::GL_mouse_on(int button, int state, int x, int y)
 
 }
 
+void CPublicRelation::GL_mouse_wheel(int button, int dir, int x, int y) {
+	if (dir > 0) st_gl_basic.VP_Offset.z += 0.5;
+	else st_gl_basic.VP_Offset.z -= 0.5;
+	return;
+}
 
 
 void  CPublicRelation::GL_Ground(void) {
 	double ground_max_x = 100.0; // 1.0 = 1.0m
 	double ground_max_y = 100.0;// 1.0 = 1.0m
+//	double ground_height = 0.0;
+	double ground_height = pIO_Table->physics.lp.z;
+
 	glColor3d(0.8, 0.8, 0.8);  // 大地の色
 	glLineWidth(1.0);
 	glBegin(GL_LINES);
+	
 	for (double ly = -ground_max_y; ly <= ground_max_y; ly += 2.0) {
-		glVertex3d(-ground_max_x, ly, 0);
-		glVertex3d(ground_max_x, ly, 0);
+		glVertex3f(-ground_max_x, ly, ground_height);
+		glVertex3f(ground_max_x, ly, ground_height);
 	}
 	for (double lx = -ground_max_x; lx <= ground_max_x; lx += 2.0) {
-		glVertex3d(lx, ground_max_y, 0);
-		glVertex3d(lx, -ground_max_y, 0);
+		glVertex3f(lx, ground_max_y, ground_height);
+		glVertex3f(lx, -ground_max_y, ground_height);
 	}
 	glEnd();
 } //大地の描画Keyboard

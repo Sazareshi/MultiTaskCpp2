@@ -19,6 +19,8 @@ typedef struct _gl_basic {
 	Vector3 ViewCenter;		// 視野の中心位置
 	Vector3 ViewUpside;		// 視野の上方向
 
+	Vector3 VP_Offset;		//視点位置オフセット
+
 	GLdouble fovy, aspect, zNear, zFar;
 
 	bool _Bitmap;
