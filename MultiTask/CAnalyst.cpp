@@ -189,77 +189,99 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 	cal_as_gain();
 	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
 	unsigned int play_scan_ms = pPly->inf.cycle_ms;
+
+	pIO_Table->as_ctrl.as_out_dir_bh = 0;
+	pIO_Table->as_ctrl.as_out_dir_slew = 0;
+	pIO_Table->as_ctrl.as_out_dir_mh = 0;
 		
 	switch (motion_id) {
 	case MOTION_ID_BH: {
-		target->n_step = 4;
-		target->type = BH_AXIS;
-		target->ptn_status = PTN_STANDBY;
-		target->iAct = 0; //Initialize activated pattern
-
-		//Step 1
-		target->motions[0].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
-		// _p
-		target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
-		// _t
-		target->motions[0]._t = pIO_Table->physics.T*2.0;
-		// low phase
-		target->motions[0].phase1 = DEF_PI*0.25;
-		// high phase
-		target->motions[0].phase2 = -DEF_PI*0.75;
-
-		//Step 2
-		target->motions[1].type = CTR_TYPE_ACC_AS_INCHING;
-		// _p
-		target->motions[1]._p = pIO_Table->as_ctrl.tgpos_bh;
-		// _t
-		if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_SWAY) {
-			target->motions[1]._t = pIO_Table->as_ctrl.inch_gain_n_sway;
+		if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_POS) {
+			; 
 		}
-		else if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_POS) {
-			target->motions[1]._t = pIO_Table->as_ctrl.inch_gain_n_pos;
+		else if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_SWAY) {
+			target->n_step = 4;
+			target->type = BH_AXIS;
+			target->ptn_status = PTN_STANDBY;
+			target->iAct = 0; //Initialize activated pattern
+
+			//Step 1
+			target->motions[0].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
+			// _p
+			target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
+			// _t
+			target->motions[0]._t = pIO_Table->physics.T*2.0;
+			// low phase
+			target->motions[0].phase1 = DEF_PI * 0.25;
+			// high phase
+			target->motions[0].phase2 = -DEF_PI * 0.75;
+
+			//Step 2
+			target->motions[1].type = CTR_TYPE_ACC_AS_INCHING;
+			// _p
+			target->motions[1]._p = pIO_Table->as_ctrl.tgpos_bh;
+			// _t
+			if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_SWAY) {
+				target->motions[1]._t = pIO_Table->as_ctrl.inch_gain_n_sway;
+			}
+			else if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_POS) {
+				target->motions[1]._t = pIO_Table->as_ctrl.inch_gain_n_pos;
+			}
+			else {
+				target->motions[1]._t = 0.0;
+			}
+			//time_count
+			target->motions[1].time_count = (int)(target->motions[1]._t * 1000) / (int)play_scan_ms;
+			// _v
+			target->motions[1]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;
+
+			//Step 3
+			target->motions[2].type = CTR_TYPE_DEC_V;
+			// _p
+			target->motions[2]._p = pIO_Table->as_ctrl.tgpos_bh;
+			// _t
+			if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_SWAY) {
+				target->motions[2]._t = pIO_Table->as_ctrl.inch_gain_n_sway;
+			}
+			else if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_POS) {
+				target->motions[2]._t = pIO_Table->as_ctrl.inch_gain_n_pos;
+			}
+			else {
+				target->motions[2]._t = 0.0;
+			}
+			//time_count
+			target->motions[2].time_count = (int)(target->motions[2]._t * 1000) / (int)play_scan_ms;
+			// _v
+			target->motions[2]._v = pIO_Table->ref.bh_v;
+
+			//Step 4
+			target->motions[3].type = CTR_TYPE_TIME_WAIT;
+			// _p
+			target->motions[3]._p = pIO_Table->as_ctrl.tgpos_bh;
+			// _t
+			target->motions[3]._t = PTN_CONFIRMATION_TIME;
+
+			// _v
+			target->motions[3]._v = pIO_Table->physics.vR;
+
+			//time_count
+			for (int i = 0; i < 4; i++) {
+				target->motions[i].act_counter = 0;
+				target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
+			}
 		}
 		else {
-			target->motions[1]._t = 0.0;
-		}
-		//time_count
-		target->motions[1].time_count =(int) (target->motions[1]._t * 1000) /(int) play_scan_ms;
-		// _v
-			target->motions[1]._v = g_spec.bh_acc[FWD_ACC] * target->motions[0]._t;
+			target->n_step = 1;
+			target->type = BH_AXIS;
+			target->ptn_status = PTN_STANDBY;
+			target->iAct = 0; //Initialize activated pattern
 
-		//Step 3
-		target->motions[2].type = CTR_TYPE_DEC_V;
-		// _p
-		target->motions[2]._p = pIO_Table->as_ctrl.tgpos_bh;
-		// _t
-		if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_SWAY) {
-			target->motions[2]._t = pIO_Table->as_ctrl.inch_gain_n_sway;
-		}
-		else if (pMode->antisway_control_n == AS_MODE_ACTIVE_INCH_POS) {
-			target->motions[2]._t = pIO_Table->as_ctrl.inch_gain_n_pos;
-		}
-		else {
-			target->motions[2]._t = 0.0;
-		}
-		//time_count
-		target->motions[2].time_count = (int)(target->motions[2]._t * 1000) / (int)play_scan_ms;
-		// _v
-		target->motions[2]._v = pIO_Table->ref.bh_v;
-
-		//Step 4
-		target->motions[3].type = CTR_TYPE_TIME_WAIT;
-		// _p
-		target->motions[3]._p = pIO_Table->as_ctrl.tgpos_bh;
-		// _t
-		target->motions[3]._t = PTN_CONFIRMATION_TIME;
-
-		// _v
-		target->motions[3]._v = pIO_Table->physics.vR;
-		
-		//time_count
-		for (int i = 0; i < 4; i++) {
-			target->motions[i].act_counter = 0;
-			target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
+			//Step 1
+			target->motions[0].type = CTR_TYPE_TIME_WAIT;
+			// _p
+			target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
+			// _t
+			target->motions[0]._t = 0.1;
 		}
 
 	}break;
@@ -276,11 +298,19 @@ int CAnalyst::cal_as_inch_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		// _t
 		target->motions[0]._t = pIO_Table->physics.T*2.0;
 	
-if(pIO_Table)
-		// low phase
-		target->motions[0].phase1 = DEF_PI * 0.25;
-		// high phase
-		target->motions[0].phase2 = -DEF_PI * 0.75;
+	    double 	sway_now = sqrt(pIO_Table->physics.sway_amp_t) / pIO_Table->physics.w0;
+
+			// low phase
+			target->motions[0].phase1 = DEF_PI * 0.25;
+			// high phase
+			target->motions[0].phase2 = -DEF_PI * 0.75;
+
+			if (sway_now < 0.001) {
+				// low phase
+				target->motions[0].phase1 = DEF_PI*0.1;
+				// high phase
+				target->motions[0].phase2 = -DEF_PI*0.95;
+			}
 
 
 		//Step 2
@@ -299,7 +329,7 @@ if(pIO_Table)
 		}
 
 		// _v
-			target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[0]._t;
+			target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;
 
 		//Step 3
 		target->motions[2].type = CTR_TYPE_DEC_V;
@@ -370,16 +400,18 @@ void CAnalyst::update_as_ctrl() {
 		else if (pMode->antisway_control_n != AS_MODE_COMPLETED) {														//振れはトリガレベル以下だが未完了
 			if ((abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) <= g_spec.as_compl_nposLv[I_AS_LV_COMPLE]) &&	//位置決めは完了レベル
 				(pIO_Table->physics.sway_amp_n < g_spec.as_compl_swayLv_sq[I_AS_LV_COMPLE])) {							//振れも完了レベル
-				pMode->antisway_control_n = AS_MODE_COMPLETED;
+				pMode->antisway_control_n =		AS_MODE_COMPLETED;
 			}
 			else if (abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) <= g_spec.as_compl_nposLv[I_AS_LV_COMPLE]) { //位置決めは完了レベル
 				pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_SWAY;
 			}
 			else
-				//pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_POS;
-				pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_SWAY;
+				pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_POS;
 		}
 		else;
+//########## Test Code  ################
+		pMode->antisway_control_n = AS_MODE_ACTIVE_INCH_SWAY;
+//########## Test Code  ################
 
 		// Tangent direction
 		if (pIO_Table->ref.b_slew_manual_ctrl) {
@@ -406,11 +438,12 @@ void CAnalyst::update_as_ctrl() {
 				pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_SWAY;
 			}
 			else
-				pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_SWAY;
-			//pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_POS;
+				pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_POS;
 		}
 		else;
-
+		//########## Test Code  ################
+		pMode->antisway_control_t = AS_MODE_ACTIVE_INCH_SWAY;
+		//########## Test Code  ################
 	}
 	else {
 		;
@@ -436,7 +469,8 @@ void CAnalyst::cal_as_gain() {
 	pIO_Table->as_ctrl.inch_gain_n_sway = temp_angle / pIO_Table->physics.w0;
 
 
-	sway0 = g_spec.slew_acc[FWD_ACC] / DEF_G * pIO_Table->physics.R;
+	//sway0 = g_spec.slew_acc[FWD_ACC] / DEF_G * pIO_Table->physics.R;
+	sway0 = g_spec.slew_acc[FWD_ACC] / DEF_G;
 	sway_now = sqrt(pIO_Table->physics.sway_amp_t)/pIO_Table->physics.w0;
 
 
@@ -445,6 +479,7 @@ void CAnalyst::cal_as_gain() {
 	}
 	else {
 		temp_angle = DEF_HPI * 0.8 * sway_now / sway0;
+		if (temp_angle < DEF_PI / 8.0) temp_angle = DEF_PI / 8.0;
 	}
 	pIO_Table->as_ctrl.inch_gain_t_sway = temp_angle / pIO_Table->physics.w0;
 

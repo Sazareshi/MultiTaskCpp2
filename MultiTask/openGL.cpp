@@ -243,6 +243,7 @@ void CPublicRelation::GL_Display(void) {
 	char t_char[20];
 	char t_char2[20];
 
+	
 	strcpy_s(t_char2, "L = ");
 	sprintf_s(t_char, "%f", pIO_Table->physics.L);
 	strcat_s(t_char2, t_char);
@@ -253,10 +254,32 @@ void CPublicRelation::GL_Display(void) {
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(5, 88, t_char2);
 
+	strcpy_s(t_char2, "as_tg = ");
+	sprintf_s(t_char, "%f", COF_RAD2DEG * pIO_Table->as_ctrl.tgpos_slew);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(30, 88, t_char2);
+
+	strcpy_s(t_char2, "as_dir = ");
+	sprintf_s(t_char, "%d", pIO_Table->as_ctrl.as_out_dir_slew);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(55, 88, t_char2);
+
+
 	strcpy_s(t_char2, "bm = ");
 	sprintf_s(t_char, "%f", pIO_Table->physics.R);
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(5, 83, t_char2);
+
+	strcpy_s(t_char2, "as_tg = ");
+	sprintf_s(t_char, "%f", pIO_Table->as_ctrl.tgpos_bh);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(30, 83, t_char2);
+
+	strcpy_s(t_char2, "as_dir = ");
+	sprintf_s(t_char, "%d", pIO_Table->as_ctrl.as_out_dir_bh);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(55, 83, t_char2);
+
 
 
 	glutSwapBuffers(); //glutInitDisplayMode(GLUT_DOUBLE)でダブルバッファリングを利用可
@@ -489,7 +512,7 @@ void CPublicRelation::GL_DISPLAY_TEXT(int x, int y, char *string) {
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
-	glColor3f(0.0, 0.0, 0.0);
+	glColor3f(0.0, 1.0, 0.0);
 	glCallList(list);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

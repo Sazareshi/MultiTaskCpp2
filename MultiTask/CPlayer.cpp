@@ -333,11 +333,16 @@ double CPlayer::act_slew_steps(ST_MOTION_UNIT* pRecipe) {
 		output_v = pStep->_v;
 	}break;
 	case CTR_TYPE_ACC_AS_INCHING: {
-		if (abs(pIO_Table->physics.PhPlane_t.z) < DEF_HPI)  output_v = g_spec.slew_notch_spd[NOTCH_MAX - 1];
-		else   output_v = -g_spec.slew_notch_spd[NOTCH_MAX - 1];
+	//	if (pIO_Table->as_ctrl.as_out_dir_slew == 0) {
+			if (abs(pIO_Table->physics.PhPlane_t.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir_slew = +1;
+			else  pIO_Table->as_ctrl.as_out_dir_slew = -1;
+	//	}
+		output_v = (double)pIO_Table->as_ctrl.as_out_dir_slew * pStep->_v;
+		//output_v = (double)pIO_Table->as_ctrl.as_out_dir_slew * g_spec.slew_notch_spd[NOTCH_MAX - 1];
 	}break;
 	case CTR_TYPE_DEC_V: {
 		output_v = pStep->_v;
+		pIO_Table->as_ctrl.as_out_dir_slew = 0;
 	}break;
 	case CTR_TYPE_BH_WAIT:
 	case CTR_TYPE_SLEW_WAIT:
@@ -371,11 +376,17 @@ double CPlayer::act_bh_steps(ST_MOTION_UNIT* pRecipe) {
 		output_v = pStep->_v;
 	}break;
 	case CTR_TYPE_ACC_AS_INCHING: {
-		if(abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI)  output_v = g_spec.bh_notch_spd[NOTCH_MAX-1];
-		else   output_v = -g_spec.bh_notch_spd[NOTCH_MAX - 1];
+		if (abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir_bh = 1;
+		else  pIO_Table->as_ctrl.as_out_dir_bh = -1;
+		output_v = (double)pIO_Table->as_ctrl.as_out_dir_bh * pStep->_v;
+	//	output_v = (double)pIO_Table->as_ctrl.as_out_dir_bh * g_spec.bh_notch_spd[NOTCH_MAX - 1];
+
+	//	if(abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI)  output_v = g_spec.bh_notch_spd[NOTCH_MAX-1];
+	//	else   output_v = -g_spec.bh_notch_spd[NOTCH_MAX - 1];
 	}break;
 	case CTR_TYPE_DEC_V: {
 		output_v = pStep->_v;
+		pIO_Table->as_ctrl.as_out_dir_bh = 0;
 	}break;
 	case CTR_TYPE_BH_WAIT:
 	case CTR_TYPE_SLEW_WAIT:

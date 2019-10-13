@@ -78,9 +78,47 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 				}
 				else;
 			}
+			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO2) {
+				wstring wstr, wstr_tmp;
+				float tempf;
+				int n;
+
+				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) {
+					n = GetDlgItemText(hDlg, IDC_TASK_EDIT1, (LPTSTR)wstr_tmp.c_str(), 128);
+					if (n)tempf = stof(wstr_tmp); else tempf = 0.0;
+					pIO_Table->as_ctrl.tgpos_slew += (double)tempf / COF_RAD2DEG;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) {
+					n = GetDlgItemText(hDlg, IDC_TASK_EDIT1, (LPTSTR)wstr_tmp.c_str(), 128);
+					if (n)tempf = stof(wstr_tmp); else tempf = 0.0;
+					pIO_Table->as_ctrl.tgpos_slew -= (double)tempf / COF_RAD2DEG;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) {
+					pIO_Table->as_ctrl.tgpos_slew = pIO_Table->physics.th;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO4) {
+					n = GetDlgItemText(hDlg, IDC_TASK_EDIT2, (LPTSTR)wstr_tmp.c_str(), 128);
+					if (n)tempf = stof(wstr_tmp); else tempf = 0.0;
+					pIO_Table->as_ctrl.tgpos_bh += (double)tempf;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO5) {
+					n = GetDlgItemText(hDlg, IDC_TASK_EDIT2, (LPTSTR)wstr_tmp.c_str(), 128);
+					if (n)tempf = stof(wstr_tmp); else tempf = 0.0;
+					pIO_Table->as_ctrl.tgpos_bh -= (double)tempf;
+				}
+				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO6) {
+					pIO_Table->as_ctrl.tgpos_bh = pIO_Table->physics.R;
+				}
+				else;
+
+				wstr = wstr + wstr_tmp.c_str();
+
+
+
+			}
 			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO4) {
 				pOrder->ui.anti_sway_trigger = ON;
-				pMan->get_UI();	//ŠÂ‹«ƒ‚[ƒhÝ’è
+				pMan->get_UI();	//Manager task‚ÉŽæ‚èž‚Ý
 				pOrder->ui.anti_sway_trigger = OFF;
 			}
 			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO6) {
@@ -188,7 +226,7 @@ void CPublicRelation::set_panel_tip_txt()
 		}
 	}break;
 	case IDC_TASK_FUNC_RADIO2: {
-		wstr = L"Func2 \n\r 1:?? 2:?? 3:?? \n\r 4:?? 5:?? 6:??";
+		wstr = L"Type of Func2 \n\r 1:+slew tg 2:-slew tg 3:0 slew tg \n\r 4:+bh tg 5:-bh tg 6:0 bh tg";
 		switch (inf.panel_type_id) {
 		case IDC_TASK_ITEM_RADIO1:
 			wstr_type += L"Param of type1 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";

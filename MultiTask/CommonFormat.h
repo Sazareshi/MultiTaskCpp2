@@ -306,6 +306,11 @@ typedef struct _stAS_CTRL {
 
 	double phase_chk_range[NUM_OF_AS];		//U‚ê~‚ßˆÊ‘ŠŠm”F‹–—eŒë·	
 
+	int as_out_dir_bh;						//U‚ê~‚ßo—Í‚Ì•ûŒü
+	int as_out_dir_slew;					//U‚ê~‚ßo—Í‚Ì•ûŒü
+	int as_out_dir_mh;						//U‚ê~‚ßo—Í‚Ì•ûŒü
+
+
 }ST_AS_CTRL, *LPST_AS_CTRL;
 
 /************************************************/
