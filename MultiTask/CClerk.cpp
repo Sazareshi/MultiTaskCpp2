@@ -26,12 +26,6 @@ LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 	case WM_COMMAND:
 		switch (LOWORD(wp)) {
 		case IDC_TASK_FUNC_RADIO1:
-		{
-			inf.panel_func_id = LOWORD(wp); set_panel_tip_txt(); set_PNLparam_value(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-			Chart::open_chart(inf.hInstance,inf.hWnd_parent);
-			break;
-		}
-
 		case IDC_TASK_FUNC_RADIO2:
 		case IDC_TASK_FUNC_RADIO3:
 		case IDC_TASK_FUNC_RADIO4:
@@ -49,7 +43,7 @@ LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 			inf.panel_type_id = LOWORD(wp); set_panel_tip_txt();  SetFocus(GetDlgItem(inf.hWnd_opepane, IDC_TASK_EDIT1));
 			if (inf.panel_func_id == IDC_TASK_FUNC_RADIO1) {
 				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) {
-					;
+					Chart::open_chart(inf.hInstance, inf.hWnd_parent);
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) {
 					;
@@ -133,7 +127,7 @@ void CClerk::set_panel_tip_txt()
 	wstring wstr_type; wstring wstr;
 	switch (inf.panel_func_id) {
 	case IDC_TASK_FUNC_RADIO1: {
-		wstr = L"Type for Func1 \n\r 1:Open Chart 2:?? 3:?? \n\r 4:?? 5:?? 6:??";
+		wstr = L"Type for Func1 \n\r 1:Open Chart 2:sel_graph 3:sel_phase \n\r 4:?? 5:?? 6:??";
 		switch (inf.panel_type_id) {
 		case IDC_TASK_ITEM_RADIO1:
 			wstr_type += L"Param of type1 \n\r 1:?? 2:??  3:?? \n\r 4:?? 5:?? 6:??";

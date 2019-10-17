@@ -9,6 +9,52 @@ double Chart::ploting_data[CHART_NUM][PLOT_ITEM_NUM];
 HWND Chart::hwnd_chart;
 ST_CHART_DISP Chart::st_disp;
 
+
+void Chart::init_chart() {
+	st_disp.disp_type = CHART_GRAPH;
+	st_disp.g_write_line = 0;
+	for (int i = 0; i < CHART_NUM; i++) {
+		st_disp.g_origin[i].x = CHART_MARGIN_X;
+		st_disp.g_origin[i].y= CHART_DOT_H / 2 + CHART_DOT_H * i;
+	}
+	for (int i = 0; i < PHASE_NUM; i++) {
+		st_disp.p_origin[i].x = (PHASE_MARGIN_X  + PHASE_DOT_W )*i + PHASE_DOT_W / 2;
+		st_disp.p_origin[i].y = PHASE_MARGIN_Y + PHASE_DOT_H/2;
+	}
+	
+	st_disp.g_screen_disp_time = CHART_DURATION_DEF;
+	st_disp.p_screen_disp_time = PHASE_DURATION_DEF;
+	st_disp.g_ms_per_dot = st_disp.g_screen_disp_time * 1000 / CHART_DOT_W;
+	st_disp.p_ms_interval = PHASE_INTERVAL;
+
+	st_disp.chart_w = CHART_WND_W * 4;
+	st_disp.chart_h = CHART_WND_H;
+
+	//表示フォント
+	st_disp.hfont_inftext = CreateFont(
+		12,						//int cHeight
+		0,						//int cWidth
+		0,						//int cEscapement
+		0,						//int cOrientation
+		0,						//int cWeight
+		FALSE,					//DWORD bItalic
+		FALSE,					//DWORD bUnderline
+		FALSE,					//DWORD bStrikeOut
+		SHIFTJIS_CHARSET,		//DWORD iCharSet
+		OUT_DEFAULT_PRECIS,		//DWORD iOutPrecision
+		CLIP_DEFAULT_PRECIS,	//DWORD iClipPrecision
+		PROOF_QUALITY,			//DWORD iQuality
+		FIXED_PITCH | FF_MODERN,//DWORD iPitchAndFamily
+		TEXT("Arial")			//LPCWSTR pszFaceName
+	);
+
+	st_disp.hdc_mem0 = CreateCompatibleDC(NULL);
+	st_disp.hdc_mem_bg = CreateCompatibleDC(NULL);
+	st_disp.hdc_mem_graph = CreateCompatibleDC(NULL);
+
+
+	return;
+}
 /*########################################################################
 チャートWindow Create & 表示
 ##########################################################################*/
@@ -69,30 +115,8 @@ LRESULT Chart::ChartWndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 		scrw = GetSystemMetrics(SM_CXSCREEN);			//プライマモニタの幅
 		scrh = GetSystemMetrics(SM_CYSCREEN);			//プライマモニタの高さ
 
-		st_disp.chart_w = CHART_WND_W * 4;
-		st_disp.chart_h = CHART_WND_H;
-
-		st_disp.hfont_inftext = CreateFont(
-			12,						//int cHeight
-			0,						//int cWidth
-			0,						//int cEscapement
-			0,						//int cOrientation
-			0,						//int cWeight
-			FALSE,					//DWORD bItalic
-			FALSE,					//DWORD bUnderline
-			FALSE,					//DWORD bStrikeOut
-			SHIFTJIS_CHARSET,		//DWORD iCharSet
-			OUT_DEFAULT_PRECIS,		//DWORD iOutPrecision
-			CLIP_DEFAULT_PRECIS,	//DWORD iClipPrecision
-			PROOF_QUALITY,			//DWORD iQuality
-			FIXED_PITCH | FF_MODERN,//DWORD iPitchAndFamily
-			TEXT("Arial")			//LPCWSTR pszFaceName
-		);
-
-		st_disp.hdc_mem0 = CreateCompatibleDC(NULL);
-		st_disp.hdc_mem_bg = CreateCompatibleDC(NULL);
-		st_disp.hdc_mem_graph = CreateCompatibleDC(NULL);
-
+		init_chart();
+	
 		hdc = GetDC(hWnd);
 		HBITMAP hDummy = CreateCompatibleBitmap(hdc, st_disp.chart_w, st_disp.chart_h);
 		SelectObject(st_disp.hdc_mem0, hDummy);		//合成画像（背景＋グラフ）
@@ -111,21 +135,27 @@ LRESULT Chart::ChartWndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 		//SelectObject(st_disp.hdc_mem_bg, GetStockObject(BLACK_PEN));
 
 		POINT linkpt[2];
-		linkpt[0].x = 25; linkpt[0].y = 75; linkpt[1].x = 800; linkpt[1].y = 75;
+		POINT toPT;
 
-		SelectObject(st_disp.hdc_mem0, GetStockObject(DC_PEN));
-		SetDCPenColor(st_disp.hdc_mem0, RGB(128, 0, 0));
-
-		MoveToEx(st_disp.hdc_mem0, linkpt[0].x, linkpt[0].y, NULL);
-		LineTo(st_disp.hdc_mem0, linkpt[1].x, linkpt[1].y);
-
-		linkpt[0].x = 25; linkpt[0].y = 225; linkpt[1].x = 800; linkpt[1].y = 225;
+	//	linkpt[0].x = 25; linkpt[0].y = 75; linkpt[1].x = 800; linkpt[1].y = 75;
+	//	SelectObject(st_disp.hdc_mem0, GetStockObject(DC_PEN));
+	//	SetDCPenColor(st_disp.hdc_mem0, RGB(128, 0, 0));
+	//	MoveToEx(st_disp.hdc_mem0, linkpt[0].x, linkpt[0].y, NULL);
+	//	LineTo(st_disp.hdc_mem0, linkpt[1].x, linkpt[1].y);
+	//	linkpt[0].x = 25; linkpt[0].y = 225; linkpt[1].x = 800; linkpt[1].y = 225;
 
 		SelectObject(st_disp.hdc_mem_bg, GetStockObject(DC_PEN));
 		SetDCPenColor(st_disp.hdc_mem_bg, RGB(128, 128, 128));
+		for(int i = 0; i < CHART_NUM; i++) {
+			MoveToEx(st_disp.hdc_mem_bg, st_disp.g_origin[i].x, st_disp.g_origin[i].y, NULL);
+			LineTo(st_disp.hdc_mem_bg, st_disp.g_origin[i].x + CHART_DOT_W, st_disp.g_origin[i].y);
 
-		MoveToEx(st_disp.hdc_mem_bg, linkpt[0].x, linkpt[0].y, NULL);
-		LineTo(st_disp.hdc_mem_bg, linkpt[1].x, linkpt[1].y);
+			MoveToEx(st_disp.hdc_mem_bg, st_disp.g_origin[i].x, st_disp.g_origin[i].y + CHART_DOT_H/2 - 5, NULL);
+			LineTo(st_disp.hdc_mem_bg, st_disp.g_origin[i].x, st_disp.g_origin[i].y - CHART_DOT_H / 2 +5);
+
+		}
+		
+
 
 /*
 		SelectObject(st_disp.hdc_mem_bg, GetStockObject(DC_BRUSH));
@@ -134,7 +164,7 @@ LRESULT Chart::ChartWndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 		Ellipse(st_disp.hdc_mem_bg, 50, 50, 10, 10);
 */
 
-		TransparentBlt(st_disp.hdc_mem0, 0, 0, st_disp.chart_w/2, st_disp.chart_h, st_disp.hdc_mem_bg, 0, 0, st_disp.chart_w, st_disp.chart_h, RGB(255, 255, 255));
+		TransparentBlt(st_disp.hdc_mem0, 0, 0, st_disp.chart_w, st_disp.chart_h, st_disp.hdc_mem_bg, 0, 0, st_disp.chart_w, st_disp.chart_h, RGB(255, 255, 255));
 		//BitBlt(st_disp.hdc_mem0, 0, 0, st_disp.chart_w, st_disp.chart_h, st_disp.hdc_mem_bg, 0, 0, SRCCOPY);
 
 

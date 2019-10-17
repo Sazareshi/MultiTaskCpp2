@@ -255,11 +255,9 @@ typedef struct _stIO_Physic {
 	Vector3 PhPlane_n;	//回転座標半径方向の位相平面 x:OmegaTheata y:TheataDot z:angle
 	Vector3 PhPlane_t;	//回転座標接線方向の位相平面 x:OmegaTheata y:TheataDot z:angle
 
-	double sway_amp_r;	//位相平面半径
-	double sway_amp_n;	//位相平面半径　法線方向
-	double sway_amp_t;	//位相平面半径　接線方向
-
-
+	double sway_amp_r_ph2;	//位相平面半径
+	double sway_amp_n_ph2;	//位相平面半径　法線方向
+	double sway_amp_t_ph2;	//位相平面半径　接線方向
 	
 }ST_IO_PHYSIC, *LPST_IO_PHYSIC;
 
@@ -280,6 +278,11 @@ typedef struct _stIO_Ref {
 #define AS_BH_ID	1
 #define AS_MH_ID	2
 
+#define POS_AS_PTN_INCHING			0	//インチング
+#define POS_AS_PTN_SINGLE_T			1	//振れ止め台形パターン
+#define POS_AS_PTN_NO_AS_TRAP		2	//台形パターン
+#define POS_AS_PTN_NO_AS_TRAP_EX	3	//拡張台形パターン
+
 typedef struct _stAS_CTRL {
 	double tgpos_h;							//巻目標位置
 	double tgpos_gt;						//走行目標位置
@@ -293,7 +296,7 @@ typedef struct _stAS_CTRL {
 
 	//INCHING MODE
 	double inching_gain_spd[NUM_OF_AS];		//振止　目標速度 0:slew 1:bh 2:mh
-	double inch_gain_t_pos;					//振止ゲイン　位置合わせ用　接線方向 　加速時間sec
+	double inch_gain_t_pos;					//振止ゲイン　位置合わせ用　接線方向  加速時間sec
 	double inch_gain_t_sway;				//振止ゲイン　振れ止め用	接線方向　加速時間sec
 	double inch_gain_n_pos;					//振止ゲイン　位置合わせ用　法線方向　加速時間sec
 	double inch_gain_n_sway;				//振止ゲイン　振れ止め用	法線方向　加速時間sec
@@ -309,6 +312,16 @@ typedef struct _stAS_CTRL {
 	int as_out_dir_bh;						//振れ止め出力の方向
 	int as_out_dir_slew;					//振れ止め出力の方向
 	int as_out_dir_mh;						//振れ止め出力の方向
+
+	double tgD_slew;		//振止目標-現在角度
+	double tgD_bh;			//振止目標-現在位置
+	double tgD_slew_abs;	//振止目標-現在角度 絶対値
+	double tgD_bh_abs;		//振止目標-現在位置 絶対値
+
+	int pos_as_ptn_t;		//位置合わせ振れ止めパターンのタイプ
+	int pos_as_ptn_n;		//位置合わせ振れ止めパターンのタイプ
+	int sway_as_ptn_t;		//振れのみ振れ止めパターンのタイプ
+	int sway_as_ptn_n;		//振れのみ振れ止めパターンのタイプ
 
 
 }ST_AS_CTRL, *LPST_AS_CTRL;
