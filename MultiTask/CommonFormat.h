@@ -10,6 +10,7 @@
 #define	DEF_HPI  1.5708			//90deg
 #define	DEF_PI  3.1415265
 #define DEF_2PI 6.2831853
+#define DEF_001DEG	0.00017		//0.01deg
 #define DEF_G	9.80665
 #define COF_RAD2DEG	57.296
 

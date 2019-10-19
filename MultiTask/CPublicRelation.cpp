@@ -117,9 +117,7 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 
 			}
 			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO4) {
-				pOrder->ui.anti_sway_trigger = ON;
-				pMan->get_UI();	//Manager task‚ÉŽæ‚èž‚Ý
-				pOrder->ui.anti_sway_trigger = OFF;
+				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) VP_mode = 2;
 			}
 			else if (inf.panel_func_id == IDC_TASK_FUNC_RADIO6) {
 				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) pOrder->ui.env_mode = ENV_MODE_REAL;

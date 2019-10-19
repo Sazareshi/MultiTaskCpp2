@@ -82,33 +82,35 @@ void CAnalyst::cal_simulation() {
 	pIO_Table->physics.vL = hp.v_h;	//Šª‘¬“x
 	
 	//###ZŽ²‚Æ‚ÌŠp“x
-	
-	double temp_f = sqrt(rel_lp.x * rel_lp.x + rel_lp.y * rel_lp.y);//XY•½–Ê”¼Œa
-	pIO_Table->physics.lph = asin(temp_f/ pIO_Table->physics.L);
-	
-	//###ZŽ²Šp“x‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot
-	pIO_Table->physics.PhPlane_r.x = temp_f / pIO_Table->physics.L * pIO_Table->physics.w0;
-	pIO_Table->physics.PhPlane_r.y = sqrt(rel_lvp.x * rel_lvp.x + rel_lvp.y * rel_lvp.y) / pIO_Table->physics.L;
-	if (pIO_Table->physics.PhPlane_r.x < 0.0) {
-		if (pIO_Table->physics.PhPlane_r.y < 0.0) pIO_Table->physics.PhPlane_r.z -= DEF_PI;
-		else pIO_Table->physics.PhPlane_r.z += DEF_PI;
-	}
+
+	double temp_r = sqrt(rel_lp.x * rel_lp.x + rel_lp.y * rel_lp.y);//XY•½–Ê”¼Œa
+	double temp_v = sqrt(rel_lvp.x * rel_lvp.x + rel_lvp.y * rel_lvp.y);//XY•½–Ê”¼Œa‘¬“x
+	pIO_Table->physics.lph = asin(temp_r / pIO_Table->physics.L);
+
+	//###ZŽ²Šp“x‚ÌˆÊ‘Š•½–Ê  x:Theata y:TheataDot/Omega
+	pIO_Table->physics.PhPlane_r.x = temp_r / pIO_Table->physics.L;
+	if (pIO_Table->physics.PhPlane_r.x < DEF_001DEG)pIO_Table->physics.PhPlane_r.x = DEF_001DEG;
+
+	pIO_Table->physics.PhPlane_r.y = temp_v / (pIO_Table->physics.L * pIO_Table->physics.w0);
+	pIO_Table->physics.PhPlane_r.z = atan(pIO_Table->physics.PhPlane_r.y / pIO_Table->physics.PhPlane_r.x);
+
 	pIO_Table->physics.sway_amp_r_ph2 = pIO_Table->physics.PhPlane_r.x * pIO_Table->physics.PhPlane_r.x + pIO_Table->physics.PhPlane_r.y * pIO_Table->physics.PhPlane_r.y;
 
 	//###XY•½–ÊŠp“x
 	double radious = pIO_Table->physics.L * sin(pIO_Table->physics.lph);
-	if (radious < 0.0001) radious = 0.0001;
+	if (radious < DEF_001DEG) radious = DEF_001DEG;
 	double last_th = pIO_Table->physics.lth;
 	pIO_Table->physics.lth = acos(rel_lp.x / radious);
 
+	//U‚êŠpŽü”g”
+	if (pIO_Table->physics.L > 1.0)	pIO_Table->physics.w0 = sqrt(DEF_G / pIO_Table->physics.L);
+	else pIO_Table->physics.w0 = sqrt(DEF_G);
+	//U‚êŽüŠú
+	pIO_Table->physics.T = DEF_2PI / pIO_Table->physics.w0;
 
-	if (pIO_Table->physics.L > 1.0)
-	pIO_Table->physics.w0 = sqrt(DEF_G / pIO_Table->physics.L);//U‚êŠpŽü”g”
-	pIO_Table->physics.T = DEF_2PI / pIO_Table->physics.w0;			//U‚êŽüŠú
-
-	//###xy•½–Ê”¼Œa•ûŒü‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot@z:Phi
-	pIO_Table->physics.PhPlane_n.x = (rel_lp.x * sin(pIO_Table->physics.th) + rel_lp.y *cos(pIO_Table->physics.th)) / pIO_Table->physics.L * pIO_Table->physics.w0;
-	pIO_Table->physics.PhPlane_n.y = (rel_lvp.x * sin(pIO_Table->physics.th) + rel_lvp.y *cos(pIO_Table->physics.th)) / pIO_Table->physics.L;
+	//###xy•½–Ê”¼Œa•ûŒü‚ÌˆÊ‘Š•½–Ê  x:Theata y:TheataDot/Omega@z:Phi
+	pIO_Table->physics.PhPlane_n.x = (rel_lp.x * sin(pIO_Table->physics.th) + rel_lp.y *cos(pIO_Table->physics.th)) / pIO_Table->physics.L;
+	pIO_Table->physics.PhPlane_n.y = (rel_lvp.x * sin(pIO_Table->physics.th) + rel_lvp.y *cos(pIO_Table->physics.th)) / (pIO_Table->physics.L * pIO_Table->physics.w0);
 	pIO_Table->physics.PhPlane_n.z = atan(pIO_Table->physics.PhPlane_n.y / pIO_Table->physics.PhPlane_n.x);
 	if (pIO_Table->physics.PhPlane_n.x < 0.0) {
 		if (pIO_Table->physics.PhPlane_n.y < 0.0) pIO_Table->physics.PhPlane_n.z -= DEF_PI;
@@ -116,23 +118,15 @@ void CAnalyst::cal_simulation() {
 	}
 	pIO_Table->physics.sway_amp_n_ph2 = pIO_Table->physics.PhPlane_n.x * pIO_Table->physics.PhPlane_n.x + pIO_Table->physics.PhPlane_n.y * pIO_Table->physics.PhPlane_n.y;
 
-	//###xy•½–ÊÚü•ûŒü‚ÌˆÊ‘Š•½–Ê  x:OmegaTheata y:TheataDot@z:Phi
-	pIO_Table->physics.PhPlane_t.x = (rel_lp.x * cos(pIO_Table->physics.th) - rel_lp.y *sin(pIO_Table->physics.th)) / pIO_Table->physics.L* pIO_Table->physics.w0;
-	pIO_Table->physics.PhPlane_t.y = (rel_lvp.x * cos(pIO_Table->physics.th) - rel_lvp.y *sin(pIO_Table->physics.th)) / pIO_Table->physics.L;
+	//###xy•½–ÊÚü•ûŒü‚ÌˆÊ‘Š•½–Ê  x:Theata y:TheataDot/Omega@z:Phi
+	pIO_Table->physics.PhPlane_t.x = (rel_lp.x * cos(pIO_Table->physics.th) - rel_lp.y *sin(pIO_Table->physics.th)) / pIO_Table->physics.L;
+	pIO_Table->physics.PhPlane_t.y = (rel_lvp.x * cos(pIO_Table->physics.th) - rel_lvp.y *sin(pIO_Table->physics.th)) / (pIO_Table->physics.L* pIO_Table->physics.w0);
 	pIO_Table->physics.PhPlane_t.z = atan(pIO_Table->physics.PhPlane_t.y / pIO_Table->physics.PhPlane_t.x);
 	if (pIO_Table->physics.PhPlane_t.x < 0.0) {
 		if (pIO_Table->physics.PhPlane_t.y < 0.0) pIO_Table->physics.PhPlane_t.z -= DEF_PI;
 		else pIO_Table->physics.PhPlane_t.z += DEF_PI;
 	}
 	pIO_Table->physics.sway_amp_t_ph2 = pIO_Table->physics.PhPlane_t.x * pIO_Table->physics.PhPlane_t.x + pIO_Table->physics.PhPlane_t.y * pIO_Table->physics.PhPlane_t.y;
-
-	//###ŠeˆÊ‘Š•½–Ê‚Ì‰ÁŒ¸‘¬Žž‚Ì‰ñ“]’†SOFFSET’l
-	double temp_lw = pIO_Table->physics.L * pIO_Table->physics.w0;
-	if (temp_lw < 0.0001) temp_lw = 0.0001;
-	pIO_Table->as_ctrl.phase_acc_offset[AS_SLEW_ID] = g_spec.slew_acc[FWD_ACC]/ temp_lw;		//Offset of center of phase plane on acceleration
-	pIO_Table->as_ctrl.phase_dec_offset[AS_SLEW_ID] = g_spec.slew_acc[FWD_DEC] / temp_lw;		//Offset of center of phase plane on deceleration
-	pIO_Table->as_ctrl.phase_acc_offset[AS_BH_ID] = g_spec.bh_acc[FWD_ACC] / temp_lw;			//Offset of center of phase plane on acceleration
-	pIO_Table->as_ctrl.phase_dec_offset[AS_BH_ID] = g_spec.bh_acc[FWD_DEC] / temp_lw;			//Offset of center of phase plane on deceleration
 
 };
 
@@ -185,6 +179,14 @@ void CAnalyst::cal_as_target() {
 	pIO_Table->as_ctrl.tgD_bh_abs = abs(pIO_Table->as_ctrl.tgD_bh);
 	pIO_Table->as_ctrl.tgD_slew = pIO_Table->as_ctrl.tgpos_slew - pIO_Table->physics.th;
 	pIO_Table->as_ctrl.tgD_slew_abs = abs(pIO_Table->as_ctrl.tgD_slew);
+
+	//###ŠeˆÊ‘Š•½–Ê‚Ì‰ÁŒ¸‘¬Žž‚Ì‰ñ“]’†SOFFSET’l
+	double temp_lw = pIO_Table->physics.L * pIO_Table->physics.w0 * pIO_Table->physics.w0;
+	if (temp_lw < 0.0001) temp_lw = 0.0001;
+	pIO_Table->as_ctrl.phase_acc_offset[AS_SLEW_ID] = g_spec.slew_acc[FWD_ACC] / temp_lw;		//Offset of center of phase plane on acceleration
+	pIO_Table->as_ctrl.phase_dec_offset[AS_SLEW_ID] = g_spec.slew_acc[FWD_DEC] / temp_lw;		//Offset of center of phase plane on deceleration
+	pIO_Table->as_ctrl.phase_acc_offset[AS_BH_ID] = g_spec.bh_acc[FWD_ACC] / temp_lw;			//Offset of center of phase plane on acceleration
+	pIO_Table->as_ctrl.phase_dec_offset[AS_BH_ID] = g_spec.bh_acc[FWD_DEC] / temp_lw;			//Offset of center of phase plane on deceleration
 	return;
 };
 
