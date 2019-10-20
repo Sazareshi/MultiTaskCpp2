@@ -8,14 +8,27 @@ Chart::~Chart(){}
 double Chart::ploting_data[CHART_NUM][PLOT_ITEM_NUM];
 HWND Chart::hwnd_chart;
 ST_CHART_DISP Chart::st_disp;
+HWND Chart::hwnd_startPB;
+HWND Chart::hwnd_stopPB;
+HWND Chart::hwnd_radio_g;
+HWND Chart::hwnd_radio_p;
+HINSTANCE Chart::hInst;
+UINT Chart::chart_interval_ms;
+int Chart::chart_type;
 
 
 void Chart::init_chart() {
+
+
 	st_disp.disp_type = CHART_GRAPH;
+	if (st_disp.disp_type == CHART_GRAPH) SendMessage(hwnd_radio_g, BM_SETCHECK, BST_CHECKED, 0L);
+	if (st_disp.disp_type == CHART_PHASE) SendMessage(hwnd_radio_p, BM_SETCHECK, BST_CHECKED, 0L);
+
+
 	st_disp.g_write_line = 0;
 	for (int i = 0; i < CHART_NUM; i++) {
 		st_disp.g_origin[i].x = CHART_MARGIN_X;
-		st_disp.g_origin[i].y= CHART_DOT_H / 2 + CHART_DOT_H * i;
+		st_disp.g_origin[i].y= CHART_DOT_H / 2 + CHART_DOT_H * i +25;
 	}
 	for (int i = 0; i < PHASE_NUM; i++) {
 		st_disp.p_origin[i].x = (PHASE_MARGIN_X  + PHASE_DOT_W )*i + PHASE_DOT_W / 2;
@@ -24,8 +37,8 @@ void Chart::init_chart() {
 	
 	st_disp.g_screen_disp_time = CHART_DURATION_DEF;
 	st_disp.p_screen_disp_time = PHASE_DURATION_DEF;
-	st_disp.g_ms_per_dot = st_disp.g_screen_disp_time * 1000 / CHART_DOT_W;
-	st_disp.p_ms_interval = PHASE_INTERVAL;
+	st_disp.g_ms_per_dot = st_disp.g_screen_disp_time / CHART_DOT_W;
+	st_disp.plot_interval_ms = PHASE_INTERVAL;
 
 	st_disp.chart_w = CHART_WND_W * 4;
 	st_disp.chart_h = CHART_WND_H;
@@ -61,6 +74,7 @@ void Chart::init_chart() {
 void Chart::open_chart(HINSTANCE hInst, HWND hwnd_parent) {
 	WNDCLASSEX wc;
 
+	Chart::hInst = hInst;
 	ZeroMemory(&wc, sizeof(wc));
 	wc.cbSize = sizeof(WNDCLASSEX);
 
@@ -93,6 +107,17 @@ void Chart::open_chart(HINSTANCE hInst, HWND hwnd_parent) {
 	UpdateWindow(hwnd_chart);
 }
 
+int Chart::plot_graph(int iline, double* pPlotting) {
+	SelectObject(st_disp.hdc_mem_graph, GetStockObject(DC_BRUSH));
+	SetDCBrushColor(st_disp.hdc_mem_graph, RGB(192, 0, 192));
+	SelectObject(st_disp.hdc_mem_graph, GetStockObject(NULL_PEN));
+	Ellipse(st_disp.hdc_mem_graph, 50, 50, 10, 10);
+	return 0;
+}
+int Chart::plot_phase(double* pPlotting) {
+	return 0;
+}
+
 /*########################################################################
 チャートWindowのCall　Back関数
 ##########################################################################*/
@@ -109,11 +134,31 @@ LRESULT Chart::ChartWndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 
 	switch (msg) {
 	case WM_CREATE: {
+
 		nFramX = GetSystemMetrics(SM_CXSIZEFRAME);		//ウィンドウ周囲の幅
 		nFramY = GetSystemMetrics(SM_CYSIZEFRAME);		//ウィンドウ周囲の高さ
 		nCaption = GetSystemMetrics(SM_CYCAPTION);		//タイトルバーの高さ
 		scrw = GetSystemMetrics(SM_CXSCREEN);			//プライマモニタの幅
 		scrh = GetSystemMetrics(SM_CYSCREEN);			//プライマモニタの高さ
+
+		hwnd_startPB = CreateWindow(
+			L"BUTTON", L"Start",
+			WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+			CHART_WND_W - 100, CHART_WND_H-70, 38, 25, hWnd, (HMENU)IDC_CHART_START_PB, Chart::hInst, NULL);
+		hwnd_stopPB = CreateWindow(
+			L"BUTTON", L"Stop",
+			WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+			CHART_WND_W - 58, CHART_WND_H-70, 38, 25, hWnd, (HMENU)IDC_CHART_STOP_PB, Chart::hInst, NULL);
+		hwnd_radio_g = CreateWindow(
+			L"BUTTON", L"graph",
+			WS_CHILD | WS_VISIBLE | BS_RADIOBUTTON,
+			CHART_WND_W - 150, 5, 60, 25, hWnd, (HMENU)IDC_CHART_RADIO_GRAPH, Chart::hInst, NULL);
+		hwnd_radio_p = CreateWindow(
+			L"BUTTON", L"phase",
+			WS_CHILD | WS_VISIBLE | BS_RADIOBUTTON,
+			CHART_WND_W - 80, 5, 60, 25, hWnd, (HMENU)IDC_CHART_RADIO_PHASE, Chart::hInst, NULL);
+
+
 
 		init_chart();
 	
@@ -137,13 +182,6 @@ LRESULT Chart::ChartWndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 		POINT linkpt[2];
 		POINT toPT;
 
-	//	linkpt[0].x = 25; linkpt[0].y = 75; linkpt[1].x = 800; linkpt[1].y = 75;
-	//	SelectObject(st_disp.hdc_mem0, GetStockObject(DC_PEN));
-	//	SetDCPenColor(st_disp.hdc_mem0, RGB(128, 0, 0));
-	//	MoveToEx(st_disp.hdc_mem0, linkpt[0].x, linkpt[0].y, NULL);
-	//	LineTo(st_disp.hdc_mem0, linkpt[1].x, linkpt[1].y);
-	//	linkpt[0].x = 25; linkpt[0].y = 225; linkpt[1].x = 800; linkpt[1].y = 225;
-
 		SelectObject(st_disp.hdc_mem_bg, GetStockObject(DC_PEN));
 		SetDCPenColor(st_disp.hdc_mem_bg, RGB(128, 128, 128));
 		for(int i = 0; i < CHART_NUM; i++) {
@@ -157,22 +195,60 @@ LRESULT Chart::ChartWndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 		
 
 
-/*
-		SelectObject(st_disp.hdc_mem_bg, GetStockObject(DC_BRUSH));
-		SetDCBrushColor(st_disp.hdc_mem_bg, RGB(192, 0, 192));
-		SelectObject(st_disp.hdc_mem_bg, GetStockObject(NULL_PEN));
-		Ellipse(st_disp.hdc_mem_bg, 50, 50, 10, 10);
-*/
 
-		TransparentBlt(st_disp.hdc_mem0, 0, 0, st_disp.chart_w, st_disp.chart_h, st_disp.hdc_mem_bg, 0, 0, st_disp.chart_w, st_disp.chart_h, RGB(255, 255, 255));
+
+
+		//TransparentBlt(st_disp.hdc_mem0, 0, 0, st_disp.chart_w, st_disp.chart_h, st_disp.hdc_mem_graph, 0, 0, st_disp.chart_w, st_disp.chart_h, RGB(255, 255, 255));
 		//BitBlt(st_disp.hdc_mem0, 0, 0, st_disp.chart_w, st_disp.chart_h, st_disp.hdc_mem_bg, 0, 0, SRCCOPY);
 
 
 	}break;
+
+	case WM_TIMER:{
+		if (st_disp.disp_type == CHART_GRAPH) {
+			
+			st_disp.g_write_line+= st_disp.g_ms_per_dot * st_disp.plot_interval_ms;
+			if (st_disp.g_write_line >= CHART_WND_W * 2) {
+				st_disp.g_write_line -= CHART_WND_W * 2;
+			}
+			int iline=1;
+			double tem_d=0.1;
+			plot_graph(iline, &tem_d);
+		}
+		else if (st_disp.disp_type == CHART_PHASE) {
+			;
+		}
+		else;
+		InvalidateRect(Chart::hwnd_chart, NULL, FALSE);
+	}break;
+	case WM_COMMAND:
+		switch (LOWORD(wp)) {
+		case IDC_CHART_START_PB:
+			SetTimer(hwnd_chart, ID_CHART_TIMER, Chart::chart_interval_ms,NULL);
+		break;
+		case IDC_CHART_STOP_PB:
+			KillTimer(hwnd_chart, ID_CHART_TIMER);
+		break;
+		case IDC_CHART_RADIO_GRAPH:
+			st_disp.disp_type = CHART_GRAPH;
+			SendMessage(hwnd_radio_g, BM_SETCHECK, BST_CHECKED, 0L);
+			SendMessage(hwnd_radio_p, BM_SETCHECK, BST_UNCHECKED, 0L);
+		break;
+		case IDC_CHART_RADIO_PHASE:
+			st_disp.disp_type = CHART_PHASE;
+			SendMessage(hwnd_radio_p, BM_SETCHECK, BST_CHECKED, 0L);
+			SendMessage(hwnd_radio_g, BM_SETCHECK, BST_UNCHECKED, 0L);
+			break;
+
+
+		}break;
 	case WM_PAINT: {
 		PAINTSTRUCT ps;
 
 		hdc = BeginPaint(hWnd, &ps);
+		TransparentBlt(st_disp.hdc_mem0, 0, 0, st_disp.chart_w, st_disp.chart_h, st_disp.hdc_mem_bg, 0, 0, st_disp.chart_w, st_disp.chart_h, RGB(255, 255, 255));
+		TransparentBlt(st_disp.hdc_mem0, 0, 0, st_disp.chart_w, st_disp.chart_h, st_disp.hdc_mem_graph, 0, 0, st_disp.chart_w, st_disp.chart_h, RGB(255, 255, 255));
+
 		BitBlt(
 			hdc,				//HDC hdc
 			0,					//int x
