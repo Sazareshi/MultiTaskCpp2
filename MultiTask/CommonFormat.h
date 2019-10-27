@@ -301,8 +301,8 @@ typedef struct _stAS_CTRL {
 
 	//INCHING MODE
 	double inching_gain_spd[NUM_OF_AS];		//振止　目標速度 0:slew 1:bh 2:mh
-	double inching_gain_pos[NUM_OF_AS];		//振止ゲイン　位置合わせ用　接線方向  加速時間sec
-	double inching_gain_sway[NUM_OF_AS];	//振止ゲイン　振れ止め用	接線方向　加速時間sec
+	double as_gain_pos[NUM_OF_AS];		//振止ゲイン　位置合わせ用　接線方向  加速時間sec
+	double as_gain_damp[NUM_OF_AS];	//振止ゲイン　振れ止め用	接線方向　加速時間sec
 	int	inch_step[NUM_OF_AS];				//1:振止 2:位置合わせ  0:slew 1:bh 2:mh
 	double trigger_phase[NUM_OF_AS];		//振止動作のトリガを掛ける目標位相 0:slew 1:bh 2:mh
 

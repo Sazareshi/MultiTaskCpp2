@@ -43,6 +43,8 @@ void CComDevice::update_remote_room_consol() {
 	JoyInfoEx.dwFlags = JOY_RETURNALL;
 
 	if (JOYERR_NOERROR == joyGetPosEx(0, &JoyInfoEx)) { //0番のジョイスティックの情報を見る
+		pIO_Table->console_remote.console_active = true;
+
 		pIO_Table->console_remote.bh_notch_raw = JoyInfoEx.dwYpos;
 		pIO_Table->console_remote.slew_notch_raw = JoyInfoEx.dwXpos;
 		pIO_Table->console_remote.mh_notch_raw = JoyInfoEx.dwRpos;
@@ -144,6 +146,7 @@ void CComDevice::update_remote_room_consol() {
 		ws << *(inf.psys_counter) % 100 << " :dwXpos = " << JoyInfoEx.dwXpos << "  dwYpos = " << JoyInfoEx.dwYpos << "  dwZpos = " << JoyInfoEx.dwRpos << "  dwButton = " << JoyInfoEx.dwButtons << "  dwPOV = " << JoyInfoEx.dwPOV;
 	}
 	else {
+		pIO_Table->console_remote.console_active = false;
 		ws << L" working!" << *(inf.psys_counter) % 100 << "JOY STICK Error";
 	}
 
@@ -152,7 +155,7 @@ void CComDevice::update_remote_room_consol() {
 		if (pOrder->ui.as_mode == OPE_MODE_AS_OFF)pOrder->ui.as_mode = OPE_MODE_AS_ON;
 		else pOrder->ui.as_mode = OPE_MODE_AS_OFF;
 		CManager* pMan = (CManager*)VectpCTaskObj[g_itask.mng];
-		pMan->get_UI();									//環境モード設定
+		pMan->get_UI();
 	}
 }
 

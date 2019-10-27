@@ -122,16 +122,19 @@ int CPlayer::set_table_out() {
 		pIO_Table->ref.b_bh_manual_ctrl= TRUE;		//Žè“®‘€ì’†
 	else if(pIO_Table->physics.vR == 0.0)
 		pIO_Table->ref.b_bh_manual_ctrl = FALSE;	//Žè“®‘€ì’†‰ðœ
+	else;
 
 	if (manual_vref[MOTION_ID_SLEW] != 0.0)
 		pIO_Table->ref.b_slew_manual_ctrl = TRUE;	//Žè“®‘€ì’†
 	else if (pIO_Table->physics.wth == 0.0)
 		pIO_Table->ref.b_slew_manual_ctrl = FALSE;	//Žè“®‘€ì’†‰ðœ
+	else;
 
 	if (manual_vref[MOTION_ID_MH] != 0.0)
 		pIO_Table->ref.b_mh_manual_ctrl = TRUE;		//Žè“®‘€ì’†
 	else if (pIO_Table->physics.vL == 0.0)
 		pIO_Table->ref.b_mh_manual_ctrl = FALSE;	//Žè“®‘€ì’†‰ðœ
+	else;
 
 	return 0;
 };
@@ -464,7 +467,7 @@ void CPlayer::cal_auto_ref() {
 		//## normal derection
 		if ((bh_motion_ptn.ptn_status == PTN_UNIT_FIN) || (bh_motion_ptn.ptn_status == PTN_NOTHING)) {//Any pattern not running
 			auto_vref[MOTION_ID_BH] = 0.0;
-			if (pMode->antisway_control_n != AS_MODE_DEACTIVATE) {
+			if (pMode->antisway_control_n != AS_MOVE_DEACTIVATE) {
 				//Set pattern recipe
 				if (pAna->cal_as_recipe(MOTION_ID_BH, &(this->bh_motion_ptn)) == NO_ERR_EXIST) {
 					bh_motion_ptn.ptn_status = PTN_STANDBY;
@@ -496,7 +499,7 @@ void CPlayer::cal_auto_ref() {
 		//## tangent derection
 		if ((slew_motion_ptn.ptn_status == PTN_UNIT_FIN) || (slew_motion_ptn.ptn_status == PTN_NOTHING)) {//Any pattern not running
 			auto_vref[MOTION_ID_SLEW] = 0.0;
-			if (pMode->antisway_control_t != AS_MODE_DEACTIVATE) {
+			if (pMode->antisway_control_t != AS_MOVE_DEACTIVATE) {
 				//Set pattern recipe
 				if (pAna->cal_as_recipe(MOTION_ID_SLEW, &(this->slew_motion_ptn)) == NO_ERR_EXIST) {
 					slew_motion_ptn.ptn_status = PTN_STANDBY;

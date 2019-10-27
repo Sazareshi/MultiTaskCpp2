@@ -147,8 +147,9 @@ void CPublicRelation::GL_Display(void) {
 
 //視点（カメラ）の設定------------------------------
 	if (VP_mode == 2) {
-	 st_gl_basic.ViewPoint = pIO_Table->physics.cp;
-	 st_gl_basic.ViewPoint.z += (10.0 + st_gl_basic.VP_Offset.z);
+	 st_gl_basic.ViewPoint.x = pIO_Table->physics.cp.x;
+	 st_gl_basic.ViewPoint.y = pIO_Table->physics.cp.y;
+	 //st_gl_basic.ViewPoint.z += (10.0 + st_gl_basic.VP_Offset.z);
 	 st_gl_basic.ViewCenter = pIO_Table->physics.cp;
 	 st_gl_basic.ViewCenter.x += 0.1;
 	 st_gl_basic.ViewCenter.z = 0.0;

@@ -29,71 +29,83 @@ void CPublicRelation::routine_work(void *param) {
 };
 
 void CPublicRelation::check_console() {
+	if (pIO_Table->console_remote.console_active == true) {
+		if (pIO_Table->console_remote.PB[0] & 0x003f) {
+			if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW1)) {
+				VP_mode = 1;
+				st_gl_basic.fovy = 120.0;
+			}
+			else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW2)) {
+				VP_mode = 2;
+				st_gl_basic.ViewPoint = pIO_Table->physics.cp;
+				st_gl_basic.ViewPoint.z += 10.0;
 
-	if (pIO_Table->console_remote.PB[0] & 0x003f) {
-		if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW1)) {
-			VP_mode = 1;
-			st_gl_basic.fovy = 120.0;
+				st_gl_basic.ViewCenter = pIO_Table->physics.cp;
+				st_gl_basic.ViewCenter.x += 0.1;
+				st_gl_basic.ViewCenter.z = 0.0;
+
+				st_gl_basic.ViewUpside.x = sin(pIO_Table->physics.th);
+				st_gl_basic.ViewUpside.y = cos(pIO_Table->physics.th);
+				st_gl_basic.ViewUpside.z = 0.0;
+
+				st_gl_basic.fovy = 30.0;
+			}
+			else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW3)) {
+				VP_mode = 3;
+				st_gl_basic.ViewPoint.x = 10.0;
+				st_gl_basic.ViewPoint.y = 50.0;
+				st_gl_basic.ViewPoint.z = 100.0;
+
+				st_gl_basic.VP_Offset.x = 0.0;
+				st_gl_basic.VP_Offset.y = 0.0;
+				st_gl_basic.VP_Offset.z = 0.0;
+
+
+				st_gl_basic.ViewCenter.x = 0.0;
+				st_gl_basic.ViewCenter.y = 0.0;
+				st_gl_basic.ViewCenter.z = 20.0;
+
+				st_gl_basic.ViewUpside.x = 0.0;
+				st_gl_basic.ViewUpside.y = 0.0;
+				st_gl_basic.ViewUpside.z = 1.0;
+
+				st_gl_basic.fovy = 60.0;
+				st_gl_basic.aspect = (double)st_gl_basic.WinWidth / (double)st_gl_basic.WinHeight;
+				st_gl_basic.zNear = 0.1;
+				st_gl_basic.zFar = 900.0;
+			}
+			else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW4)) {
+				VP_mode = 4;
+				st_gl_basic.ViewPoint.x = 0.0;
+				st_gl_basic.ViewPoint.y = 1.0;
+				st_gl_basic.ViewPoint.z = 100.0;
+
+				st_gl_basic.ViewCenter.x = 0.0;
+				st_gl_basic.ViewCenter.y = 0.1;
+				st_gl_basic.ViewCenter.z = 0.0;
+
+				st_gl_basic.ViewUpside.x = 0.0;
+				st_gl_basic.ViewUpside.y = 0.0;
+				st_gl_basic.ViewUpside.z = 1.0;
+
+				st_gl_basic.fovy = 60.0;
+			}
+			else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEWUP)) {
+				st_gl_basic.ViewPoint.z += 5.0;
+			}
+			else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEWDOWN)) {
+				st_gl_basic.ViewPoint.z -= 5.0;
+			}
+			else;
 		}
-		else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW2)) {
-			VP_mode = 2;
+
+		if (pIO_Table->console_remote.SWITCH[0] != 0xffff) {
+			if (pIO_Table->console_remote.SWITCH[0] == 0) st_gl_basic.fovy += 1.0;
+			else if (pIO_Table->console_remote.SWITCH[0] == 18000) st_gl_basic.fovy -= 1.0;
+			else;
+
 		}
-		else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW3)) {
-			VP_mode = 3;
-			st_gl_basic.ViewPoint.x = 10.0;
-			st_gl_basic.ViewPoint.y = 50.0;
-			st_gl_basic.ViewPoint.z = 100.0;
-
-			st_gl_basic.VP_Offset.x = 0.0;
-			st_gl_basic.VP_Offset.y = 0.0;
-			st_gl_basic.VP_Offset.z = 0.0;
-
-
-			st_gl_basic.ViewCenter.x = 0.0;
-			st_gl_basic.ViewCenter.y = 0.0;
-			st_gl_basic.ViewCenter.z = 20.0;
-
-			st_gl_basic.ViewUpside.x = 0.0;
-			st_gl_basic.ViewUpside.y = 0.0;
-			st_gl_basic.ViewUpside.z = 1.0;
-
-			st_gl_basic.fovy = 60.0;
-			st_gl_basic.aspect = (double)st_gl_basic.WinWidth / (double)st_gl_basic.WinHeight;
-			st_gl_basic.zNear = 0.1;
-			st_gl_basic.zFar = 900.0;
-		}
-		else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW4)) {
-			VP_mode = 4;
-			st_gl_basic.ViewPoint.x = 0.0;
-			st_gl_basic.ViewPoint.y = 1.0;
-			st_gl_basic.ViewPoint.z = 100.0;
-
-			st_gl_basic.ViewCenter.x = 0.0;
-			st_gl_basic.ViewCenter.y = 0.1;
-			st_gl_basic.ViewCenter.z = 0.0;
-
-			st_gl_basic.ViewUpside.x = 0.0;
-			st_gl_basic.ViewUpside.y = 0.0;
-			st_gl_basic.ViewUpside.z = 1.0;
-
-			st_gl_basic.fovy = 60.0;
-		}
-		else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEWUP)) {
-			st_gl_basic.ViewPoint.z += 5.0;
-		}
-		else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEWDOWN)) {
-			st_gl_basic.ViewPoint.z -= 5.0;
-		}
-		else;
 	}
-
-	if (pIO_Table->console_remote.SWITCH[0] != 0xffff) {
-		if(pIO_Table->console_remote.SWITCH[0] == 0) st_gl_basic.fovy += 1.0;
-		else if (pIO_Table->console_remote.SWITCH[0] == 18000) st_gl_basic.fovy -= 1.0;
-		else;
-
-	}
-
 	;
 }
 

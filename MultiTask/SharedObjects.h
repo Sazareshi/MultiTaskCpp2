@@ -29,19 +29,17 @@ public:
 #define OPE_MODE_AS_ON			0x0001
 #define OPE_MODE_AS_OFF			0x0000
 
-#define AS_PTN_SWAY						0x0100
+#define AS_PTN_DMP						0x0100
 #define AS_PTN_POS						0x0200
 #define AS_PTN_0						0x0000
-#define AS_PTN_POS						0x0200
-#define AS_MODE_DEACTIVATE				0x0000
-#define AS_MODE_STANDBY					0x0001
-#define AS_MODE_ACTIVE_LONG				0x0002
-#define AS_MODE_ACTIVE_SHORT			0x0004
-#define AS_MODE_ACTIVE_INCH				0x0008
-//#define AS_MODE_ACTIVE_INCH_SWAY		0x0020
-//#define AS_MODE_ACTIVE_INCH_POS			0x0040
-#define AS_MODE_COMPLETED				0x0010
-#define AS_MODE_INTERRUPT				0x0020
+
+#define AS_MOVE_DEACTIVATE				0x0000
+#define AS_MOVE_STANDBY					0x0001
+#define AS_MOVE_LONG_SLEW				0x0002
+#define AS_MOVE_POSITIONING				0x0004
+#define AS_MOVE_ANTISWAY				0x0008
+#define AS_MOVE_COMPLETE				0x0010
+#define AS_MOVE_INTERRUPT				0x0020
 
 #define AUTO_MODE_DEACTIVATE	0x0000
 #define AUTO_MODE_STANDBY		0x0001
@@ -99,6 +97,8 @@ enum CON_SWITCH_ID {
 };
 
 typedef struct _stConsole {
+	bool console_active;
+
 	DWORD mh_notch_raw;		//ノッチ入力生値
 	DWORD slew_notch_raw;	//ノッチ入力生値
 	DWORD bh_notch_raw;		//ノッチ入力生値
