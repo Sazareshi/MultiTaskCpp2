@@ -26,10 +26,24 @@ tweet2owner(ws.str()); ws.str(L""); ws.clear();
 
 };
 
-void CPlayer::cal_ui_order() {
-	manual_vref[MOTION_ID_SLEW] = (double)(pOrder->ui.notch_slew_dir * g_spec.slew_notch_spd[pOrder->ui.notch_slew]);
-	manual_vref[MOTION_ID_BH] = (double)(pOrder->ui.notch_bh_dir * g_spec.bh_notch_spd[pOrder->ui.notch_bh]);
-	manual_vref[MOTION_ID_MH] = (double)(pOrder->ui.notch_mh_dir * g_spec.bh_notch_spd[pOrder->ui.notch_mh]);
+void CPlayer::cal_console_order() {
+	if(pIO_Table->console_remote.slew_notch_dir)
+		manual_vref[MOTION_ID_SLEW] = (double)(pIO_Table->console_remote.slew_notch_dir * g_spec.slew_notch_spd[pIO_Table->console_remote.slew_notch]);
+	else if(pOrder->ui.notch_slew_dir)
+		manual_vref[MOTION_ID_SLEW] = (double)(pOrder->ui.notch_slew_dir * g_spec.slew_notch_spd[pOrder->ui.notch_slew]);
+	else manual_vref[MOTION_ID_SLEW] = 0.0;
+
+	if (pIO_Table->console_remote.bh_notch_dir)
+		manual_vref[MOTION_ID_BH] = (double)(pIO_Table->console_remote.bh_notch_dir * g_spec.bh_notch_spd[pIO_Table->console_remote.bh_notch]);
+	else if (pOrder->ui.notch_bh_dir)
+		manual_vref[MOTION_ID_BH] = (double)(pOrder->ui.notch_bh_dir * g_spec.bh_notch_spd[pOrder->ui.notch_bh]);
+	else manual_vref[MOTION_ID_BH] =0.0;
+
+	if (pIO_Table->console_remote.mh_notch_dir)
+		manual_vref[MOTION_ID_MH] = (double)(pIO_Table->console_remote.mh_notch_dir * g_spec.hoist_notch_spd[pIO_Table->console_remote.mh_notch]);
+	else if (pOrder->ui.notch_mh_dir)
+		manual_vref[MOTION_ID_MH] = (double)(pOrder->ui.notch_mh_dir * g_spec.hoist_notch_spd[pOrder->ui.notch_mh]);
+	else manual_vref[MOTION_ID_MH] = 0.0;
 };
 
 void CPlayer::init_task(void *pobj) {
@@ -77,7 +91,7 @@ int CPlayer::update_as_status() {
 int CPlayer::set_table_out() {
 
 	if (pMode->environment == ENV_MODE_SIM1) {
-		cal_ui_order();
+		cal_console_order();
 	}
 	else;
 
@@ -363,13 +377,13 @@ double CPlayer::act_slew_steps(ST_MOTION_UNIT* pRecipe) {
 		output_v = pStep->_v;
 	}break;
 	case CTR_TYPE_ACC_AS_INCHING: {
-			if (abs(pIO_Table->physics.PhPlane_t.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir_slew = +1;
-			else  pIO_Table->as_ctrl.as_out_dir_slew = -1;
-			output_v = (double)pIO_Table->as_ctrl.as_out_dir_slew * pStep->_v;
+			if (abs(pIO_Table->physics.PhPlane_t.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = +1;
+			else  pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = -1;
+			output_v = (double)pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * pStep->_v;
 	}break;
 	case CTR_TYPE_DEC_V: {
 		output_v = pStep->_v;
-		pIO_Table->as_ctrl.as_out_dir_slew = 0;
+		pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = 0;
 	}break;
 	case CTR_TYPE_BH_WAIT:
 	case CTR_TYPE_SLEW_WAIT:
@@ -403,9 +417,9 @@ double CPlayer::act_bh_steps(ST_MOTION_UNIT* pRecipe) {
 		output_v = pStep->_v;
 	}break;
 	case CTR_TYPE_ACC_AS_INCHING: {
-		if (abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir_bh = 1;
-		else  pIO_Table->as_ctrl.as_out_dir_bh = -1;
-		output_v = (double)pIO_Table->as_ctrl.as_out_dir_bh * pStep->_v;
+		if (abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 1;
+		else  pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = -1;
+		output_v = (double)pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * pStep->_v;
 	//	output_v = (double)pIO_Table->as_ctrl.as_out_dir_bh * g_spec.bh_notch_spd[NOTCH_MAX - 1];
 
 	//	if(abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI)  output_v = g_spec.bh_notch_spd[NOTCH_MAX-1];
@@ -413,7 +427,7 @@ double CPlayer::act_bh_steps(ST_MOTION_UNIT* pRecipe) {
 	}break;
 	case CTR_TYPE_DEC_V: {
 		output_v = pStep->_v;
-		pIO_Table->as_ctrl.as_out_dir_bh = 0;
+		pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 0;
 	}break;
 	case CTR_TYPE_BH_WAIT:
 	case CTR_TYPE_SLEW_WAIT:
@@ -452,7 +466,7 @@ void CPlayer::cal_auto_ref() {
 			auto_vref[MOTION_ID_BH] = 0.0;
 			if (pMode->antisway_control_n != AS_MODE_DEACTIVATE) {
 				//Set pattern recipe
-				if (pAna->cal_as_inch_recipe(MOTION_ID_BH, &(this->bh_motion_ptn)) == NO_ERR_EXIST) {
+				if (pAna->cal_as_recipe(MOTION_ID_BH, &(this->bh_motion_ptn)) == NO_ERR_EXIST) {
 					bh_motion_ptn.ptn_status = PTN_STANDBY;
 				}
 			}
@@ -484,7 +498,7 @@ void CPlayer::cal_auto_ref() {
 			auto_vref[MOTION_ID_SLEW] = 0.0;
 			if (pMode->antisway_control_t != AS_MODE_DEACTIVATE) {
 				//Set pattern recipe
-				if (pAna->cal_as_inch_recipe(MOTION_ID_SLEW, &(this->slew_motion_ptn)) == NO_ERR_EXIST) {
+				if (pAna->cal_as_recipe(MOTION_ID_SLEW, &(this->slew_motion_ptn)) == NO_ERR_EXIST) {
 					slew_motion_ptn.ptn_status = PTN_STANDBY;
 				}
 			}

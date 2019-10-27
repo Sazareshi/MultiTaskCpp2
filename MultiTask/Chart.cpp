@@ -107,11 +107,15 @@ void Chart::open_chart(HINSTANCE hInst, HWND hwnd_parent) {
 	UpdateWindow(hwnd_chart);
 }
 
+int g_tmp001=50;
 int Chart::plot_graph(int iline, double* pPlotting) {
+	g_tmp001++;
+	if (g_tmp001 > 700) g_tmp001 = 50;
+
 	SelectObject(st_disp.hdc_mem_graph, GetStockObject(DC_BRUSH));
 	SetDCBrushColor(st_disp.hdc_mem_graph, RGB(192, 0, 192));
 	SelectObject(st_disp.hdc_mem_graph, GetStockObject(NULL_PEN));
-	Ellipse(st_disp.hdc_mem_graph, 50, 50, 10, 10);
+	Ellipse(st_disp.hdc_mem_graph, g_tmp001, 10, g_tmp001+5, 15);
 	return 0;
 }
 int Chart::plot_phase(double* pPlotting) {
@@ -192,12 +196,7 @@ LRESULT Chart::ChartWndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			LineTo(st_disp.hdc_mem_bg, st_disp.g_origin[i].x, st_disp.g_origin[i].y - CHART_DOT_H / 2 +5);
 
 		}
-		
-
-
-
-
-
+	
 		//TransparentBlt(st_disp.hdc_mem0, 0, 0, st_disp.chart_w, st_disp.chart_h, st_disp.hdc_mem_graph, 0, 0, st_disp.chart_w, st_disp.chart_h, RGB(255, 255, 255));
 		//BitBlt(st_disp.hdc_mem0, 0, 0, st_disp.chart_w, st_disp.chart_h, st_disp.hdc_mem_bg, 0, 0, SRCCOPY);
 

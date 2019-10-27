@@ -256,9 +256,13 @@ typedef struct _stIO_Physic {
 	Vector3 PhPlane_n;	//回転座標半径方向の位相平面 x:OmegaTheata y:TheataDot z:angle
 	Vector3 PhPlane_t;	//回転座標接線方向の位相平面 x:OmegaTheata y:TheataDot z:angle
 
-	double sway_amp_r_ph2;	//位相平面半径
-	double sway_amp_n_ph2;	//位相平面半径　法線方向
-	double sway_amp_t_ph2;	//位相平面半径　接線方向
+	double sway_amp_r_ph2;	//位相平面半径2乗
+	double sway_amp_n_ph2;	//位相平面半径2乗　法線方向
+	double sway_amp_t_ph2;	//位相平面半径2乗　接線方向
+
+	double sway_amp_r_ph;	//位相平面半径
+	double sway_amp_n_ph;	//位相平面半径　法線方向
+	double sway_amp_t_ph;	//位相平面半径　接線方向
 	
 }ST_IO_PHYSIC, *LPST_IO_PHYSIC;
 
@@ -297,32 +301,24 @@ typedef struct _stAS_CTRL {
 
 	//INCHING MODE
 	double inching_gain_spd[NUM_OF_AS];		//振止　目標速度 0:slew 1:bh 2:mh
-	double inch_gain_t_pos;					//振止ゲイン　位置合わせ用　接線方向  加速時間sec
-	double inch_gain_t_sway;				//振止ゲイン　振れ止め用	接線方向　加速時間sec
-	double inch_gain_n_pos;					//振止ゲイン　位置合わせ用　法線方向　加速時間sec
-	double inch_gain_n_sway;				//振止ゲイン　振れ止め用	法線方向　加速時間sec
-
+	double inching_gain_pos[NUM_OF_AS];		//振止ゲイン　位置合わせ用　接線方向  加速時間sec
+	double inching_gain_sway[NUM_OF_AS];	//振止ゲイン　振れ止め用	接線方向　加速時間sec
 	int	inch_step[NUM_OF_AS];				//1:振止 2:位置合わせ  0:slew 1:bh 2:mh
 	double trigger_phase[NUM_OF_AS];		//振止動作のトリガを掛ける目標位相 0:slew 1:bh 2:mh
 
 	double phase_acc_offset[NUM_OF_AS];		//Offset of center of phase plane on acceleration
 	double phase_dec_offset[NUM_OF_AS];		//Offset of center of phase plane on deceleration
-
+	
 	double phase_chk_range[NUM_OF_AS];		//振れ止め位相確認許容誤差	
+	double inchD[NUM_OF_AS];				//振れ止めインチング判定距離	
 
-	int as_out_dir_bh;						//振れ止め出力の方向
-	int as_out_dir_slew;					//振れ止め出力の方向
-	int as_out_dir_mh;						//振れ止め出力の方向
+	int as_out_dir[NUM_OF_AS];				//振れ止め出力の方向
 
-	double tgD_slew;		//振止目標-現在角度
-	double tgD_bh;			//振止目標-現在位置
-	double tgD_slew_abs;	//振止目標-現在角度 絶対値
-	double tgD_bh_abs;		//振止目標-現在位置 絶対値
-
-	int pos_as_ptn_t;		//位置合わせ振れ止めパターンのタイプ
-	int pos_as_ptn_n;		//位置合わせ振れ止めパターンのタイプ
-	int sway_as_ptn_t;		//振れのみ振れ止めパターンのタイプ
-	int sway_as_ptn_n;		//振れのみ振れ止めパターンのタイプ
+	double tgD[NUM_OF_AS];					//振止目標-現在角度
+	double tgD_abs[NUM_OF_AS];				//振止目標-現在角度 絶対値
+	
+	int pos_as_ptn[NUM_OF_AS];				//位置合わせ振れ止めパターンのタイプ
+	int sway_as_ptn[NUM_OF_AS];				//振れのみ振れ止めパターンのタイプ
 
 
 }ST_AS_CTRL, *LPST_AS_CTRL;

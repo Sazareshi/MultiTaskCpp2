@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "CPublicRelation.h"
+#include "helper.h"
 
 extern CIO_Table*		pIO_Table;
 extern CORDER_Table*	pOrder;				//共有メモリOrderクラスポインタ
@@ -156,7 +157,7 @@ void CPublicRelation::GL_Display(void) {
 	 st_gl_basic.ViewUpside.z = 0.0;
 	}
 	else if (VP_mode == 1) {
-	 st_gl_basic.ViewPoint.x = (pIO_Table->physics.R - CAM_DIST_SIDE1)*(pIO_Table->physics.th);
+	 st_gl_basic.ViewPoint.x = (pIO_Table->physics.R - CAM_DIST_SIDE1)*sin(pIO_Table->physics.th);
 	 st_gl_basic.ViewPoint.y = (pIO_Table->physics.R - CAM_DIST_SIDE1)*cos(pIO_Table->physics.th);
 	 st_gl_basic.ViewPoint.z = 10.0;
 
@@ -266,7 +267,7 @@ void CPublicRelation::GL_Display(void) {
 	GL_DISPLAY_TEXT(28, 88, t_char2);
 
 	strcpy_s(t_char2, "as_dir = ");
-	sprintf_s(t_char, "%d", pIO_Table->as_ctrl.as_out_dir_slew);
+	sprintf_s(t_char, "%d", pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID]);
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(52, 88, t_char2);
 
@@ -282,7 +283,7 @@ void CPublicRelation::GL_Display(void) {
 	GL_DISPLAY_TEXT(28, 83, t_char2);
 
 	strcpy_s(t_char2, "as_dir = ");
-	sprintf_s(t_char, "%d", pIO_Table->as_ctrl.as_out_dir_bh);
+	sprintf_s(t_char, "%d", pIO_Table->as_ctrl.as_out_dir[AS_BH_ID]);
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(52, 83, t_char2);
 
@@ -330,7 +331,7 @@ void CPublicRelation::GL_mouse_on(int button, int state, int x, int y)
 			st_gl_basic.ViewUpside.y = 0.0;
 			st_gl_basic.ViewUpside.z = 1.0;
 
-			st_gl_basic.fovy = 120.0;
+			//st_gl_basic.fovy = 120.0;
 
 		}
 		else if (VP_mode == 2) {

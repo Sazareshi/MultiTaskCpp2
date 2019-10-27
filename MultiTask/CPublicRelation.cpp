@@ -20,12 +20,82 @@ ST_GL_BASIC CPublicRelation::st_gl_basic; // OpenGL äÓñ{ç\ë¢ëÃ
 
 void CPublicRelation::routine_work(void *param) {
 
+	check_console();
 	if (st_gl_basic.bGLactive) glutPostRedisplay(); //glutDisplayFunc()ÇÇPâÒé¿çsÇ∑ÇÈ
-	
+
 	ws <<  L" working!"<< *(inf.psys_counter)%100 ;
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 
 };
+
+void CPublicRelation::check_console() {
+
+	if (pIO_Table->console_remote.PB[0] & 0x003f) {
+		if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW1)) {
+			VP_mode = 1;
+			st_gl_basic.fovy = 120.0;
+		}
+		else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW2)) {
+			VP_mode = 2;
+		}
+		else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW3)) {
+			VP_mode = 3;
+			st_gl_basic.ViewPoint.x = 10.0;
+			st_gl_basic.ViewPoint.y = 50.0;
+			st_gl_basic.ViewPoint.z = 100.0;
+
+			st_gl_basic.VP_Offset.x = 0.0;
+			st_gl_basic.VP_Offset.y = 0.0;
+			st_gl_basic.VP_Offset.z = 0.0;
+
+
+			st_gl_basic.ViewCenter.x = 0.0;
+			st_gl_basic.ViewCenter.y = 0.0;
+			st_gl_basic.ViewCenter.z = 20.0;
+
+			st_gl_basic.ViewUpside.x = 0.0;
+			st_gl_basic.ViewUpside.y = 0.0;
+			st_gl_basic.ViewUpside.z = 1.0;
+
+			st_gl_basic.fovy = 60.0;
+			st_gl_basic.aspect = (double)st_gl_basic.WinWidth / (double)st_gl_basic.WinHeight;
+			st_gl_basic.zNear = 0.1;
+			st_gl_basic.zFar = 900.0;
+		}
+		else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEW4)) {
+			VP_mode = 4;
+			st_gl_basic.ViewPoint.x = 0.0;
+			st_gl_basic.ViewPoint.y = 1.0;
+			st_gl_basic.ViewPoint.z = 100.0;
+
+			st_gl_basic.ViewCenter.x = 0.0;
+			st_gl_basic.ViewCenter.y = 0.1;
+			st_gl_basic.ViewCenter.z = 0.0;
+
+			st_gl_basic.ViewUpside.x = 0.0;
+			st_gl_basic.ViewUpside.y = 0.0;
+			st_gl_basic.ViewUpside.z = 1.0;
+
+			st_gl_basic.fovy = 60.0;
+		}
+		else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEWUP)) {
+			st_gl_basic.ViewPoint.z += 5.0;
+		}
+		else if (Bitcheck(pIO_Table->console_remote.PB[0], CON_PB_VIEWDOWN)) {
+			st_gl_basic.ViewPoint.z -= 5.0;
+		}
+		else;
+	}
+
+	if (pIO_Table->console_remote.SWITCH[0] != 0xffff) {
+		if(pIO_Table->console_remote.SWITCH[0] == 0) st_gl_basic.fovy += 1.0;
+		else if (pIO_Table->console_remote.SWITCH[0] == 18000) st_gl_basic.fovy -= 1.0;
+		else;
+
+	}
+
+	;
+}
 
 LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 

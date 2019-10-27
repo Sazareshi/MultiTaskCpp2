@@ -28,6 +28,8 @@ public:
 	void set_panel_tip_txt();//タブパネルのStaticテキストを設定
 	void routine_work(void *param);
 
+	void check_console();
+
 	void init_task(void *pobj);
 
 						 

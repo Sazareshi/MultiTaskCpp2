@@ -27,3 +27,4 @@ enum FaultID {
 	CLERK_F0 = 5001, 
 	ANALYST_F0 = 6001
 };
+

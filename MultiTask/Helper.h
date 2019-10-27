@@ -8,6 +8,11 @@
 #define	ON				1		// ON
 #define	OFF				0		// OFF
 
+#define Bitcheck(a,b)	(a >> b) & 1
+#define Bitset(a,b)		a |= (1<<b)
+#define Bitclear(a,b)		a &= ~(1<<b)
+
+
 using namespace std;
 
 class CHelper

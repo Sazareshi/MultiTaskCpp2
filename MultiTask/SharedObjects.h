@@ -29,14 +29,19 @@ public:
 #define OPE_MODE_AS_ON			0x0001
 #define OPE_MODE_AS_OFF			0x0000
 
+#define AS_PTN_SWAY						0x0100
+#define AS_PTN_POS						0x0200
+#define AS_PTN_0						0x0000
+#define AS_PTN_POS						0x0200
 #define AS_MODE_DEACTIVATE				0x0000
 #define AS_MODE_STANDBY					0x0001
-#define AS_MODE_ACTIVE_MOVE_LONG		0x0002
-#define AS_MODE_ACTIVE_MOVE_SHORT		0x0004
-#define AS_MODE_ACTIVE_INCH_SWAY		0x0008
-#define AS_MODE_ACTIVE_INCH_POS			0x0010
-#define AS_MODE_COMPLETED				0x0020
-#define AS_MODE_INTERRUPT				0x0080
+#define AS_MODE_ACTIVE_LONG				0x0002
+#define AS_MODE_ACTIVE_SHORT			0x0004
+#define AS_MODE_ACTIVE_INCH				0x0008
+//#define AS_MODE_ACTIVE_INCH_SWAY		0x0020
+//#define AS_MODE_ACTIVE_INCH_POS			0x0040
+#define AS_MODE_COMPLETED				0x0010
+#define AS_MODE_INTERRUPT				0x0020
 
 #define AUTO_MODE_DEACTIVATE	0x0000
 #define AUTO_MODE_STANDBY		0x0001
@@ -55,8 +60,11 @@ public:
 	int operation;			//AUTO MANUAL 
 	int antisway;			//Antisway OPE_MODE_AS_ON / OPE_MODE_AS_OFF
 	int antisway_control_h;	//
+	int antisway_ptn_h;		//
 	int antisway_control_t;	//
+	int antisway_ptn_t;		//
 	int antisway_control_n;	//
+	int antisway_ptn_n;		//
 	int auto_control;
 	int environment;
 };
@@ -77,6 +85,39 @@ public:
 /************************************************/
 /*    IO TABLE		 L                          */
 /************************************************/
+
+#define CONSOLE_PB_DW   	4
+#define CONSOLE_PB_NUM		4
+#define CONSOLE_LAMP_NUM	4
+#define CONSOLE_SWITCH_NUM	8
+
+enum CON_PBL_ID1 {
+	CON_PB_VIEW1, CON_PB_VIEW2, CON_PB_VIEW3, CON_PB_VIEW4, CON_PB_VIEWUP, CON_PB_VIEWDOWN, CON_PB_7, CON_PB_AS
+};
+enum CON_SWITCH_ID {
+	CON_SWITCH_0, CON_SWITCH_1, CON_SWITCH_2, CON_SWITCH_3, CON_SWITCH_4
+};
+
+typedef struct _stConsole {
+	DWORD mh_notch_raw;		//ノッチ入力生値
+	DWORD slew_notch_raw;	//ノッチ入力生値
+	DWORD bh_notch_raw;		//ノッチ入力生値
+	DWORD gt_notch_raw;		//ノッチ入力生値
+	int mh_notch;
+	int slew_notch;
+	int bh_notch;
+	int gt_notch;
+	int mh_notch_dir;
+	int slew_notch_dir;
+	int bh_notch_dir;
+	int gt_notch_dir;
+
+	DWORD	PB[CONSOLE_PB_DW];
+	DWORD	LAMP[CONSOLE_LAMP_NUM];
+	DWORD	SWITCH[CONSOLE_SWITCH_NUM];
+}ST_CONSOLE, *LPST_CONSOLE;
+
+
 class CIO_Table
 {
 public:
@@ -86,5 +127,9 @@ public:
 	ST_IO_PHYSIC	physics;
 	ST_IO_REF		ref;
 	ST_AS_CTRL		as_ctrl;
+	ST_CONSOLE		console_ope_room;
+	ST_CONSOLE		console_remote;
+	ST_CONSOLE		console_pc;
+
 
 };
