@@ -159,7 +159,7 @@ void CAnalyst::init_task(void *pobj) {
 
 void CAnalyst::routine_work(void *param) {
 	Vector3 rel_lp = hl.r - hp.r;		//’Ý‰×‘Š‘Îxyz
-	ws << L" working!" << *(inf.psys_counter) % 100 << "  Phse t:n ;" << pIO_Table->physics.PhPlane_t.z << ":" << pIO_Table->physics.PhPlane_n.z << " Mode  t:n ;  " << pMode->antisway_control_t << ":" << pMode->antisway_control_n << " n_inchD : " << pIO_Table->as_ctrl.inchD[AS_BH_ID];
+	ws << L" working!" << *(inf.psys_counter) % 100 << "  Phse t:n ;" << pIO_Table->physics.PhPlane_t.z << ":" << pIO_Table->physics.PhPlane_n.z << " Mode  t:n ;  " << pMode->antisway_control_t << ":" << pMode->antisway_control_n ;
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 
 	//ƒVƒ~ƒ…ƒŒ[ƒ^ŒvŽZ
@@ -356,11 +356,7 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 void CAnalyst::update_as_ctrl() {
 
 
-	double n_th0 = atan(pIO_Table->physics.sway_amp_n_ph / pIO_Table->as_ctrl.phase_acc_offset[AS_BH_ID]);
-	double n_t0 = 2.0 * n_th0 / pIO_Table->physics.w0;
-	pIO_Table->as_ctrl.inchD[AS_BH_ID] = n_t0 * n_t0 * g_spec.bh_acc[FWD_ACC];
 
-	
 	// Update Anti-Sway Control mode
 	if (pMode->antisway != OPE_MODE_AS_ON) {
 		pMode->antisway_control_h = pMode->antisway_control_t = pMode->antisway_control_n = AS_MOVE_DEACTIVATE;
@@ -378,130 +374,66 @@ void CAnalyst::update_as_ctrl() {
 		pMode->antisway_ptn_n = AS_PTN_0;
 		pMode->antisway_control_n = AS_MOVE_STANDBY;
 	}
-#if 1
+	else if ((pIO_Table->physics.sway_amp_n_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) && 
+				(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_COMPLE])){
+		pMode->antisway_ptn_n = AS_PTN_0;
+		pMode->antisway_control_n = AS_MOVE_COMPLETE;
+	}
 	else if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {	//–Ú•W‚ªˆÊ’uŒˆ‚ß‹N“®”»’è‹——£“à
-
+		if (pIO_Table->physics.sway_amp_n_ph > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]){ //U‚ê‚ªƒgƒŠƒK”»’è’lˆÈã
+			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
+			pMode->antisway_ptn_n = AS_PTN_DMP;
+		}
+		else {
+			if (pMode->antisway_control_n != AS_MOVE_COMPLETE) pMode->antisway_ptn_n = AS_PTN_POS;
+			else pMode->antisway_ptn_n = AS_PTN_0;
+		}
+	}
+	else if (pIO_Table->physics.sway_amp_n_ph > g_spec.as_compl_swayLv_sq[I_AS_LV_DAMPING]) { //U‚ê‚ªƒ_ƒ“ƒsƒ“ƒO”»’è’lˆÈã
 		pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		if ((pIO_Table->physics.sway_amp_n_ph2 > g_spec.as_compl_swayLv_sq[I_AS_LV_ANTISWAY]) || //U‚ê‚ªU‚êdŽ‹”»’è’lˆÈã
-			(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_COMPLE])) {
-			pMode->antisway_ptn_n = AS_PTN_DMP;
-		}
-		else {
-			pMode->antisway_ptn_n = AS_PTN_POS;
-		}
-	}
-	else if (	(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID]  > g_spec.bh_notch_spd[1]* g_spec.bh_notch_spd[1]/ g_spec.bh_acc[1]) &&
-				(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < g_spec.bh_notch_spd[1] * g_spec.bh_notch_spd[1] / g_spec.bh_acc[1])) {
-
-		if (abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {	//ˆÊ’uŒˆ‚ß‚ÍOK
-			pMode->antisway_ptn_n = AS_PTN_DMP;
-			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		}
-		else if (pIO_Table->physics.sway_amp_n_ph2 > g_spec.as_compl_swayLv_sq[I_AS_LV_ANTISWAY]) {					//U‚ê‚ªU‚êdŽ‹”»’è’lˆÈã
-			pMode->antisway_ptn_n = AS_PTN_DMP;
-			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		}
-		else { 																										//Žc‚è‚ÍˆÊ’u‡‚í‚¹ƒ^ƒCƒv
-			pMode->antisway_ptn_n = AS_PTN_DMP;
-			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		}
-	}
-	else if (pMode->antisway_control_n != AS_MOVE_COMPLETE) {														//U‚ê‚ÍƒgƒŠƒKƒŒƒxƒ‹ˆÈ‰º‚¾‚ª–¢Š®—¹
-		if ((abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) <= (g_spec.as_compl_nposLv[I_AS_LV_COMPLE]) &&	//ˆÊ’uŒˆ‚ß‚ÍŠ®—¹ƒŒƒxƒ‹
-			(pIO_Table->physics.sway_amp_n_ph2 < g_spec.as_compl_swayLv_sq[I_AS_LV_COMPLE]))) {							//U‚ê‚àŠ®—¹ƒŒƒxƒ‹
-			pMode->antisway_ptn_n = AS_PTN_POS;
-			pMode->antisway_control_n = AS_MOVE_COMPLETE;
-		}
-		else if (abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) <= g_spec.as_compl_nposLv[I_AS_LV_COMPLE]){ //ˆÊ’uŒˆ‚ß‚ÍŠ®—¹ƒŒƒxƒ‹
-			pMode->antisway_ptn_n = AS_PTN_DMP;
-			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		}
-		else {
-			pMode->antisway_ptn_n = AS_PTN_POS;
-			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		}
-	}
-	else;
-	pMode->antisway_ptn_n = AS_PTN_DMP;
-#else
-	else if (pIO_Table->physics.sway_amp_n_ph2 > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]) {						//U•i2æj‚ªA”»’è’l‰z‚¦
-		if (abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {	//ˆÊ’uŒˆ‚ß‚ÍOK
-			pMode->antisway_ptn_n = AS_PTN_DMP;
-			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		}
-		else if (pIO_Table->physics.sway_amp_n_ph2 > g_spec.as_compl_swayLv_sq[I_AS_LV_ANTISWAY]) {					//U‚ê‚ªU‚êdŽ‹”»’è’lˆÈã
-			pMode->antisway_ptn_n = AS_PTN_DMP;
-			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		}
-		else { 																										//Žc‚è‚ÍˆÊ’u‡‚í‚¹ƒ^ƒCƒv
-			pMode->antisway_ptn_n = AS_PTN_DMP;
-			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		}
-	}
-	else if (pMode->antisway_control_n != AS_MOVE_COMPLETE) {														//U‚ê‚ÍƒgƒŠƒKƒŒƒxƒ‹ˆÈ‰º‚¾‚ª–¢Š®—¹
-		if ((abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) <= g_spec.as_compl_nposLv[I_AS_LV_COMPLE]) &&	//ˆÊ’uŒˆ‚ß‚ÍŠ®—¹ƒŒƒxƒ‹
-			(pIO_Table->physics.sway_amp_n_ph2 < g_spec.as_compl_swayLv_sq[I_AS_LV_COMPLE])) {							//U‚ê‚àŠ®—¹ƒŒƒxƒ‹
-			pMode->antisway_ptn_n = AS_PTN_POS;
-			pMode->antisway_control_n = AS_MOVE_COMPLETE;
-		}
-		else if (abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) <= g_spec.as_compl_nposLv[I_AS_LV_COMPLE]) { //ˆÊ’uŒˆ‚ß‚ÍŠ®—¹ƒŒƒxƒ‹
-			pMode->antisway_ptn_n = AS_PTN_DMP;
-			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		}
-		else {
-			pMode->antisway_ptn_n = AS_PTN_POS;
-			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		}
-	}
-	else;
-		//@@@@@@ Test Code  @@@@@@@@
 		pMode->antisway_ptn_n = AS_PTN_DMP;
+	}
+	else if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {
 		pMode->antisway_control_n = AS_MOVE_ANTISWAY;
-		//@@@@@@ Test Code  @@@@@@@@
-#endif
+		pMode->antisway_ptn_n = AS_PTN_POS;
+	}
+	else;
+	//pMode->antisway_ptn_n = AS_PTN_DMP;
+
 		//##### Tangent direction
+
 	if (pIO_Table->ref.b_slew_manual_ctrl) {
 		pMode->antisway_ptn_t = AS_PTN_0;
 		pMode->antisway_control_t = AS_MOVE_INTERRUPT;
 	}
 	else if (pIO_Table->physics.wth != 0.0) {
 		pMode->antisway_ptn_t = AS_PTN_0;
-		pMode->antisway_control_t= AS_MOVE_STANDBY;
+		pMode->antisway_control_t = AS_MOVE_STANDBY;
 	}
-	else if (pIO_Table->physics.sway_amp_t_ph2 > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]) {							//U•i2æj‚ªA”»’è’l‰z‚¦
-		if (abs(pIO_Table->physics.th - pIO_Table->as_ctrl.tgpos_slew) < g_spec.as_compl_tposLv[I_AS_LV_TRIGGER]) {		//ˆÊ’uŒˆ‚ß‚ÍOK
-			pMode->antisway_ptn_t = AS_PTN_DMP;
-			pMode->antisway_control_t = AS_MOVE_ANTISWAY;
-		}
-		else if (pIO_Table->physics.sway_amp_t_ph2 > g_spec.as_compl_swayLv_sq[I_AS_LV_ANTISWAY]) {						//U‚ê‚ªU‚êdŽ‹”»’è’lˆÈã
-			pMode->antisway_ptn_t = AS_PTN_DMP;
-			pMode->antisway_control_t = AS_MOVE_ANTISWAY;
-		}
-		else {																											//Žc‚è‚ÍˆÊ’u‡‚í‚¹ƒ^ƒCƒv
-			pMode->antisway_ptn_t = AS_PTN_DMP;
-			pMode->antisway_control_t = AS_MOVE_ANTISWAY;
-		}
+	else if ((pIO_Table->physics.sway_amp_t_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) &&		//–Ú•W‚ªˆÊ’uŒˆ‚ßŠ®—¹”»’è‹——£“à
+		(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_nposLv[I_AS_LV_COMPLE])) {	//U‚ê‚ªŠ®—¹”»’è“à
+		pMode->antisway_ptn_t = AS_PTN_0;
+		pMode->antisway_control_t = AS_MOVE_COMPLETE;
 	}
-	else if (pMode->antisway_control_t != AS_MOVE_COMPLETE) {															//U‚ê‚ÍƒgƒŠƒKƒŒƒxƒ‹ˆÈ‰º‚¾‚ª–¢Š®—¹
-		if ((abs(pIO_Table->physics.th - pIO_Table->as_ctrl.tgpos_slew) <= g_spec.as_compl_nposLv[I_AS_LV_COMPLE]) &&	//ˆÊ’uŒˆ‚ß‚ÍŠ®—¹ƒŒƒxƒ‹
-			(pIO_Table->physics.sway_amp_t_ph2 < g_spec.as_compl_swayLv_sq[I_AS_LV_COMPLE])) {								//U‚ê‚àŠ®—¹ƒŒƒxƒ‹
-			pMode->antisway_ptn_t = AS_PTN_POS;
-			pMode->antisway_control_t = AS_MOVE_COMPLETE;
-		}
-		else if (abs(pIO_Table->physics.R - pIO_Table->as_ctrl.tgpos_bh) <= g_spec.as_compl_nposLv[I_AS_LV_COMPLE]) {	//ˆÊ’uŒˆ‚ß‚ÍŠ®—¹ƒŒƒxƒ‹
-			pMode->antisway_ptn_t = AS_PTN_DMP;
+	else if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {	//–Ú•W‚ªˆÊ’uŒˆ‚ß‹N“®”»’è‹——£“à
+		if (pIO_Table->physics.sway_amp_t_ph > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]) {	//U‚ê‚ªƒgƒŠƒK”»’è’lˆÈã
 			pMode->antisway_control_t = AS_MOVE_ANTISWAY;
+			pMode->antisway_ptn_t = AS_PTN_DMP;
 		}
 		else {
-			pMode->antisway_ptn_t = AS_PTN_POS;
-			pMode->antisway_control_t = AS_MOVE_ANTISWAY;
+			if (pMode->antisway_control_t != AS_MOVE_COMPLETE) pMode->antisway_ptn_t = AS_PTN_POS;
+			else pMode->antisway_ptn_t = AS_PTN_0;
 		}
 	}
-	else;
-		//@@@@@@ Test Code  @@@@@@@@
-		pMode->antisway_ptn_t = AS_PTN_DMP;
+	else if (pIO_Table->physics.sway_amp_t_ph > g_spec.as_compl_swayLv_sq[I_AS_LV_DAMPING]) { //U‚ê‚ªƒ_ƒ“ƒsƒ“ƒO”»’è’lˆÈã
 		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
-		//@@@@@@ Test Code  @@@@@@@@
+		pMode->antisway_ptn_t = AS_PTN_DMP;
+	}
+	else if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {
+		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
+		pMode->antisway_ptn_t= AS_PTN_POS;
+	}
+	else;
 	return;
 };
 
@@ -510,21 +442,19 @@ void CAnalyst::cal_as_gain() {//U‚êŽ~‚ßƒQƒCƒ“‰Á‘¬ŽžŠÔ
 	//### Damping ModeƒQƒCƒ“ŒvŽZ
 	//#### ˆøž•ûŒü
 	double temp_angle;
-	//double sway0 = g_spec.bh_acc[FWD_ACC] / DEF_G;
-	//double sway_now = sqrt(pIO_Table->physics.sway_amp_n_ph2) / pIO_Table->physics.w0;
+
 	if (pIO_Table->as_ctrl.phase_acc_offset[AS_BH_ID] < pIO_Table->physics.sway_amp_n_ph) {
 		temp_angle = DEF_HPI*0.8;
 	}
 	else {
 		temp_angle = DEF_HPI*0.8 * pIO_Table->physics.sway_amp_n_ph/ pIO_Table->as_ctrl.phase_acc_offset[AS_BH_ID];
+		if (temp_angle < DEF_PI / 10.0) temp_angle = DEF_PI / 10.0;
 	}
 	
 	pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID] = temp_angle / pIO_Table->physics.w0;
 
 
 	//####ù‰ñ•ûŒü
-	//sway0 = g_spec.slew_acc[FWD_ACC] * pIO_Table->physics.R / DEF_G;			//‰ÁŒ¸‘¬Žž‚ÌU‚ê’†SƒIƒtƒZƒbƒg
-	//sway_now = sqrt(pIO_Table->physics.sway_amp_t_ph2) / pIO_Table->physics.w0;	//Œ»Ý‚ÌU‚êU••]‰¿’l
 
 	if (pIO_Table->as_ctrl.phase_acc_offset[AS_SLEW_ID] < pIO_Table->physics.sway_amp_t_ph) {
 		temp_angle = DEF_HPI * 0.8;
@@ -537,8 +467,13 @@ void CAnalyst::cal_as_gain() {//U‚êŽ~‚ßƒQƒCƒ“‰Á‘¬ŽžŠÔ
 	pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID] = temp_angle / pIO_Table->physics.w0;
 
 	//### Positioning ModeƒQƒCƒ“ŒvŽZ
+	//ˆÚ“®‹——£‚©‚ç‰Á‘¬ŽžŠÔŒvŽZ
 	pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = sqrt(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] / g_spec.bh_acc[FWD_ACC]);
 	pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = sqrt(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] / g_spec.slew_acc[FWD_ACC]);
+
+	//Damping Mode‚ÅãŒÀÝ’è
+	if (pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID]) pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
+	if (pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID]) pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
 	return;
 };
 

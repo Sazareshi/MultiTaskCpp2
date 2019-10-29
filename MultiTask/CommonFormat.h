@@ -300,25 +300,17 @@ typedef struct _stAS_CTRL {
 	double tgspd_bh;						//引込目標速度
 
 	//INCHING MODE
-	double inching_gain_spd[NUM_OF_AS];		//振止　目標速度 0:slew 1:bh 2:mh
 	double as_gain_pos[NUM_OF_AS];		//振止ゲイン　位置合わせ用　接線方向  加速時間sec
-	double as_gain_damp[NUM_OF_AS];	//振止ゲイン　振れ止め用	接線方向　加速時間sec
-	int	inch_step[NUM_OF_AS];				//1:振止 2:位置合わせ  0:slew 1:bh 2:mh
-	double trigger_phase[NUM_OF_AS];		//振止動作のトリガを掛ける目標位相 0:slew 1:bh 2:mh
+	double as_gain_damp[NUM_OF_AS];		//振止ゲイン　振れ止め用	接線方向　加速時間sec
 
 	double phase_acc_offset[NUM_OF_AS];		//Offset of center of phase plane on acceleration
 	double phase_dec_offset[NUM_OF_AS];		//Offset of center of phase plane on deceleration
 	
 	double phase_chk_range[NUM_OF_AS];		//振れ止め位相確認許容誤差	
-	double inchD[NUM_OF_AS];				//振れ止めインチング判定距離	
-
 	int as_out_dir[NUM_OF_AS];				//振れ止め出力の方向
 
 	double tgD[NUM_OF_AS];					//振止目標-現在角度
 	double tgD_abs[NUM_OF_AS];				//振止目標-現在角度 絶対値
-	
-	int pos_as_ptn[NUM_OF_AS];				//位置合わせ振れ止めパターンのタイプ
-	int sway_as_ptn[NUM_OF_AS];				//振れのみ振れ止めパターンのタイプ
 
 
 }ST_AS_CTRL, *LPST_AS_CTRL;
@@ -334,9 +326,9 @@ typedef struct _stAS_CTRL {
 #define REV_ACC 2
 #define REV_DEC 3
 
-#define I_AS_LV_COMPLE		0
-#define I_AS_LV_TRIGGER		1
-#define I_AS_LV_ANTISWAY	2
+#define I_AS_LV_COMPLE		0	//完了判定値
+#define I_AS_LV_TRIGGER		1	//振止起動判定
+#define I_AS_LV_DAMPING		2	//ダンピングモード判定
 
 
 typedef struct _stSpec {
