@@ -154,6 +154,14 @@ void CAnalyst::init_task(void *pobj) {
 
 	hl.pHP = &hp; //吊点と紐付け
 
+	pIO_Table->as_ctrl.allowable_pos_overshoot_plus[AS_BH_ID]= 0.2;		//振止目標位置オーバー許容値　進行方向
+	pIO_Table->as_ctrl.allowable_pos_overshoot_plus[AS_SLEW_ID] = 0.2;	//振止目標位置オーバー許容値　進行方向
+	pIO_Table->as_ctrl.allowable_pos_overshoot_plus[AS_MH_ID] = 0.0;	//振止目標位置オーバー許容値　進行方向
+
+	pIO_Table->as_ctrl.allowable_pos_overshoot_ninus[AS_BH_ID] = 2.0;	//振止目標位置オーバー許容値　進行方向
+	pIO_Table->as_ctrl.allowable_pos_overshoot_ninus[AS_SLEW_ID] = 2.0;	//振止目標位置オーバー許容値　進行方向
+	pIO_Table->as_ctrl.allowable_pos_overshoot_ninus[AS_MH_ID] = 2.0;	//振止目標位置オーバー許容値　進行方向
+	
 	return;
 };
 
@@ -167,8 +175,6 @@ void CAnalyst::routine_work(void *param) {
 
 	cal_as_target();
 	update_as_ctrl();
-	//cal_as_gain();
-
 
 };
 //##########################
@@ -208,17 +214,15 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 		
 	switch (motion_id) {
 	case MOTION_ID_BH: {
-		if (pMode->antisway_ptn_n &  AS_PTN_POS) {
-			; 
-		}
-		else if (pMode->antisway_ptn_n & AS_PTN_DMP) {
-			if (pMode->antisway_control_n & AS_MOVE_ANTISWAY) {
-				target->n_step = 4;
-				target->type = BH_AXIS;
-				target->ptn_status = PTN_STANDBY;
-				target->iAct = 0; //Initialize activated pattern
+		if (pMode->antisway_control_n & AS_MOVE_ANTISWAY) {
+			target->n_step = 4;
+			target->axis_type = BH_AXIS;
+			target->ptn_status = PTN_STANDBY;
+			target->iAct = 0; //Initialize activated pattern
+			target->motion_type = pMode->antisway_ptn_n;
 
-				//Step 1
+			//Step 1
+			{
 				target->motions[0].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
 				// _p
 				target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
@@ -229,9 +233,10 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 				target->motions[0].phase1 = start_offset;//DEF_PI * 0.25;
 				// high phase
 				target->motions[0].phase2 = -DEF_PI + start_offset; //* 0.75;
-
-				//Step 2
-				target->motions[1].type = CTR_TYPE_ACC_AS_INCHING;
+			}
+			//Step 2
+			{
+				target->motions[1].type = CTR_TYPE_ACC_AS;
 				// _p
 				target->motions[1]._p = pIO_Table->as_ctrl.tgpos_bh;
 				// _t
@@ -240,8 +245,9 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 				target->motions[1].time_count = (int)(target->motions[1]._t * 1000) / (int)play_scan_ms;
 				// _v
 				target->motions[1]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;
-
-				//Step 3
+			}
+			//Step 3
+			{
 				target->motions[2].type = CTR_TYPE_DEC_V;
 				// _p
 				target->motions[2]._p = pIO_Table->as_ctrl.tgpos_bh;
@@ -251,8 +257,9 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 				target->motions[2].time_count = (int)(target->motions[2]._t * 1000) / (int)play_scan_ms;
 				// _v
 				target->motions[2]._v = pIO_Table->ref.bh_v;
-
-				//Step 4
+			}
+			//Step 4
+			{
 				target->motions[3].type = CTR_TYPE_TIME_WAIT;
 				// _p
 				target->motions[3]._p = pIO_Table->as_ctrl.tgpos_bh;
@@ -260,92 +267,109 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 				target->motions[3]._t = PTN_CONFIRMATION_TIME;
 				// _v
 				target->motions[3]._v = pIO_Table->physics.vR;
-				//time_count
-				for (int i = 0; i < 4; i++) {
-					target->motions[i].act_counter = 0;
-					target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
-				}
 			}
-			else {
-				;
+			//time_count
+			for (int i = 0; i < 4; i++) {
+				target->motions[i].act_counter = 0;
+				target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
 			}
 		}
 		else {
 			target->n_step = 1;
-			target->type = BH_AXIS;
+			target->axis_type = BH_AXIS;
 			target->ptn_status = PTN_STANDBY;
 			target->iAct = 0; //Initialize activated pattern
-
+			
 			//Step 1
 			target->motions[0].type = CTR_TYPE_TIME_WAIT;
 			// _p
 			target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
 			// _t
-			target->motions[0]._t = 0.1;
+			target->motions[0]._t = PTN_CONFIRMATION_TIME;
+			for (int i = 0; i < 1; i++) {
+				target->motions[i].act_counter = 0;
+				target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
+			}
 		}
-
 	}break;
 	case MOTION_ID_SLEW: {
-		if (pMode->antisway_ptn_t &  AS_PTN_POS) {
-			;
-		}
-		else if (pMode->antisway_ptn_t &  AS_PTN_DMP) {
-			if (pMode->antisway_control_t &  AS_MOVE_ANTISWAY) {
+		if (pMode->antisway_control_t &  AS_MOVE_ANTISWAY) {
 				target->n_step = 4;
-				target->type = SLW_AXIS;
+				target->axis_type = SLW_AXIS;
 				target->ptn_status = PTN_STANDBY;
 				target->iAct = 0; //Initialize activated pattern
+				target->motion_type = pMode->antisway_ptn_t;
 
-			//Step 1
-				target->motions[0].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
-				// _p
-				target->motions[0]._p = pIO_Table->as_ctrl.tgpos_slew;
-				// _t
-				target->motions[0]._t = pIO_Table->physics.T*2.0;
+				//Step 1
+				{
+					target->motions[0].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
+					// _p
+					target->motions[0]._p = pIO_Table->as_ctrl.tgpos_slew;
+					// _t
+					target->motions[0]._t = pIO_Table->physics.T*2.0;
 
-				double start_offset = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID] * pIO_Table->physics.w0;
-				// low phase
-				target->motions[0].phase1 = start_offset;//DEF_PI * 0.25;
-				 // high phase
-				target->motions[0].phase2 = -DEF_PI + start_offset;// *0.75;
-
-															   //Step 2
-				target->motions[1].type = CTR_TYPE_ACC_AS_INCHING;
-				// _p
-				target->motions[1]._p = pIO_Table->as_ctrl.tgpos_slew;
-				// _t
-				target->motions[1]._t = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
-
-				// _v
-				target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;
-
+					double start_offset = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID] * pIO_Table->physics.w0;
+					// low phase
+					target->motions[0].phase1 = start_offset;//DEF_PI * 0.25;
+					 // high phase
+					target->motions[0].phase2 = -DEF_PI + start_offset;// *0.75;
+				}
+				//Step 2
+				{
+					target->motions[1].type = CTR_TYPE_ACC_AS;
+					// _p
+					target->motions[1]._p = pIO_Table->as_ctrl.tgpos_slew;
+					// _t
+					target->motions[1]._t = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
+					// _v
+					target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;
+				}
 				//Step 3
-				target->motions[2].type = CTR_TYPE_DEC_V;
-				// _p
-				target->motions[2]._p = pIO_Table->as_ctrl.tgpos_slew;
-				// _t
-				target->motions[2]._t = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
-
-				// _v
-				target->motions[2]._v = pIO_Table->physics.wth;
-
+				{
+					target->motions[2].type = CTR_TYPE_DEC_V;
+					// _p
+					target->motions[2]._p = pIO_Table->as_ctrl.tgpos_slew;
+					// _t
+					target->motions[2]._t = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
+					// _v
+					target->motions[2]._v = pIO_Table->physics.wth;
+				}
 				//Step 4
-				target->motions[3].type = CTR_TYPE_TIME_WAIT;
-				// _p
-				target->motions[3]._p = pIO_Table->as_ctrl.tgpos_slew;
-				// _t
-				target->motions[3]._t = PTN_CONFIRMATION_TIME;
-				// _v
-				target->motions[3]._v = pIO_Table->physics.wth;
-
+				{
+					target->motions[3].type = CTR_TYPE_TIME_WAIT;
+					// _p
+					target->motions[3]._p = pIO_Table->as_ctrl.tgpos_slew;
+					// _t
+					target->motions[3]._t = PTN_CONFIRMATION_TIME;
+					// _v
+					target->motions[3]._v = pIO_Table->physics.wth;
+				}
 				//time_count
 				for (int i = 0; i < 4; i++) {
 					target->motions[i].act_counter = 0;
 					target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
 				}
 			}
+		else {
+			//Step 1
+			{
+				target->n_step = 1;
+				target->axis_type = SLW_AXIS;
+				target->ptn_status = PTN_STANDBY;
+				target->iAct = 0; //Initialize activated pattern
+				//Step 1
+				target->motions[3].type = CTR_TYPE_TIME_WAIT;
+				// _p
+				target->motions[3]._p = pIO_Table->as_ctrl.tgpos_slew;
+				// _t
+				target->motions[3]._t = PTN_CONFIRMATION_TIME;
+			}
+			 //time_count
+			for (int i = 0; i < 1; i++) {
+				target->motions[i].act_counter = 0;
+				target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
+			}
 		}
-		else;
 	}break;
 	default: return 1;
 	}

@@ -219,7 +219,7 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 		if (pStep->act_counter > pStep->time_count) 
 			status = STEP_ERROR;
 	}break;
-	case CTR_TYPE_ACC_AS_INCHING: {
+	case CTR_TYPE_ACC_AS: {
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 	}break;
 	case CTR_TYPE_DEC_V: {
@@ -324,7 +324,7 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 		}
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 	}break;
-	case CTR_TYPE_ACC_AS_INCHING: {
+	case CTR_TYPE_ACC_AS: {
 	//	if(abs(auto_vref[MOTION_ID_BH]) > abs(pStep->_v)) status = STEP_FIN;
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 	}break;
@@ -379,7 +379,7 @@ double CPlayer::act_slew_steps(ST_MOTION_UNIT* pRecipe) {
 	case CTR_TYPE_DOUBLE_PHASE_WAIT: {
 		output_v = pStep->_v;
 	}break;
-	case CTR_TYPE_ACC_AS_INCHING: {
+	case CTR_TYPE_ACC_AS: {
 			if (abs(pIO_Table->physics.PhPlane_t.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = +1;
 			else  pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = -1;
 			output_v = (double)pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * pStep->_v;
@@ -419,14 +419,25 @@ double CPlayer::act_bh_steps(ST_MOTION_UNIT* pRecipe) {
 	case CTR_TYPE_DOUBLE_PHASE_WAIT: {
 		output_v = pStep->_v;
 	}break;
-	case CTR_TYPE_ACC_AS_INCHING: {
+	case CTR_TYPE_ACC_AS: {
 		if (abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 1;
 		else  pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = -1;
 		output_v = (double)pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * pStep->_v;
-	//	output_v = (double)pIO_Table->as_ctrl.as_out_dir_bh * g_spec.bh_notch_spd[NOTCH_MAX - 1];
-
-	//	if(abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI)  output_v = g_spec.bh_notch_spd[NOTCH_MAX-1];
-	//	else   output_v = -g_spec.bh_notch_spd[NOTCH_MAX - 1];
+		if (pRecipe->motion_type == AS_PTN_POS) {
+			if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] > 0.0) && (output_v < 0.0)) output_v = 0.0;
+			else if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] < 0.0) && (output_v > 0.0)) output_v = 0.0;
+			else;
+		}
+		else if (pRecipe->motion_type == AS_PTN_DMP) {
+			if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] > 0.0) && (output_v < 0.0)) {
+				if ((pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > pIO_Table->as_ctrl.allowable_pos_overshoot_ninus[AS_BH_ID])) output_v = 0.0;
+			}
+			else if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] < 0.0) && (output_v > 0.0)) {
+				if ((pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > pIO_Table->as_ctrl.allowable_pos_overshoot_ninus[AS_BH_ID])) output_v = 0.0;
+			}
+			else;
+		}
+		else output_v = 0.0;
 	}break;
 	case CTR_TYPE_DEC_V: {
 		output_v = pStep->_v;
@@ -485,7 +496,7 @@ void CPlayer::cal_auto_ref() {
 				bh_motion_ptn.ptn_status = PTN_UNIT_FIN;
 				auto_vref[MOTION_ID_BH] = 0.0;
 			}
-			else if (bh_motion_ptn.type != BH_AXIS) {
+			else if (bh_motion_ptn.axis_type != BH_AXIS) {
 				bh_motion_ptn.ptn_status = PTN_NOTHING;
 				auto_vref[MOTION_ID_BH] = 0.0;
 			}
@@ -517,7 +528,7 @@ void CPlayer::cal_auto_ref() {
 				slew_motion_ptn.ptn_status = PTN_UNIT_FIN;
 				auto_vref[MOTION_ID_SLEW] = 0.0;
 			}
-			else if (slew_motion_ptn.type != SLW_AXIS) {
+			else if (slew_motion_ptn.axis_type != SLW_AXIS) {
 				slew_motion_ptn.ptn_status = PTN_NOTHING;
 				auto_vref[MOTION_ID_SLEW] = 0.0;
 			}

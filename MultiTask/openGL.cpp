@@ -510,7 +510,7 @@ void CPublicRelation::GL_Keyboard(unsigned char key, int x, int y) {
 
 void CPublicRelation::GL_DRAW_STRING(int x, int y, char *string, void *font = GLUT_BITMAP_TIMES_ROMAN_24) {
 	int len, i;
-	glRasterPos2f(x, y);
+	glRasterPos2f((GLfloat)x, (GLfloat)y);
 	len = (int)strlen(string);
 	for (i = 0; i < len; i++) {
 		glutBitmapCharacter(font, string[i]);

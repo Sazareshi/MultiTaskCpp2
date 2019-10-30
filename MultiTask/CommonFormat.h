@@ -60,7 +60,7 @@ typedef struct _st_iTask {
 #define CTR_TYPE_ACC_TIME					0x0200  //Specified time acceleration
 #define CTR_TYPE_ACC_V						0x0201  //Toward specified speed acceleration
 #define CTR_TYPE_ACC_TIME_OR_V				0x0202  //Specified time acceleration or reach specified speed
-#define CTR_TYPE_ACC_AS_INCHING				0x0203 //Toward specified speed acceleration for inching antisway
+#define CTR_TYPE_ACC_AS				0x0203 //Toward specified speed acceleration for inching antisway
 #define CTR_TYPE_DEC_TIME					0x0300  //Specified time deceleration
 #define CTR_TYPE_DEC_V						0x0301  //Toward specified speed deceleration
 #define CTR_TYPE_DEC_TIME_OR_V				0x0302  //Specified time acceleration or reach specified speed
@@ -101,10 +101,11 @@ typedef struct _stMotion_Element {	//運動要素
 #define PTN_PAUSE		3	//Paused
 
 typedef struct _stMOTION_UNIT {	//動作パターン
-	int type;					//動作軸種別　MH_AXIS,TT_AXIS,GT_AXIS,BH_AXIS..... 
+	int axis_type;				//動作軸種別　MH_AXIS,TT_AXIS,GT_AXIS,BH_AXIS..... 
 	int n_step;					//動作パターン構成要素数
 	int ptn_status;				//動作パターン実行状況
 	int iAct;					//実行中index -1で完了
+	int motion_type;			//オプション指定
 	ST_MOTION_ELEMENT motions[M_ELEMENT_MAX];
 }ST_MOTION_UNIT, *LPST_MOTION_UNIT;
 
@@ -224,7 +225,7 @@ typedef struct _stSTAT_ORDER {
 typedef struct _stIO_Physic {
 	double M_load;//吊荷質量
 
-				  //吊点　　座標原点　xy：旋回軸　z：地面(上が+）
+	//吊点　　座標原点　xy：旋回軸　z：地面(上が+）
 	Vector3 cp;		//吊点xyz
 	double R;		//軸長さ
 	double th;		//旋回角度
@@ -235,12 +236,12 @@ typedef struct _stIO_Physic {
 	double wth;		//旋回角速度
 	double wph;		//起伏角速度
 
-					//吊荷　　座標原点　xy：旋回軸　z：地面(上が+）
+	//吊荷　　座標原点　xy：旋回軸　z：地面(上が+）
 	Vector3 lp;		//吊点xyz
 	Vector3 lv;		//吊点vx vy vz
 
 
-					//吊荷吊点間相対位置
+	//吊荷吊点間相対位置
 	double L;		//ロープ長
 	double lph;		//Z軸との角度
 	double lth;		//XY平面角度
@@ -268,25 +269,19 @@ typedef struct _stIO_Physic {
 
 typedef struct _stIO_Ref {
 
-	double slew_w;				//旋回角速度
-	double hoist_v;				//巻速度
-	double bh_v;				//引込速度
+	double	slew_w;				//旋回角速度
+	double	hoist_v;			//巻速度
+	double	bh_v;				//引込速度
 	bool	b_bh_manual_ctrl;	//手動操作中
 	bool	b_slew_manual_ctrl;	//手動操作中
 	bool	b_mh_manual_ctrl;	//手動操作中
 
 }ST_IO_REF, *LPST_IO_REF;
 
-
 #define NUM_OF_AS	3
 #define AS_SLEW_ID  0
 #define AS_BH_ID	1
 #define AS_MH_ID	2
-
-#define POS_AS_PTN_INCHING			0	//インチング
-#define POS_AS_PTN_SINGLE_T			1	//振れ止め台形パターン
-#define POS_AS_PTN_NO_AS_TRAP		2	//台形パターン
-#define POS_AS_PTN_NO_AS_TRAP_EX	3	//拡張台形パターン
 
 typedef struct _stAS_CTRL {
 	double tgpos_h;							//巻目標位置
@@ -299,7 +294,6 @@ typedef struct _stAS_CTRL {
 	double tgspd_slew;						//旋回目標速度
 	double tgspd_bh;						//引込目標速度
 
-	//INCHING MODE
 	double as_gain_pos[NUM_OF_AS];		//振止ゲイン　位置合わせ用　接線方向  加速時間sec
 	double as_gain_damp[NUM_OF_AS];		//振止ゲイン　振れ止め用	接線方向　加速時間sec
 
@@ -312,6 +306,8 @@ typedef struct _stAS_CTRL {
 	double tgD[NUM_OF_AS];					//振止目標-現在角度
 	double tgD_abs[NUM_OF_AS];				//振止目標-現在角度 絶対値
 
+	double allowable_pos_overshoot_plus[NUM_OF_AS];		//振止目標位置オーバー許容値　進行方向
+	double allowable_pos_overshoot_ninus[NUM_OF_AS];	//振止目標位置オーバー許容値　進行逆方向
 
 }ST_AS_CTRL, *LPST_AS_CTRL;
 
