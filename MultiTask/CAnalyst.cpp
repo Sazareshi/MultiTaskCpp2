@@ -398,13 +398,13 @@ void CAnalyst::update_as_ctrl() {
 		pMode->antisway_ptn_n = AS_PTN_0;
 		pMode->antisway_control_n = AS_MOVE_STANDBY;
 	}
-	else if ((pIO_Table->physics.sway_amp_n_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) && 
-				(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_COMPLE])){
+	else if ((pIO_Table->physics.sway_amp_n_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) &&			//振れが完了レベル
+				(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_COMPLE])){	//位置が完了レベル
 		pMode->antisway_ptn_n = AS_PTN_0;
 		pMode->antisway_control_n = AS_MOVE_COMPLETE;
 	}
-	else if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {	//目標が位置決め起動判定距離内
-		if (pIO_Table->physics.sway_amp_n_ph > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]){ //振れがトリガ判定値以上
+	else if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {		//目標が位置決め起動判定距離内
+		if (pIO_Table->physics.sway_amp_n_ph > g_spec.as_compl_swayLv[I_AS_LV_TRIGGER]){			//振れがトリガ判定値以上
 			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
 			pMode->antisway_ptn_n = AS_PTN_DMP;
 		}
@@ -413,11 +413,11 @@ void CAnalyst::update_as_ctrl() {
 			else pMode->antisway_ptn_n = AS_PTN_0;
 		}
 	}
-	else if (pIO_Table->physics.sway_amp_n_ph > g_spec.as_compl_swayLv_sq[I_AS_LV_DAMPING]) { //振れがダンピング判定値以上
+	else if (pIO_Table->physics.sway_amp_n_ph > g_spec.as_compl_swayLv[I_AS_LV_DAMPING]) {			//振れがダンピング判定値以上
 		pMode->antisway_control_n = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_n = AS_PTN_DMP;
 	}
-	else if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {
+	else if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {
 		pMode->antisway_control_n = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_n = AS_PTN_POS;
 	}
@@ -496,8 +496,13 @@ void CAnalyst::cal_as_gain() {//振れ止めゲイン＝加速時間
 	pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = sqrt(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] / g_spec.slew_acc[FWD_ACC]);
 
 	//Damping Modeで上限設定
-	if (pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID]) pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
-	if (pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID]) pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
+	if ((pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID]) &&
+		(pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] < DEF_HPI/ pIO_Table->physics.w0)){
+		pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
+	}
+	if (pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID]) {
+		pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
+	}
 	return;
 };
 
