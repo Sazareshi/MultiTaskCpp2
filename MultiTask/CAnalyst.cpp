@@ -200,7 +200,6 @@ void CAnalyst::cal_as_target() {
 	return;
 };
 
-
 //#########################################################################
 int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 
@@ -240,9 +239,12 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 				// _p
 				target->motions[1]._p = pIO_Table->as_ctrl.tgpos_bh;
 				// _t
-				target->motions[1]._t = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
+				if(pMode->antisway_ptn_n == AS_PTN_DMP)
+					target->motions[1]._t = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
+				else
+					target->motions[1]._t = pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID];
 				//time_count
-				target->motions[1].time_count = (int)(target->motions[1]._t * 1000) / (int)play_scan_ms;
+				//target->motions[1].time_count = (int)(target->motions[1]._t * 1000) / (int)play_scan_ms;
 				// _v
 				target->motions[1]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;
 			}
@@ -254,7 +256,7 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 				// _t
 				target->motions[2]._t = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
 				//time_count
-				target->motions[2].time_count = (int)(target->motions[2]._t * 1000) / (int)play_scan_ms;
+				//target->motions[2].time_count = (int)(target->motions[2]._t * 1000) / (int)play_scan_ms;
 				// _v
 				target->motions[2]._v = pIO_Table->ref.bh_v;
 			}
@@ -320,7 +322,11 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 					// _p
 					target->motions[1]._p = pIO_Table->as_ctrl.tgpos_slew;
 					// _t
-					target->motions[1]._t = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
+					if (pMode->antisway_ptn_t == AS_PTN_DMP)
+						target->motions[1]._t = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
+					else
+						target->motions[1]._t = pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID];
+	
 					// _v
 					target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;
 				}
@@ -379,8 +385,6 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 //### Update Anti-sway Control Mode
 void CAnalyst::update_as_ctrl() {
 
-
-
 	// Update Anti-Sway Control mode
 	if (pMode->antisway != OPE_MODE_AS_ON) {
 		pMode->antisway_control_h = pMode->antisway_control_t = pMode->antisway_control_n = AS_MOVE_DEACTIVATE;
@@ -409,8 +413,10 @@ void CAnalyst::update_as_ctrl() {
 			pMode->antisway_ptn_n = AS_PTN_DMP;
 		}
 		else {
-			if (pMode->antisway_control_n != AS_MOVE_COMPLETE) pMode->antisway_ptn_n = AS_PTN_POS;
-			else pMode->antisway_ptn_n = AS_PTN_0;
+			if (pMode->antisway_control_n != AS_MOVE_COMPLETE) 
+				pMode->antisway_ptn_n = AS_PTN_POS;
+			else 
+				pMode->antisway_ptn_n = AS_PTN_0;
 		}
 	}
 	else if (pIO_Table->physics.sway_amp_n_ph > g_spec.as_compl_swayLv[I_AS_LV_DAMPING]) {			//êUÇÍÇ™É_ÉìÉsÉìÉOîªíËílà»è„
@@ -435,21 +441,23 @@ void CAnalyst::update_as_ctrl() {
 		pMode->antisway_control_t = AS_MOVE_STANDBY;
 	}
 	else if ((pIO_Table->physics.sway_amp_t_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) &&		//ñ⁄ïWÇ™à íuåàÇﬂäÆóπîªíËãóó£ì‡
-		(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_nposLv[I_AS_LV_COMPLE])) {	//êUÇÍÇ™äÆóπîªíËì‡
+		(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_tposLv[I_AS_LV_COMPLE])) {	//êUÇÍÇ™äÆóπîªíËì‡
 		pMode->antisway_ptn_t = AS_PTN_0;
 		pMode->antisway_control_t = AS_MOVE_COMPLETE;
 	}
-	else if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {	//ñ⁄ïWÇ™à íuåàÇﬂãNìÆîªíËãóó£ì‡
-		if (pIO_Table->physics.sway_amp_t_ph > g_spec.as_compl_swayLv_sq[I_AS_LV_TRIGGER]) {	//êUÇÍÇ™ÉgÉäÉKîªíËílà»è„
+	else if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_tposLv[I_AS_LV_TRIGGER]) {	//ñ⁄ïWÇ™à íuåàÇﬂãNìÆîªíËãóó£ì‡
+		if (pIO_Table->physics.sway_amp_t_ph > g_spec.as_compl_swayLv[I_AS_LV_TRIGGER]) {	//êUÇÍÇ™ÉgÉäÉKîªíËílà»è„
 			pMode->antisway_control_t = AS_MOVE_ANTISWAY;
 			pMode->antisway_ptn_t = AS_PTN_DMP;
 		}
 		else {
-			if (pMode->antisway_control_t != AS_MOVE_COMPLETE) pMode->antisway_ptn_t = AS_PTN_POS;
-			else pMode->antisway_ptn_t = AS_PTN_0;
+			if (pMode->antisway_control_t != AS_MOVE_COMPLETE) 
+				pMode->antisway_ptn_t = AS_PTN_POS;
+			else 
+				pMode->antisway_ptn_t = AS_PTN_0;
 		}
 	}
-	else if (pIO_Table->physics.sway_amp_t_ph > g_spec.as_compl_swayLv_sq[I_AS_LV_DAMPING]) { //êUÇÍÇ™É_ÉìÉsÉìÉOîªíËílà»è„
+	else if (pIO_Table->physics.sway_amp_t_ph > g_spec.as_compl_swayLv[I_AS_LV_DAMPING]) { //êUÇÍÇ™É_ÉìÉsÉìÉOîªíËílà»è„
 		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_t = AS_PTN_DMP;
 	}
@@ -484,7 +492,7 @@ void CAnalyst::cal_as_gain() {//êUÇÍé~ÇﬂÉQÉCÉìÅÅâ¡ë¨éûä‘
 		temp_angle = DEF_HPI * 0.8;
 	}
 	else {
-		temp_angle = DEF_HPI * 0.8 * pIO_Table->physics.sway_amp_t_ph / pIO_Table->as_ctrl.phase_acc_offset[AS_SLEW_ID];
+		temp_angle = DEF_HPI*0.8 * pIO_Table->physics.sway_amp_t_ph / pIO_Table->as_ctrl.phase_acc_offset[AS_SLEW_ID];
 		//â∫å¿ê›íË
 		if (temp_angle < DEF_PI / 6.0) temp_angle = DEF_PI / 6.0 * pIO_Table->physics.R / 40.0;
 	}
@@ -495,14 +503,22 @@ void CAnalyst::cal_as_gain() {//êUÇÍé~ÇﬂÉQÉCÉìÅÅâ¡ë¨éûä‘
 	pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = sqrt(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] / g_spec.bh_acc[FWD_ACC]);
 	pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = sqrt(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] / g_spec.slew_acc[FWD_ACC]);
 
-	//Damping ModeÇ≈è„å¿ê›íË
-	if ((pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID]) &&
-		(pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] < DEF_HPI/ pIO_Table->physics.w0)){
+	//Positioning ModeÇ≈ê›íË
+	if ((pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID]) && //êUÇÍé~ÇﬂÉQÉCÉìÇÊÇËëÂÇ´Ç¢
+		(pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] < DEF_HPI/ pIO_Table->physics.w0)){				//à⁄ìÆó Ç™è¨Ç≥Ç¢
 		pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
 	}
-	if (pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID]) {
+	if ((pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID]) && 
+		(pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] < DEF_HPI / pIO_Table->physics.w0 * 0.5)) {
 		pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
 	}
+	//Positioning ModeÇ≈jyougenå¿ê›íË
+	if (pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > DEF_HPI / pIO_Table->physics.w0 * 0.5) {
+		pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = DEF_HPI / pIO_Table->physics.w0 * 0.5;
+	}
+
+
+
 	return;
 };
 

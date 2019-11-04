@@ -22,7 +22,7 @@ void CPlayer::routine_work(void *param) {
 	set_table_out();				//出力セット
 			
 	ws << L" working!" << *(inf.psys_counter) % 100 << " SLEW_REF " << pIO_Table->ref.slew_w << " BH_REF " << pIO_Table->ref.bh_v<<"AS N POS16/SWAY8: "<< pMode->antisway_control_n;
-tweet2owner(ws.str()); ws.str(L""); ws.clear();
+	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 
 };
 
@@ -172,16 +172,15 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 
 		//Low phase
 		if (temp_chk1 < -DEF_PI) {
-//			if ((pIO_Table->physics.PhPlane_t.z < (temp_chk1 - DEF_2PI)) || (pIO_Table->physics.PhPlane_t.z > temp_chk2))
 				status = STEP_FIN;
 		}
 		else if (temp_chk2 > DEF_PI) {
-//			if ((pIO_Table->physics.PhPlane_t.z >(-temp_chk2 + DEF_2PI)) || (pIO_Table->physics.PhPlane_t.z < temp_chk1))
 				status = STEP_FIN;
 		}
 		else {
-			if ((pIO_Table->physics.PhPlane_t.z < temp_chk1) && (pIO_Table->physics.PhPlane_t.z > temp_chk2))
-				status = STEP_FIN;
+			if ((pIO_Table->physics.PhPlane_t.z < temp_chk1) && (pIO_Table->physics.PhPlane_t.z > temp_chk2)) {
+					status = STEP_FIN;
+			}
 		}
 		
 		//High phase	
@@ -193,11 +192,11 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 			if (pIO_Table->physics.PhPlane_t.z > temp_chk1) {
 				temp_chk2 = pStep->phase2 + pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
 				if (temp_chk2 < DEF_PI) {
-					if (pIO_Table->physics.PhPlane_t.z < temp_chk2) 
+					if (pIO_Table->physics.PhPlane_t.z < temp_chk2)
 						status = STEP_FIN;
 				}
 				else {
-					if (pIO_Table->physics.PhPlane_t.z < -DEF_2PI + temp_chk2) 
+					if (pIO_Table->physics.PhPlane_t.z < -DEF_2PI + temp_chk2)
 						status = STEP_FIN;
 				}
 			}
@@ -207,11 +206,11 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 			if (pIO_Table->physics.PhPlane_t.z < temp_chk1) {
 				temp_chk2 = pStep->phase2 - pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
 				if (temp_chk2 > -DEF_PI) {
-					if (pIO_Table->physics.PhPlane_t.z > temp_chk2) 
+					if (pIO_Table->physics.PhPlane_t.z > temp_chk2)
 						status = STEP_FIN;
 				}
 				else {
-					if (pIO_Table->physics.PhPlane_t.z > DEF_2PI - temp_chk2) 
+					if (pIO_Table->physics.PhPlane_t.z > DEF_2PI - temp_chk2)
 						status = STEP_FIN;
 				}
 			}
@@ -380,8 +379,14 @@ double CPlayer::act_slew_steps(ST_MOTION_UNIT* pRecipe) {
 		output_v = pStep->_v;
 	}break;
 	case CTR_TYPE_ACC_AS: {
+		if (pRecipe->motion_type == AS_PTN_POS) {
+			if (pIO_Table->as_ctrl.tgD[AS_SLEW_ID] > 0.0) pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = 1;
+			else  pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = -1;
+		}
+		else {
 			if (abs(pIO_Table->physics.PhPlane_t.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = +1;
 			else  pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = -1;
+		}
 			output_v = (double)pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * pStep->_v;
 	}break;
 	case CTR_TYPE_DEC_V: {
@@ -420,8 +425,16 @@ double CPlayer::act_bh_steps(ST_MOTION_UNIT* pRecipe) {
 		output_v = pStep->_v;
 	}break;
 	case CTR_TYPE_ACC_AS: {
-		if (abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 1;
-		else  pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = -1;
+
+		if (pRecipe->motion_type == AS_PTN_POS) {
+			if (pIO_Table->as_ctrl.tgD[AS_BH_ID] > 0.0) pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 1;
+			else  pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = -1;
+		}
+		else {
+			if (abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 1;
+			else  pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = -1;
+		}
+
 		output_v = (double)pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * pStep->_v;
 		if (pRecipe->motion_type == AS_PTN_POS) {
 			if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] > 0.0) && (output_v < 0.0)) output_v = 0.0;
@@ -470,7 +483,7 @@ void CPlayer::cal_auto_ref() {
 	
 	CAnalyst* pAna = (CAnalyst*)VectpCTaskObj[g_itask.ana];
 
-	if (pMode->auto_control == AUTO_MODE_ACTIVE) {
+	if((pMode->operation== OPE_MODE_AUTO_ENABLE)&&(pMode->auto_control == AUTO_MODE_ACTIVE)) {
 		;
 	}
 	else if (pMode->antisway == OPE_MODE_AS_ON){
