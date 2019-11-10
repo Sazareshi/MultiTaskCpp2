@@ -31,6 +31,7 @@ public:
 
 #define AS_PTN_DMP						0x0100
 #define AS_PTN_POS						0x0200
+#define AS_PTN_MOVE						0x0400
 #define AS_PTN_0						0x0000
 
 #define AS_MOVE_DEACTIVATE				0x0000
@@ -130,6 +131,4 @@ public:
 	ST_CONSOLE		console_ope_room;
 	ST_CONSOLE		console_remote;
 	ST_CONSOLE		console_pc;
-
-
 };

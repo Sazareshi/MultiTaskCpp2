@@ -21,8 +21,11 @@ void CPlayer::routine_work(void *param) {
 
 	set_table_out();				//出力セット
 			
-	ws << L" working!" << *(inf.psys_counter) % 100 << " SLEW_REF " << pIO_Table->ref.slew_w << " BH_REF " << pIO_Table->ref.bh_v<<"AS N POS16/SWAY8: "<< pMode->antisway_control_n;
-	tweet2owner(ws.str()); ws.str(L""); ws.clear();
+	//ws << L" working!" << *(inf.psys_counter) % 100 << " BH STAT PTN " << bh_motion_ptn.ptn_status << " BH STEP " << bh_motion_ptn.iAct <<"AS N POS16/SWAY8: "<< pMode->antisway_control_n;
+
+	ws << " BH STEP_N " << bh_motion_ptn.n_step << "    BH STEP " << bh_motion_ptn.iAct << "  BH  tgD " << pIO_Table->as_ctrl.tgD[AS_BH_ID];
+
+	tweet2owner(ws.str()); ws.str(L""); ws.clear(); 
 
 };
 
@@ -68,18 +71,6 @@ int CPlayer::auto_start(LPST_JOB_ORDER recipe, int type) {
 /* antisway mode				*/
 /* ############################ */
 
-int CPlayer::update_mode(int order_type) {
-
-	if (order_type == ORDER_TYPE_UI) {
-
-	}
-
-	if (order_type == ORDER_TYPE_MANU) {
-
-	}
-
-	return 0;
-};
 int CPlayer::update_as_status() {
 	if (pMode->antisway == OFF) {
 		bh_motion_ptn.ptn_status = PTN_UNIT_FIN;
@@ -233,10 +224,12 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 		}
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 	}break;
+	case CTR_TYPE_CONST_V_TIME: {
+		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
+	}break;
 	case CTR_TYPE_BH_WAIT:
 	case CTR_TYPE_SLEW_WAIT:
 	case CTR_TYPE_MH_WAIT:
-	case CTR_TYPE_CONST_V_TIME:
 	case CTR_TYPE_ACC_TIME:
 	case CTR_TYPE_ACC_V:
 	case CTR_TYPE_ACC_TIME_OR_V:
@@ -339,10 +332,12 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 		}
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 	}break;
+	case CTR_TYPE_CONST_V_TIME: {
+		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
+	}break;
 	case CTR_TYPE_BH_WAIT:
 	case CTR_TYPE_SLEW_WAIT:
 	case CTR_TYPE_MH_WAIT:
-	case CTR_TYPE_CONST_V_TIME:
 	case CTR_TYPE_ACC_TIME:
 	case CTR_TYPE_ACC_V:
 	case CTR_TYPE_ACC_TIME_OR_V:
@@ -393,10 +388,12 @@ double CPlayer::act_slew_steps(ST_MOTION_UNIT* pRecipe) {
 		output_v = pStep->_v;
 		pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = 0;
 	}break;
+	case CTR_TYPE_CONST_V_TIME: {
+		output_v = pStep->_v;
+	}break;
 	case CTR_TYPE_BH_WAIT:
 	case CTR_TYPE_SLEW_WAIT:
 	case CTR_TYPE_MH_WAIT:
-	case CTR_TYPE_CONST_V_TIME:
 	case CTR_TYPE_ACC_TIME:
 	case CTR_TYPE_ACC_V:
 	case CTR_TYPE_ACC_TIME_OR_V:
@@ -443,10 +440,10 @@ double CPlayer::act_bh_steps(ST_MOTION_UNIT* pRecipe) {
 		}
 		else if (pRecipe->motion_type == AS_PTN_DMP) {
 			if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] > 0.0) && (output_v < 0.0)) {
-				if ((pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > pIO_Table->as_ctrl.allowable_pos_overshoot_ninus[AS_BH_ID])) output_v = 0.0;
+				if ((pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > pIO_Table->as_ctrl.allowable_pos_overshoot_plus[AS_BH_ID])) output_v = 0.0;
 			}
 			else if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] < 0.0) && (output_v > 0.0)) {
-				if ((pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > pIO_Table->as_ctrl.allowable_pos_overshoot_ninus[AS_BH_ID])) output_v = 0.0;
+				if ((pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > pIO_Table->as_ctrl.allowable_pos_overshoot_minus[AS_BH_ID])) output_v = 0.0;
 			}
 			else;
 		}
@@ -456,10 +453,14 @@ double CPlayer::act_bh_steps(ST_MOTION_UNIT* pRecipe) {
 		output_v = pStep->_v;
 		pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 0;
 	}break;
+	case CTR_TYPE_CONST_V_TIME: {
+		output_v = pStep->_v;
+	}break;
+
 	case CTR_TYPE_BH_WAIT:
 	case CTR_TYPE_SLEW_WAIT:
 	case CTR_TYPE_MH_WAIT:
-	case CTR_TYPE_CONST_V_TIME:
+
 	case CTR_TYPE_ACC_TIME:
 	case CTR_TYPE_ACC_V:
 	case CTR_TYPE_ACC_TIME_OR_V:
@@ -488,69 +489,98 @@ void CPlayer::cal_auto_ref() {
 	}
 	else if (pMode->antisway == OPE_MODE_AS_ON){
 		update_as_status(); //Check Current Pattern Handling Situation
+		
 		//## normal derection
-		if ((bh_motion_ptn.ptn_status == PTN_UNIT_FIN) || (bh_motion_ptn.ptn_status == PTN_NOTHING)) {//Any pattern not running
-			auto_vref[MOTION_ID_BH] = 0.0;
-			if (pMode->antisway_control_n != AS_MOVE_DEACTIVATE) {
-				//Set pattern recipe
-				if (pAna->cal_as_recipe(MOTION_ID_BH, &(this->bh_motion_ptn)) == NO_ERR_EXIST) {
-					bh_motion_ptn.ptn_status = PTN_STANDBY;
+		{ 
+			if ((bh_motion_ptn.ptn_status == PTN_UNIT_FIN) || (bh_motion_ptn.ptn_status == PTN_NOTHING)) {//Any pattern not running
+				auto_vref[MOTION_ID_BH] = 0.0;
+				if (pMode->antisway_control_n != AS_MOVE_DEACTIVATE) {
+					//Set pattern recipe
+					//Judge Positioning or Damping
+					double check_d = pIO_Table->physics.T * g_spec.bh_notch_spd[1]
+									+ g_spec.bh_acc[FWD_ACC] * pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID] * pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
+
+					if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > check_d) {
+						if (pAna->cal_positioning_recipe(MOTION_ID_BH, &(this->bh_motion_ptn)) == NO_ERR_EXIST) {
+							bh_motion_ptn.ptn_status = PTN_STANDBY;
+						}
+					}
+					else {
+						if (pMode->antisway_control_n == AS_MOVE_ANTISWAY) {
+							if (pAna->cal_as_recipe(MOTION_ID_BH, &(this->bh_motion_ptn)) == NO_ERR_EXIST) {
+								bh_motion_ptn.ptn_status = PTN_STANDBY;
+							}
+						}
+					}
 				}
 			}
-		}
-		else if (bh_motion_ptn.ptn_status == PTN_PAUSE){
-			auto_vref[MOTION_ID_BH] = 0.0;
-		}
-		else if (bh_motion_ptn.ptn_status == PTN_STANDBY) {
-			bh_motion_ptn.ptn_status = PTN_ACTIVE;
-		}
-		else if (bh_motion_ptn.ptn_status == PTN_ACTIVE) {
-			if (bh_motion_ptn.iAct > bh_motion_ptn.n_step) {
-				bh_motion_ptn.ptn_status = PTN_UNIT_FIN;
+			else if (bh_motion_ptn.ptn_status == PTN_PAUSE) {
 				auto_vref[MOTION_ID_BH] = 0.0;
 			}
-			else if (bh_motion_ptn.axis_type != BH_AXIS) {
-				bh_motion_ptn.ptn_status = PTN_NOTHING;
-				auto_vref[MOTION_ID_BH] = 0.0;
+			else if (bh_motion_ptn.ptn_status == PTN_STANDBY) {
+				bh_motion_ptn.ptn_status = PTN_ACTIVE;
 			}
-			else{
-				auto_vref[MOTION_ID_BH] = act_bh_steps(&(this->bh_motion_ptn));
-			}
-		}
-		else {
-			auto_vref[MOTION_ID_BH] = 0.0;
-		}
-		//## tangent derection
-		if ((slew_motion_ptn.ptn_status == PTN_UNIT_FIN) || (slew_motion_ptn.ptn_status == PTN_NOTHING)) {//Any pattern not running
-			auto_vref[MOTION_ID_SLEW] = 0.0;
-			if (pMode->antisway_control_t != AS_MOVE_DEACTIVATE) {
-				//Set pattern recipe
-				if (pAna->cal_as_recipe(MOTION_ID_SLEW, &(this->slew_motion_ptn)) == NO_ERR_EXIST) {
-					slew_motion_ptn.ptn_status = PTN_STANDBY;
+			else if (bh_motion_ptn.ptn_status == PTN_ACTIVE) {
+				if (bh_motion_ptn.iAct > bh_motion_ptn.n_step) {
+					bh_motion_ptn.ptn_status = PTN_UNIT_FIN;
+					auto_vref[MOTION_ID_BH] = 0.0;
 				}
-			}
-		}
-		else if (slew_motion_ptn.ptn_status == PTN_PAUSE) {
-			auto_vref[MOTION_ID_SLEW] = 0.0;
-		}
-		else if (slew_motion_ptn.ptn_status == PTN_STANDBY) {
-			slew_motion_ptn.ptn_status = PTN_ACTIVE;
-		}
-		else if (slew_motion_ptn.ptn_status == PTN_ACTIVE) {
-			if (slew_motion_ptn.iAct > slew_motion_ptn.n_step) {
-				slew_motion_ptn.ptn_status = PTN_UNIT_FIN;
-				auto_vref[MOTION_ID_SLEW] = 0.0;
-			}
-			else if (slew_motion_ptn.axis_type != SLW_AXIS) {
-				slew_motion_ptn.ptn_status = PTN_NOTHING;
-				auto_vref[MOTION_ID_SLEW] = 0.0;
+				else if (bh_motion_ptn.axis_type != BH_AXIS) {
+					bh_motion_ptn.ptn_status = PTN_NOTHING;
+					auto_vref[MOTION_ID_BH] = 0.0;
+				}
+				else {
+					auto_vref[MOTION_ID_BH] = act_bh_steps(&(this->bh_motion_ptn));
+				}
 			}
 			else {
-				auto_vref[MOTION_ID_SLEW] = act_slew_steps(&(this->slew_motion_ptn));
+				auto_vref[MOTION_ID_BH] = 0.0;
 			}
 		}
-		else {
-			auto_vref[MOTION_ID_SLEW] = 0.0;
+
+		//## tangent derection
+		{
+			if ((slew_motion_ptn.ptn_status == PTN_UNIT_FIN) || (slew_motion_ptn.ptn_status == PTN_NOTHING)) {//Any pattern not running
+				auto_vref[MOTION_ID_SLEW] = 0.0;
+				if (pMode->antisway_control_t != AS_MOVE_DEACTIVATE) {
+					//Set pattern recipe
+					//Judge Positioning or Damping
+					double	check_d = pIO_Table->physics.T * g_spec.slew_notch_spd[1];
+							check_d += g_spec.slew_acc[FWD_ACC] * pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID] * pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
+					if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] > check_d) {
+						if (pAna->cal_positioning_recipe(MOTION_ID_SLEW, &(this->slew_motion_ptn)) == NO_ERR_EXIST) {
+							slew_motion_ptn.ptn_status = PTN_STANDBY;
+						}
+					}
+					else {
+						if (pAna->cal_as_recipe(MOTION_ID_SLEW, &(this->slew_motion_ptn)) == NO_ERR_EXIST) {
+							slew_motion_ptn.ptn_status = PTN_STANDBY;
+						}
+					}
+				}
+			}
+			else if (slew_motion_ptn.ptn_status == PTN_PAUSE) {
+				auto_vref[MOTION_ID_SLEW] = 0.0;
+			}
+			else if (slew_motion_ptn.ptn_status == PTN_STANDBY) {
+				slew_motion_ptn.ptn_status = PTN_ACTIVE;
+			}
+			else if (slew_motion_ptn.ptn_status == PTN_ACTIVE) {
+				if (slew_motion_ptn.iAct > slew_motion_ptn.n_step) {
+					slew_motion_ptn.ptn_status = PTN_UNIT_FIN;
+					auto_vref[MOTION_ID_SLEW] = 0.0;
+				}
+				else if (slew_motion_ptn.axis_type != SLW_AXIS) {
+					slew_motion_ptn.ptn_status = PTN_NOTHING;
+					auto_vref[MOTION_ID_SLEW] = 0.0;
+				}
+				else {
+					auto_vref[MOTION_ID_SLEW] = act_slew_steps(&(this->slew_motion_ptn));
+				}
+			}
+			else {
+				auto_vref[MOTION_ID_SLEW] = 0.0;
+			}
 		}
 	}
 	else {

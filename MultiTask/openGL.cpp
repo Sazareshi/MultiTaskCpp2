@@ -3,6 +3,7 @@
 #include "helper.h"
 
 extern CIO_Table*		pIO_Table;
+extern CMODE_Table*		pMode;
 extern CORDER_Table*	pOrder;				//共有メモリOrderクラスポインタ
 
 //----------------------------------------------------
@@ -288,7 +289,20 @@ void CPublicRelation::GL_Display(void) {
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(52, 83, t_char2);
 
+	strcpy_s(t_char2, "SL_PTN = ");
+	sprintf_s(t_char, "%x", pMode->antisway_ptn_t);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(5, 78, t_char2);
 
+	strcpy_s(t_char2, "SL_CTR = ");
+	sprintf_s(t_char, "%x", pMode->antisway_control_t);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(28, 78, t_char2);
+
+	strcpy_s(t_char2, "AS_MODE = ");
+	sprintf_s(t_char, "%x", pMode->antisway);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(52, 78, t_char2);
 
 	glutSwapBuffers(); //glutInitDisplayMode(GLUT_DOUBLE)でダブルバッファリングを利用可
 }

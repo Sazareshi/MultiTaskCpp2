@@ -60,7 +60,7 @@ typedef struct _st_iTask {
 #define CTR_TYPE_ACC_TIME					0x0200  //Specified time acceleration
 #define CTR_TYPE_ACC_V						0x0201  //Toward specified speed acceleration
 #define CTR_TYPE_ACC_TIME_OR_V				0x0202  //Specified time acceleration or reach specified speed
-#define CTR_TYPE_ACC_AS				0x0203 //Toward specified speed acceleration for inching antisway
+#define CTR_TYPE_ACC_AS						0x0203 //Toward specified speed acceleration for inching antisway
 #define CTR_TYPE_DEC_TIME					0x0300  //Specified time deceleration
 #define CTR_TYPE_DEC_V						0x0301  //Toward specified speed deceleration
 #define CTR_TYPE_DEC_TIME_OR_V				0x0302  //Specified time acceleration or reach specified speed
@@ -307,7 +307,7 @@ typedef struct _stAS_CTRL {
 	double tgD_abs[NUM_OF_AS];				//振止目標-現在角度 絶対値
 
 	double allowable_pos_overshoot_plus[NUM_OF_AS];		//振止目標位置オーバー許容値　進行方向
-	double allowable_pos_overshoot_ninus[NUM_OF_AS];	//振止目標位置オーバー許容値　進行逆方向
+	double allowable_pos_overshoot_minus[NUM_OF_AS];	//振止目標位置オーバー許容値　進行逆方向
 
 }ST_AS_CTRL, *LPST_AS_CTRL;
 

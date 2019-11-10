@@ -14,6 +14,7 @@ public:
 	CAnalyst();
 	~CAnalyst();
 
+	int ptn_notch_freq[NUM_OF_AS][NOTCH_MAX];
 	void init_task(void *pobj);
 	void routine_work(void *param);
 	void cal_simulation();
@@ -22,6 +23,9 @@ public:
 	void update_as_ctrl();
 	void cal_as_gain();
 	int cal_as_recipe(int motion_id,ST_MOTION_UNIT* target);
+	int cal_positioning_recipe(int motion_id, ST_MOTION_UNIT* target);
+	int cal_move_pattern_bh(int * notch_freq, double Da);
+	int cal_move_pattern_slew(int * notch_freq, double Da);
 
 	// Mob
 	Mob_HoistPoint  hp;

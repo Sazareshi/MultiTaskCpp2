@@ -54,7 +54,6 @@ public:
 	int auto_start(LPST_JOB_ORDER recipe, int type);
 	void cal_console_order();
 	void cal_auto_ref();
-	int update_mode(int order_type);//振止制御モード、自動制御モード更新
 	int update_as_status();			//振止状態更新
 	int set_table_out();			//出力セット
 };
