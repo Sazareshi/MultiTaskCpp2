@@ -23,9 +23,10 @@ public:
 	void update_as_ctrl();
 	void cal_as_gain();
 	int cal_as_recipe(int motion_id,ST_MOTION_UNIT* target);
-	int cal_positioning_recipe(int motion_id, ST_MOTION_UNIT* target);
-	int cal_move_pattern_bh(int * notch_freq, double Da);
-	int cal_move_pattern_slew(int * notch_freq, double Da);
+	int cal_long_move_recipe(int motion_id, ST_MOTION_UNIT* target, int mode);
+	int cal_short_move_recipe(int motion_id, ST_MOTION_UNIT* target, int mode);
+	int cal_move_pattern_bh(int * notch_freq, double Da, int mode);
+	int cal_move_pattern_slew(int * notch_freq, double Da, int mode);
 
 	// Mob
 	Mob_HoistPoint  hp;

@@ -23,7 +23,7 @@ void CPlayer::routine_work(void *param) {
 			
 	//ws << L" working!" << *(inf.psys_counter) % 100 << " BH STAT PTN " << bh_motion_ptn.ptn_status << " BH STEP " << bh_motion_ptn.iAct <<"AS N POS16/SWAY8: "<< pMode->antisway_control_n;
 
-	ws << " BH STEP_N " << bh_motion_ptn.n_step << "    BH STEP " << bh_motion_ptn.iAct << "  BH  tgD " << pIO_Table->as_ctrl.tgD[AS_BH_ID];
+	ws << " Motion:" <<slew_motion_ptn.motion_type<<"   SL STEP_N " << slew_motion_ptn.n_step << "    SL STEP " << slew_motion_ptn.iAct << "  SL tgD " << pIO_Table->as_ctrl.tgD[AS_SLEW_ID] << "  SL Type " << slew_motion_ptn.motion_type;
 
 	tweet2owner(ws.str()); ws.str(L""); ws.clear(); 
 
@@ -497,11 +497,18 @@ void CPlayer::cal_auto_ref() {
 				if (pMode->antisway_control_n != AS_MOVE_DEACTIVATE) {
 					//Set pattern recipe
 					//Judge Positioning or Damping
-					double check_d = pIO_Table->physics.T * g_spec.bh_notch_spd[1]
+					double check_d = pIO_Table->physics.T * g_spec.bh_notch_spd[1] //1ノッチ一周期　＋　振れ止め1回の移動距離
 									+ g_spec.bh_acc[FWD_ACC] * pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID] * pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
+					double check_d2 = pIO_Table->physics.T * g_spec.bh_notch_spd[1] * 0.33 //1ノッチ 1/3周期　＋　1ノッチインチング距離
+									+ g_spec.bh_acc[FWD_ACC] * g_spec.bh_notch_spd[1] * g_spec.bh_notch_spd[1];
 
 					if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > check_d) {
-						if (pAna->cal_positioning_recipe(MOTION_ID_BH, &(this->bh_motion_ptn)) == NO_ERR_EXIST) {
+						if (pAna->cal_long_move_recipe(MOTION_ID_BH, &(this->bh_motion_ptn), AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
+							bh_motion_ptn.ptn_status = PTN_STANDBY;
+						}
+					}
+					else if ((pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > check_d2)&&(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > 0.5)) {
+						if (pAna->cal_short_move_recipe(MOTION_ID_BH, &(this->bh_motion_ptn), AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
 							bh_motion_ptn.ptn_status = PTN_STANDBY;
 						}
 					}
@@ -547,8 +554,16 @@ void CPlayer::cal_auto_ref() {
 					//Judge Positioning or Damping
 					double	check_d = pIO_Table->physics.T * g_spec.slew_notch_spd[1];
 							check_d += g_spec.slew_acc[FWD_ACC] * pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID] * pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
+					double check_d2 = pIO_Table->physics.T * g_spec.slew_notch_spd[1] * 0.33 //1ノッチ 1/3周期　＋　1ノッチインチング距離
+									+ g_spec.slew_acc[FWD_ACC] * g_spec.slew_notch_spd[1] * g_spec.slew_notch_spd[1];
+
 					if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] > check_d) {
-						if (pAna->cal_positioning_recipe(MOTION_ID_SLEW, &(this->slew_motion_ptn)) == NO_ERR_EXIST) {
+						if (pAna->cal_long_move_recipe(MOTION_ID_SLEW, &(this->slew_motion_ptn), AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
+							slew_motion_ptn.ptn_status = PTN_STANDBY;
+						}
+					}
+					else if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] > check_d2) {
+						if (pAna->cal_short_move_recipe(MOTION_ID_SLEW, &(this->slew_motion_ptn), AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
 							slew_motion_ptn.ptn_status = PTN_STANDBY;
 						}
 					}
