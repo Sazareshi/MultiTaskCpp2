@@ -206,7 +206,8 @@ void CPublicRelation::GL_Display(void) {
 	glEnd();
 
 	//直方体
-	drowCuboid(2.0, 2.0, 16.0, //x軸方向の幅, y軸方向の幅, z軸方向の幅,
+	glColor3d(0.5, 0.5, 1.0);		//色の設定
+	drowCuboid(4.0, 4.0, 16.0, //x軸方向の幅, y軸方向の幅, z軸方向の幅,
 		0.0, 0.0, 8.0,   //中心のx座標, 中心のy座標, 中心のz座標,
 		ms_ruby,          //色,
 		-pIO_Table->physics.th * COF_RAD2DEG,   //回転角度,
@@ -410,7 +411,7 @@ void  CPublicRelation::GL_Ground(void) {
 //	double ground_height = 0.0;
 	double ground_height = pIO_Table->physics.lp.z;
 
-	glColor3d(0.8, 0.8, 0.8);  // 大地の色
+	glColor3d(0.5, 0.5, 0.5);  // 大地の色
 	glLineWidth(1.0);
 	glBegin(GL_LINES);
 	

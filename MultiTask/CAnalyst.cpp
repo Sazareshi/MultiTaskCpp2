@@ -112,7 +112,13 @@ void CAnalyst::cal_simulation() {
 	//###xyïΩñ îºåaï˚å¸ÇÃà ëäïΩñ   x:Theata y:TheataDot/OmegaÅ@z:Phi
 	pIO_Table->physics.PhPlane_n.x = (rel_lp.x * sin(pIO_Table->physics.th) + rel_lp.y *cos(pIO_Table->physics.th)) / pIO_Table->physics.L;
 	pIO_Table->physics.PhPlane_n.y = (rel_lvp.x * sin(pIO_Table->physics.th) + rel_lvp.y *cos(pIO_Table->physics.th)) / (pIO_Table->physics.L * pIO_Table->physics.w0);
-	pIO_Table->physics.PhPlane_n.z = atan(pIO_Table->physics.PhPlane_n.y / pIO_Table->physics.PhPlane_n.x);
+
+	if (abs(pIO_Table->physics.PhPlane_n.x) < 0.000001) {
+		pIO_Table->physics.PhPlane_n.z = 0.0;
+	}
+	else {
+		pIO_Table->physics.PhPlane_n.z = atan(pIO_Table->physics.PhPlane_n.y / pIO_Table->physics.PhPlane_n.x);
+	}
 	if (pIO_Table->physics.PhPlane_n.x < 0.0) {
 		if (pIO_Table->physics.PhPlane_n.y < 0.0) pIO_Table->physics.PhPlane_n.z -= DEF_PI;
 		else pIO_Table->physics.PhPlane_n.z += DEF_PI;
@@ -123,7 +129,15 @@ void CAnalyst::cal_simulation() {
 	//###xyïΩñ ê⁄ê¸ï˚å¸ÇÃà ëäïΩñ   x:Theata y:TheataDot/OmegaÅ@z:Phi
 	pIO_Table->physics.PhPlane_t.x = (rel_lp.x * cos(pIO_Table->physics.th) - rel_lp.y *sin(pIO_Table->physics.th)) / pIO_Table->physics.L;
 	pIO_Table->physics.PhPlane_t.y = (rel_lvp.x * cos(pIO_Table->physics.th) - rel_lvp.y *sin(pIO_Table->physics.th)) / (pIO_Table->physics.L* pIO_Table->physics.w0);
-	pIO_Table->physics.PhPlane_t.z = atan(pIO_Table->physics.PhPlane_t.y / pIO_Table->physics.PhPlane_t.x);
+	
+	if (abs(pIO_Table->physics.PhPlane_t.x) < 0.000001) {
+		pIO_Table->physics.PhPlane_t.z = 0.0;
+	}
+	else {
+		pIO_Table->physics.PhPlane_t.z = atan(pIO_Table->physics.PhPlane_t.y / pIO_Table->physics.PhPlane_t.x);
+	}
+
+
 	if (pIO_Table->physics.PhPlane_t.x < 0.0) {
 		if (pIO_Table->physics.PhPlane_t.y < 0.0) pIO_Table->physics.PhPlane_t.z -= DEF_PI;
 		else pIO_Table->physics.PhPlane_t.z += DEF_PI;
@@ -287,6 +301,7 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 			target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
 			// _t
 			target->motions[0]._t = PTN_CONFIRMATION_TIME;
+			target->motions[0]._v = 0.0;
 			for (int i = 0; i < 1; i++) {
 				target->motions[i].act_counter = 0;
 				target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
@@ -365,11 +380,13 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 				target->ptn_status = PTN_STANDBY;
 				target->iAct = 0; //Initialize activated pattern
 				//Step 1
-				target->motions[3].type = CTR_TYPE_TIME_WAIT;
+				target->motions[0].type = CTR_TYPE_TIME_WAIT;
 				// _p
-				target->motions[3]._p = pIO_Table->as_ctrl.tgpos_slew;
+				target->motions[0]._p = pIO_Table->as_ctrl.tgpos_slew;
 				// _t
-				target->motions[3]._t = PTN_CONFIRMATION_TIME;
+				target->motions[0]._t = PTN_CONFIRMATION_TIME;
+
+				target->motions[0]._v = 0.0;
 			}
 			 //time_count
 			for (int i = 0; i < 1; i++) {
@@ -663,7 +680,7 @@ int CAnalyst::cal_short_move_recipe(int motion_id, ST_MOTION_UNIT* target, int m
 
 				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
 				target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * g_spec.bh_notch_spd[n];
-				target->motions[step_count]._t = Da / g_spec.bh_notch_spd[n] - pIO_Table->physics.T / 3.0 - g_spec.bh_notch_spd[n] / g_spec.bh_acc[FWD_ACC];
+				target->motions[step_count]._t = Da / g_spec.bh_notch_spd[n] - pIO_Table->physics.T / 3.0;
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
 					+ pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.bh_acc[FWD_ACC] / 2.0);
 			}
@@ -778,7 +795,7 @@ int CAnalyst::cal_short_move_recipe(int motion_id, ST_MOTION_UNIT* target, int m
 
 				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
 				target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
-				target->motions[step_count]._t = Da / g_spec.slew_notch_spd[n] - pIO_Table->physics.T / 3.0 - g_spec.slew_notch_spd[n] / g_spec.slew_acc[FWD_ACC];
+				target->motions[step_count]._t = Da / g_spec.slew_notch_spd[n] - pIO_Table->physics.T / 3.0;
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
 					+ pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.slew_acc[FWD_ACC] / 2.0);
 			}
@@ -869,6 +886,10 @@ void CAnalyst::update_as_ctrl() {
 			}
 		}
 	}
+	else if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_POSITION]) {
+		pMode->antisway_control_n = AS_MOVE_ANTISWAY;
+		pMode->antisway_ptn_n = AS_PTN_POS;
+	}
 	else if (pIO_Table->physics.sway_amp_n_ph > g_spec.as_compl_swayLv[I_AS_LV_DAMPING]) {			//êUÇÍÇ™É_ÉìÉsÉìÉOîªíËílà»è„
 		pMode->antisway_control_n = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_n = AS_PTN_DMP;
@@ -878,6 +899,7 @@ void CAnalyst::update_as_ctrl() {
 		pMode->antisway_ptn_n = AS_PTN_POS;
 	}
 	else;
+
 	//pMode->antisway_ptn_n = AS_PTN_DMP;
 
 		//##### Tangent direction
@@ -909,11 +931,15 @@ void CAnalyst::update_as_ctrl() {
 				pMode->antisway_ptn_t = AS_PTN_0;
 		}
 	}
+	else if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] > g_spec.as_compl_tposLv[I_AS_LV_POSITION]) {
+		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
+		pMode->antisway_ptn_t = AS_PTN_POS;
+	}
 	else if (pIO_Table->physics.sway_amp_t_ph > g_spec.as_compl_swayLv[I_AS_LV_DAMPING]) { //êUÇÍÇ™É_ÉìÉsÉìÉOîªíËílà»è„
 		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_t = AS_PTN_DMP;
 	}
-	else if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {
+	else if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] > g_spec.as_compl_tposLv[I_AS_LV_TRIGGER]) {
 		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_t= AS_PTN_POS;
 	}
@@ -945,7 +971,7 @@ void CAnalyst::cal_as_gain() {//êUÇÍé~ÇﬂÉQÉCÉìÅÅâ¡ë¨éûä‘
 	else {
 		temp_angle = DEF_HPI*0.8 * pIO_Table->physics.sway_amp_t_ph / pIO_Table->as_ctrl.phase_acc_offset[AS_SLEW_ID];
 		//â∫å¿ê›íË
-		if (temp_angle < DEF_PI / 6.0) temp_angle = DEF_PI / 6.0 * pIO_Table->physics.R / 40.0;
+		if (temp_angle < DEF_PI / 4.0) temp_angle = DEF_PI / 4.0 * pIO_Table->physics.R / 40.0;
 	}
 	pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID] = temp_angle / pIO_Table->physics.w0;
 
@@ -953,23 +979,28 @@ void CAnalyst::cal_as_gain() {//êUÇÍé~ÇﬂÉQÉCÉìÅÅâ¡ë¨éûä‘
 	//à⁄ìÆãóó£Ç©ÇÁâ¡ë¨éûä‘åvéZ
 	pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = sqrt(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] / g_spec.bh_acc[FWD_ACC]);
 	pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = sqrt(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] / g_spec.slew_acc[FWD_ACC]);
-
+	
 	//Positioning ModeÇ≈ê›íË
-	if ((pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID]) && //êUÇÍé~ÇﬂÉQÉCÉìÇÊÇËëÂÇ´Ç¢
-		(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < 0.2)){				//à⁄ìÆó Ç™è¨Ç≥Ç¢
+	if ((pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID]) && //à íuà⁄ìÆó Ç…î‰Ç◊êUÇÍÇ™è¨Ç≥Ç¢
+		(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < 0.2)){											  //à⁄ìÆó Ç™è¨Ç≥Ç¢
 		pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
 	}
-	if ((pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID]) && 
-		(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < 0.005)) {
+	if ((pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID]) && 	//à íuà⁄ìÆó Ç…î‰Ç◊êUÇÍÇ™è¨Ç≥Ç¢
+		(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < 0.005)) {												//ãóó£Ç™ãﬂÇ¢
 		pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
 	}
 	//Positioning ModeÇ≈è„å¿ê›íË
 	if (pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] > DEF_HPI / pIO_Table->physics.w0 * 0.5) {
-		pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = DEF_HPI / pIO_Table->physics.w0 * 0.5;
+		pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID]*0.5;
 	}
-	if (pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > DEF_HPI / pIO_Table->physics.w0 * 0.5) {
-		pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = DEF_HPI / pIO_Table->physics.w0 * 0.5;
+
+	if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < 0.1) {
+//		pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] * 0.5;
 	}
+	if (pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > DEF_HPI / pIO_Table->physics.w0) {
+		pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID]*0.8;
+	}
+
 	return;
 };
 //################################################################################

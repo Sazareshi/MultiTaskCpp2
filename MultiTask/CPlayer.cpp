@@ -13,17 +13,13 @@ CPlayer::~CPlayer(){}
 
 void CPlayer::routine_work(void *param) {
 
-	if (pMode->antisway == OPE_MODE_AS_ON) {
-		update_as_status();			//振止状態更新
-	}
-	
+	update_as_status();			//振止状態更新
 	cal_auto_ref();					//PC計算速度指令計算
-
 	set_table_out();				//出力セット
 			
 	//ws << L" working!" << *(inf.psys_counter) % 100 << " BH STAT PTN " << bh_motion_ptn.ptn_status << " BH STEP " << bh_motion_ptn.iAct <<"AS N POS16/SWAY8: "<< pMode->antisway_control_n;
 
-	ws << " Motion:" <<slew_motion_ptn.motion_type<<"   SL STEP_N " << slew_motion_ptn.n_step << "    SL STEP " << slew_motion_ptn.iAct << "  SL tgD " << pIO_Table->as_ctrl.tgD[AS_SLEW_ID] << "  SL Type " << slew_motion_ptn.motion_type;
+	ws << " Motion:" <<slew_motion_ptn.motion_type<<"   SL STEP_N " << slew_motion_ptn.n_step << "    SL STEP " << slew_motion_ptn.iAct << "  SL Type " << slew_motion_ptn.motion_type<< "  SL tgD " << pIO_Table->as_ctrl.tgD[AS_SLEW_ID] ;
 
 	tweet2owner(ws.str()); ws.str(L""); ws.clear(); 
 
@@ -153,6 +149,11 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 				status = STEP_FIN;
 		}
 
+		//Too small sway
+		if (pIO_Table->physics.sway_amp_t_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) {
+			status = STEP_FIN;
+		}
+
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 
 	}break;
@@ -206,6 +207,21 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 				}
 			}
 		}
+
+		//位置合わせモードで逆相の時は完了にしない
+		if ((pMode->antisway_ptn_t == AS_PTN_POS)&& (pIO_Table->physics.sway_amp_t_ph > g_spec.as_compl_swayLv[I_AS_LV_DAMPING])) {
+			if ((pIO_Table->as_ctrl.tgD[AS_SLEW_ID] > 0.0) && (abs(pIO_Table->physics.PhPlane_t.z) > DEF_HPI))
+				status = STEP_ON_GOING;
+			else if ((pIO_Table->as_ctrl.tgD[AS_SLEW_ID] < 0.0) && (abs(pIO_Table->physics.PhPlane_t.z) < DEF_HPI)) 
+				status = STEP_ON_GOING; 
+			else;
+		}
+
+		//Too small sway
+		if (pIO_Table->physics.sway_amp_t_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) {
+			status = STEP_FIN;
+		}
+
 		if (pStep->act_counter > pStep->time_count) 
 			status = STEP_ERROR;
 	}break;
@@ -265,6 +281,10 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 				status = STEP_FIN;
 		}
 
+		//Too small sway
+		if (pIO_Table->physics.sway_amp_n_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) {
+			status = STEP_FIN;
+		}
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 
 	}break;
@@ -291,9 +311,9 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 			status = STEP_ERROR;
 		}
 		else if (pStep->phase2 > 0.0) {
-			temp_chk1 = pStep->phase2 - pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+			temp_chk1 = pStep->phase2 - pIO_Table->as_ctrl.phase_chk_range[AS_BH_ID];
 			if (pIO_Table->physics.PhPlane_n.z > temp_chk1) {
-				temp_chk2 = pStep->phase2 + pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+				temp_chk2 = pStep->phase2 + pIO_Table->as_ctrl.phase_chk_range[AS_BH_ID];
 				if (temp_chk2 < DEF_PI) {
 					if (pIO_Table->physics.PhPlane_n.z < temp_chk2) status = STEP_FIN;
 				}
@@ -303,9 +323,9 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 			}
 		}
 		else {
-			temp_chk1 = pStep->phase2 + pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+			temp_chk1 = pStep->phase2 + pIO_Table->as_ctrl.phase_chk_range[AS_BH_ID];
 			if (pIO_Table->physics.PhPlane_n.z < temp_chk1) {
-				temp_chk2 = pStep->phase2 - pIO_Table->as_ctrl.phase_chk_range[AS_SLEW_ID];
+				temp_chk2 = pStep->phase2 - pIO_Table->as_ctrl.phase_chk_range[AS_BH_ID];
 				if (temp_chk2 > -DEF_PI) {
 					if (pIO_Table->physics.PhPlane_n.z > temp_chk2) status = STEP_FIN;
 				}
@@ -313,6 +333,19 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 					if (pIO_Table->physics.PhPlane_n.z > DEF_2PI - temp_chk2) status = STEP_FIN;
 				}
 			}
+		}
+
+		if((pMode->antisway_ptn_n == AS_PTN_POS) && (pIO_Table->physics.sway_amp_n_ph > g_spec.as_compl_swayLv[I_AS_LV_DAMPING]) ){
+			if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] > 0.0) && (abs(pIO_Table->physics.PhPlane_n.z) > DEF_HPI))
+				status = STEP_ON_GOING;
+			else if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] < 0.0) && (abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI))
+				status = STEP_ON_GOING;
+			else;
+		}
+
+		//Too small sway
+		if (pIO_Table->physics.sway_amp_n_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) {
+			status = STEP_FIN;
 		}
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 	}break;
@@ -371,6 +404,7 @@ double CPlayer::act_slew_steps(ST_MOTION_UNIT* pRecipe) {
 	}break;
 
 	case CTR_TYPE_DOUBLE_PHASE_WAIT: {
+
 		output_v = pStep->_v;
 	}break;
 	case CTR_TYPE_ACC_AS: {
@@ -382,7 +416,17 @@ double CPlayer::act_slew_steps(ST_MOTION_UNIT* pRecipe) {
 			if (abs(pIO_Table->physics.PhPlane_t.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = +1;
 			else  pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = -1;
 		}
-			output_v = (double)pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * pStep->_v;
+		output_v = (double)pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * pStep->_v;
+
+		if (pRecipe->motion_type == AS_PTN_DMP) {
+			if ((pIO_Table->as_ctrl.tgD[AS_SLEW_ID] > 0.0) && (output_v < 0.0)) {
+				if ((pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] > pIO_Table->as_ctrl.allowable_pos_overshoot_plus[AS_SLEW_ID])) output_v = 0.0;
+			}
+			else if ((pIO_Table->as_ctrl.tgD[AS_SLEW_ID] < 0.0) && (output_v > 0.0)) {
+				if ((pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] > pIO_Table->as_ctrl.allowable_pos_overshoot_minus[AS_SLEW_ID])) output_v = 0.0;
+			}
+			else;
+		}
 	}break;
 	case CTR_TYPE_DEC_V: {
 		output_v = pStep->_v;
@@ -431,14 +475,9 @@ double CPlayer::act_bh_steps(ST_MOTION_UNIT* pRecipe) {
 			if (abs(pIO_Table->physics.PhPlane_n.z) < DEF_HPI) pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 1;
 			else  pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = -1;
 		}
-
 		output_v = (double)pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * pStep->_v;
-		if (pRecipe->motion_type == AS_PTN_POS) {
-			if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] > 0.0) && (output_v < 0.0)) output_v = 0.0;
-			else if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] < 0.0) && (output_v > 0.0)) output_v = 0.0;
-			else;
-		}
-		else if (pRecipe->motion_type == AS_PTN_DMP) {
+
+		if (pRecipe->motion_type == AS_PTN_DMP) {
 			if ((pIO_Table->as_ctrl.tgD[AS_BH_ID] > 0.0) && (output_v < 0.0)) {
 				if ((pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > pIO_Table->as_ctrl.allowable_pos_overshoot_plus[AS_BH_ID])) output_v = 0.0;
 			}
@@ -447,7 +486,7 @@ double CPlayer::act_bh_steps(ST_MOTION_UNIT* pRecipe) {
 			}
 			else;
 		}
-		else output_v = 0.0;
+
 	}break;
 	case CTR_TYPE_DEC_V: {
 		output_v = pStep->_v;
@@ -499,8 +538,8 @@ void CPlayer::cal_auto_ref() {
 					//Judge Positioning or Damping
 					double check_d = pIO_Table->physics.T * g_spec.bh_notch_spd[1] //1ノッチ一周期　＋　振れ止め1回の移動距離
 									+ g_spec.bh_acc[FWD_ACC] * pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID] * pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
-					double check_d2 = pIO_Table->physics.T * g_spec.bh_notch_spd[1] * 0.33 //1ノッチ 1/3周期　＋　1ノッチインチング距離
-									+ g_spec.bh_acc[FWD_ACC] * g_spec.bh_notch_spd[1] * g_spec.bh_notch_spd[1];
+					double check_d2 = pIO_Table->physics.T * g_spec.bh_notch_spd[1]/3.0 //1ノッチ 1/3周期　＋　1ノッチインチング距離
+									+ g_spec.bh_notch_spd[1] * g_spec.bh_notch_spd[1]/g_spec.bh_acc[FWD_ACC];
 
 					if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > check_d) {
 						if (pAna->cal_long_move_recipe(MOTION_ID_BH, &(this->bh_motion_ptn), AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
@@ -554,8 +593,8 @@ void CPlayer::cal_auto_ref() {
 					//Judge Positioning or Damping
 					double	check_d = pIO_Table->physics.T * g_spec.slew_notch_spd[1];
 							check_d += g_spec.slew_acc[FWD_ACC] * pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID] * pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
-					double check_d2 = pIO_Table->physics.T * g_spec.slew_notch_spd[1] * 0.33 //1ノッチ 1/3周期　＋　1ノッチインチング距離
-									+ g_spec.slew_acc[FWD_ACC] * g_spec.slew_notch_spd[1] * g_spec.slew_notch_spd[1];
+					double check_d2 = pIO_Table->physics.T * g_spec.slew_notch_spd[1] / 3.0 //1ノッチ 1/3周期　＋　1ノッチインチング距離
+									+ g_spec.slew_notch_spd[1] * g_spec.slew_notch_spd[1]/ g_spec.slew_acc[FWD_ACC];
 
 					if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] > check_d) {
 						if (pAna->cal_long_move_recipe(MOTION_ID_SLEW, &(this->slew_motion_ptn), AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {

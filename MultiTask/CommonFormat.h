@@ -325,6 +325,7 @@ typedef struct _stAS_CTRL {
 #define I_AS_LV_COMPLE		0	//完了判定値
 #define I_AS_LV_TRIGGER		1	//振止起動判定
 #define I_AS_LV_DAMPING		2	//ダンピングモード判定
+#define I_AS_LV_POSITION	2	//位置決めモード判定
 
 
 typedef struct _stSpec {
@@ -346,8 +347,8 @@ typedef struct _stSpec {
 
 	double as_compl_swayLv[3];		// rad  0:complete 1:trigger 2:antisway
 	double as_compl_swayLv_sq[3];	// rad2 0:complete 1:trigger 2:antisway 
-	double as_compl_nposLv[3];		// m    0:complete 1:trigger 2:spare
-	double as_compl_tposLv[3];		// rad  0:complete 1:trigger 2:spare
+	double as_compl_nposLv[3];		// m    0:complete 1:trigger 2:positioning
+	double as_compl_tposLv[3];		// rad  0:complete 1:trigger 2:positioning
 
 }ST_SPEC, *LPST_SPEC;
 
