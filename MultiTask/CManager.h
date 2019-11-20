@@ -17,5 +17,6 @@ public:
 	void init_task(void *pobj);
 	LRESULT CALLBACK PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp);
 	bool get_UI();
+	int set_job_order(DWORD type, LPST_COMMAND_TARGET p_targets);
 };
 

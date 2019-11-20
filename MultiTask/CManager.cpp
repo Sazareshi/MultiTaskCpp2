@@ -6,6 +6,7 @@
 
 extern CMODE_Table*	pMode;				//共有メモリModeクラスポインタ
 extern CORDER_Table* pOrder;			//共有メモリOrderクラスポインタ
+extern CIO_Table*		pIO_Table;
 
 CManager::CManager(){
 	pManObj = this;
@@ -35,6 +36,28 @@ bool CManager::get_UI() {
 
 	return FALSE;
 }
+
+int CManager::set_job_order(DWORD type, LPST_COMMAND_TARGET p_targets) {
+	if (type == TEST_ORDER) {
+		pOrder->job_A.type = type;
+		if(p_targets->bh_pos != 0.0) pOrder->job_A.command_target[0].bh_pos = p_targets->bh_pos;
+		else pOrder->job_A.command_target[0].bh_pos = pIO_Table->physics.R;
+
+		if(p_targets->slew_pos != 0.0) pOrder->job_A.command_target[0].slew_pos = p_targets->slew_pos;
+		else pOrder->job_A.command_target[0].slew_pos = pIO_Table->physics.th;
+
+		if(p_targets->mh_pos != 0.0) pOrder->job_A.command_target[0].mh_pos = p_targets->mh_pos;
+		else pOrder->job_A.command_target[0].mh_pos = pIO_Table->physics.L;
+
+		pOrder->job_A.status = JOB_ORDER_STANDBY;
+		return 0;
+	}
+	else {
+		pOrder->job_A.type = NO_ORDER;
+		return 1;
+	}
+};
+
 void CManager::init_task(void *pobj) {
 	set_panel_tip_txt();
 	pMode->environment	= ENV_MODE_SIM1;
@@ -44,7 +67,9 @@ void CManager::init_task(void *pobj) {
 };
 
 void CManager::routine_work(void *param) {
-	ws << L" working!" << *(inf.psys_counter)%100 << L" Env=" << pMode->environment << L" Ope=" << pMode->operation << L" AS=" << pMode->antisway << L" AUTO=" << pMode->auto_control;
+	//ws << L" working!" << *(inf.psys_counter)%100 << L" Env=" << pMode->environment << L" Ope=" << pMode->operation << L" AS=" << pMode->antisway << L" AUTO=" << pMode->auto_control;
+	ws << L" ORDER=" << (int)pOrder->job_A.type << L" JOB STAT=" << pOrder->job_A.status << L" BH TARGET=" << pOrder->job_A.command_target[0].bh_pos << L" SL TARGET=" << pOrder->job_A.command_target[0].slew_pos << L" Ope=" << pMode->operation << L" AS=" << pMode->antisway << L" AUTO=" << pMode->auto_control << L" working!" << *(inf.psys_counter) % 100;
+	
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 };
 

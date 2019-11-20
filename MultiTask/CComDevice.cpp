@@ -147,7 +147,7 @@ void CComDevice::update_remote_room_consol() {
 	}
 	else {
 		pIO_Table->console_remote.console_active = false;
-		ws << L" working!" << *(inf.psys_counter) % 100 << "JOY STICK Error";
+		ws << L" working!" << *(inf.psys_counter) % 100 << "  JOY STICK Error";
 	}
 
 

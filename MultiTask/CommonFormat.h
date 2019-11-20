@@ -116,28 +116,48 @@ typedef struct _stMOTION_UNIT {	//動作パターン
 #define JOBTYPE_AS_POS	4
 #define JOBTYPE_AS_SWAY	5
 
-typedef struct _stJOB_UNIT {	//作業要素（PICK、GROUND、PARK）
+typedef struct _stCOMMAND_UNIT {	//作業要素（PICK、GROUND、PARK）
 	int type;					//JOB種別
 	int job_status;				//JOB実行状況
 	int mAct[M_AXIS];			//実行対象　配列[0]から動作コードセット-1セットで終わり
-	int iAct[M_AXIS];			//実行中index -1で完了
 	ST_MOTION_UNIT motions[M_AXIS];
-}ST_JOB_UNIT, *LPST_JOB_UNIT;
+}ST_COMMAND_UNIT, *LPST_COMMAND_UNIT;
 
-typedef struct _stJOB_Report {	//JOB完了報告フォーマット
+typedef struct _stCOMMAND_Report {	//JOB完了報告フォーマット
 	WORD status;
-}ST_JOB_REPRORT, *LPST_JOB_REPRORT;
+}ST_COMMAND_REPRORT, *LPST_COMMAND_REPRORT;
+
+
+typedef struct _stCOMMAND_Target {	//JOB　ORDER構造体
+	double bh_pos;
+	double slew_pos;
+	double mh_pos;
+}ST_COMMAND_TARGET, *LPST_COMMAND_TARGET;
+
+
+//####### JOB Status  ################
+#define JOB_ORDER_COMPLETED			0x0000
+#define JOB_ORDER_STANDBY			0x0001
+#define JOB_ORDER_STEP_STANDBY		0x0002
+#define JOB_ORDER_STEP_ON_GOING		0x0003
+#define JOB_ORDER_STEP_COMPLETED	0x0004
+
+//####### ORDER TYPE  ################
+#define TEST_ORDER					0xffff
+#define NO_ORDER					0x0000
+
+#define JOB_ORDER_MAX_STEP	3
 
 /// MODE Order
 typedef struct _stJOB_ORDER {	//JOB　ORDER構造体
-	WORD type;					//JOBタイプ
-	WORD property;				//実行条件
-	WORD status;				//実行ステータス　　-1：無効
-	WORD result;				//実行結果
-	ST_JOB_UNIT		from_recipe;//from運転パターン
-	ST_JOB_UNIT		to_recipe;	//to運転パターン
-	ST_JOB_REPRORT repo1;		//from完了報告
-	ST_JOB_REPRORT repo2;		//to完了報告
+	WORD type;										//JOBタイプ
+	WORD property;									//実行条件
+	WORD status;									//実行ステータス　　-1：無効
+	int n_job_step;									//実行ステップ数
+	int job_step_now;								//実行中ステップ
+	ST_COMMAND_TARGET	command_target[JOB_ORDER_MAX_STEP];
+	ST_COMMAND_UNIT		command_recipe[JOB_ORDER_MAX_STEP];	//運転パターン
+	ST_COMMAND_REPRORT	job_report[JOB_ORDER_MAX_STEP];	//完了報告
 }ST_JOB_ORDER, *LPST_JOB_ORDER;
 
 /// MODE Order

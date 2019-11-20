@@ -215,7 +215,7 @@ void CAnalyst::cal_as_target() {
 };
 
 //#########################################################################
-int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
+int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 
 	cal_as_gain();
 	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
@@ -400,7 +400,7 @@ int CAnalyst::cal_as_recipe(int motion_id, ST_MOTION_UNIT* target) {
 	return NO_ERR_EXIST;
 };
 //#########################################################################
-int CAnalyst::cal_long_move_recipe(int motion_id, ST_MOTION_UNIT* target, int mode) {
+int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 
 	cal_as_gain();
 	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
@@ -600,7 +600,7 @@ int CAnalyst::cal_long_move_recipe(int motion_id, ST_MOTION_UNIT* target, int mo
 	return NO_ERR_EXIST;
 };
 //#########################################################################
-int CAnalyst::cal_short_move_recipe(int motion_id, ST_MOTION_UNIT* target, int mode) {
+int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 
 	cal_as_gain();
 	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
