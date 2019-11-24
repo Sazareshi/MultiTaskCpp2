@@ -265,12 +265,12 @@ void CPublicRelation::GL_Display(void) {
 	GL_DISPLAY_TEXT(5, 88, t_char2);
 
 	strcpy_s(t_char2, "as_tg = ");
-	sprintf_s(t_char, "%f", COF_RAD2DEG * pIO_Table->as_ctrl.tgpos_slew);
+	sprintf_s(t_char, "%f", COF_RAD2DEG * pIO_Table->auto_ctrl.tgpos_slew);
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(28, 88, t_char2);
 
 	strcpy_s(t_char2, "as_dir = ");
-	sprintf_s(t_char, "%d", pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID]);
+	sprintf_s(t_char, "%d", pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID]);
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(52, 88, t_char2);
 
@@ -281,12 +281,12 @@ void CPublicRelation::GL_Display(void) {
 	GL_DISPLAY_TEXT(5, 83, t_char2);
 
 	strcpy_s(t_char2, "as_tg = ");
-	sprintf_s(t_char, "%f", pIO_Table->as_ctrl.tgpos_bh);
+	sprintf_s(t_char, "%f", pIO_Table->auto_ctrl.tgpos_bh);
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(28, 83, t_char2);
 
 	strcpy_s(t_char2, "as_dir = ");
-	sprintf_s(t_char, "%d", pIO_Table->as_ctrl.as_out_dir[AS_BH_ID]);
+	sprintf_s(t_char, "%d", pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID]);
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(52, 83, t_char2);
 

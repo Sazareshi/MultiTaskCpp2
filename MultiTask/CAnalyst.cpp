@@ -10,7 +10,7 @@ extern CIO_Table*		pIO_Table;
 
 
 CAnalyst::CAnalyst(){
-	for (int i = 0; i < NUM_OF_AS; i++)	pIO_Table->as_ctrl.phase_chk_range[i] = DEF_PI / 50.0;
+	for (int i = 0; i < NUM_OF_AS; i++)	pIO_Table->auto_ctrl.phase_chk_range[i] = DEF_PI / 50.0;
 }
 
 CAnalyst::~CAnalyst(){
@@ -148,10 +148,10 @@ void CAnalyst::cal_simulation() {
 
 	//###各位相平面の加減速時の回転中心OFFSET値
 
-	pIO_Table->as_ctrl.phase_acc_offset[AS_SLEW_ID] = g_spec.slew_acc[FWD_ACC] * pIO_Table->physics.R / DEF_G;	//Offset of center of phase plane on acceleration
-	pIO_Table->as_ctrl.phase_dec_offset[AS_SLEW_ID] = g_spec.slew_acc[FWD_DEC] * pIO_Table->physics.R / DEF_G;	//Offset of center of phase plane on deceleration
-	pIO_Table->as_ctrl.phase_acc_offset[AS_BH_ID] = g_spec.bh_acc[FWD_ACC] / DEF_G;								//Offset of center of phase plane on acceleration
-	pIO_Table->as_ctrl.phase_dec_offset[AS_BH_ID] = g_spec.bh_acc[FWD_DEC] / DEF_G;								//Offset of center of phase plane on deceleration
+	pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID] = g_spec.slew_acc[FWD_ACC] * pIO_Table->physics.R / DEF_G;	//Offset of center of phase plane on acceleration
+	pIO_Table->auto_ctrl.phase_dec_offset[AS_SLEW_ID] = g_spec.slew_acc[FWD_DEC] * pIO_Table->physics.R / DEF_G;	//Offset of center of phase plane on deceleration
+	pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID] = g_spec.bh_acc[FWD_ACC] / DEF_G;								//Offset of center of phase plane on acceleration
+	pIO_Table->auto_ctrl.phase_dec_offset[AS_BH_ID] = g_spec.bh_acc[FWD_DEC] / DEF_G;								//Offset of center of phase plane on deceleration
 
 };
 
@@ -168,13 +168,13 @@ void CAnalyst::init_task(void *pobj) {
 
 	hl.pHP = &hp; //吊点と紐付け
 
-	pIO_Table->as_ctrl.allowable_pos_overshoot_plus[AS_BH_ID]= 1.0;		//振止目標位置オーバー許容値　進行方向
-	pIO_Table->as_ctrl.allowable_pos_overshoot_plus[AS_SLEW_ID] = 1.0;	//振止目標位置オーバー許容値　進行方向
-	pIO_Table->as_ctrl.allowable_pos_overshoot_plus[AS_MH_ID] = 1.0;	//振止目標位置オーバー許容値　進行方向
+	pIO_Table->auto_ctrl.allowable_pos_overshoot_plus[AS_BH_ID]= 1.0;		//振止目標位置オーバー許容値　進行方向
+	pIO_Table->auto_ctrl.allowable_pos_overshoot_plus[AS_SLEW_ID] = 1.0;	//振止目標位置オーバー許容値　進行方向
+	pIO_Table->auto_ctrl.allowable_pos_overshoot_plus[AS_MH_ID] = 1.0;	//振止目標位置オーバー許容値　進行方向
 
-	pIO_Table->as_ctrl.allowable_pos_overshoot_minus[AS_BH_ID] = 1.0;	//振止目標位置オーバー許容値　進行方向
-	pIO_Table->as_ctrl.allowable_pos_overshoot_minus[AS_SLEW_ID] = 1.0;	//振止目標位置オーバー許容値　進行方向
-	pIO_Table->as_ctrl.allowable_pos_overshoot_minus[AS_MH_ID] = 1.0;	//振止目標位置オーバー許容値　進行方向
+	pIO_Table->auto_ctrl.allowable_pos_overshoot_minus[AS_BH_ID] = 1.0;	//振止目標位置オーバー許容値　進行方向
+	pIO_Table->auto_ctrl.allowable_pos_overshoot_minus[AS_SLEW_ID] = 1.0;	//振止目標位置オーバー許容値　進行方向
+	pIO_Table->auto_ctrl.allowable_pos_overshoot_minus[AS_MH_ID] = 1.0;	//振止目標位置オーバー許容値　進行方向
 	
 	return;
 };
@@ -187,33 +187,86 @@ void CAnalyst::routine_work(void *param) {
 	//シミュレータ計算
 	if (pMode->auto_control != ENV_MODE_SIM2) cal_simulation();
 
-	cal_as_target();
-	update_as_ctrl();
+	cal_auto_target(CAL_FOR_MANUAL);
+	update_auto_ctrl();
 
 };
 //##########################
-LPST_JOB_ORDER CAnalyst::cal_job_recipe(int job_type) {
-	return &(pOrder->job_A);
-};
-//##########################
-void CAnalyst::cal_as_target() {
-	if (pMode->antisway != OPE_MODE_AS_ON) {
-		pIO_Table->as_ctrl.tgpos_bh = pIO_Table->physics.R;
-		pIO_Table->as_ctrl.tgpos_slew = pIO_Table->physics.th;	//旋回目標位置は旋回角度
+void CAnalyst::cal_auto_target(int mode) {
+	if (mode == CAL_FOR_AUTO_JOB_A) {
+		pIO_Table->auto_ctrl.tgpos_bh = pOrder->job_A.command_target[pOrder->job_A.job_step_now].bh_pos;
+		pIO_Table->auto_ctrl.tgpos_slew = pOrder->job_A.command_target[pOrder->job_A.job_step_now].slew_pos;
 	}
-	else{
-		if(pMode->antisway_control_n == AS_MOVE_INTERRUPT)	pIO_Table->as_ctrl.tgpos_bh = pIO_Table->physics.R;
-		if (pMode->antisway_control_t == AS_MOVE_INTERRUPT)	pIO_Table->as_ctrl.tgpos_slew = pIO_Table->physics.th;
+	else {
+		if (pMode->antisway != OPE_MODE_AS_ON) {
+			pIO_Table->auto_ctrl.tgpos_bh = pIO_Table->physics.R;
+			pIO_Table->auto_ctrl.tgpos_slew = pIO_Table->physics.th;	//旋回目標位置は旋回角度
+		}
+		else {
+			if (pMode->antisway_control_n == AS_MOVE_INTERRUPT)	pIO_Table->auto_ctrl.tgpos_bh = pIO_Table->physics.R;
+			if (pMode->antisway_control_t == AS_MOVE_INTERRUPT)	pIO_Table->auto_ctrl.tgpos_slew = pIO_Table->physics.th;
+		}
 	}
 
-	pIO_Table->as_ctrl.tgD[AS_BH_ID] = pIO_Table->as_ctrl.tgpos_bh - pIO_Table->physics.R;
-	pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] = abs(pIO_Table->as_ctrl.tgD[AS_BH_ID]);
-	pIO_Table->as_ctrl.tgD[AS_SLEW_ID] = pIO_Table->as_ctrl.tgpos_slew - pIO_Table->physics.th;
-	pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] = abs(pIO_Table->as_ctrl.tgD[AS_SLEW_ID]);
+	pIO_Table->auto_ctrl.tgD[AS_BH_ID] = pIO_Table->auto_ctrl.tgpos_bh - pIO_Table->physics.R;
+	pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] = abs(pIO_Table->auto_ctrl.tgD[AS_BH_ID]);
+	pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] = pIO_Table->auto_ctrl.tgpos_slew - pIO_Table->physics.th;
+	pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] = abs(pIO_Table->auto_ctrl.tgD[AS_SLEW_ID]);
 
 	return;
 };
 
+//#########################################################################
+int CAnalyst::cal_job_recipe(int job_id, int mode) {
+	cal_as_gain();
+	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
+	unsigned int play_scan_ms = pPly->inf.cycle_ms;
+
+
+	LPST_MOTION_UNIT p_bh_target, p_slew_target;
+	double check_d, check_d2;
+
+	switch (job_id) {
+	case ORDER_ID_JOB_A: {
+		p_bh_target = &(pOrder->job_A.command_recipe[pOrder->job_A.job_step_now].motions[BH_AXIS]);
+		p_slew_target = &(pOrder->job_A.command_recipe[pOrder->job_A.job_step_now].motions[SLW_AXIS]);
+
+		check_d = pIO_Table->physics.T * g_spec.bh_notch_spd[1] //1ノッチ一周期　＋　振れ止め1回の移動距離
+			+ g_spec.bh_acc[FWD_ACC] * pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID] * pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID];
+		check_d2 = pIO_Table->physics.T * g_spec.bh_notch_spd[1] / 3.0 //1ノッチ 1/3周期　＋　1ノッチインチング距離
+			+ g_spec.bh_notch_spd[1] * g_spec.bh_notch_spd[1] / g_spec.bh_acc[FWD_ACC];
+
+		if (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > check_d) {
+			if (cal_long_move_recipe(MOTION_ID_BH, p_bh_target, AUTO_PTN_MODE_AUTOMOVE) == NO_ERR_EXIST) {
+				p_bh_target->ptn_status = PTN_STANDBY;
+			}
+		}
+		else if ((pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > check_d2) && (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > 0.5)) {
+			if (cal_short_move_recipe(MOTION_ID_BH, p_bh_target, AUTO_PTN_MODE_AUTOMOVE) == NO_ERR_EXIST) {
+				p_bh_target->ptn_status = PTN_STANDBY;
+			}
+		}
+		else {
+			if (pMode->antisway_control_n == AS_MOVE_ANTISWAY) {
+				if (cal_as_recipe(MOTION_ID_BH, p_bh_target, AUTO_PTN_MODE_AUTOMOVE) == NO_ERR_EXIST) {
+					p_bh_target->ptn_status = PTN_STANDBY;
+				}
+			}
+		}
+
+		if (p_bh_target->ptn_status = PTN_STANDBY) {
+			if (cal_long_move_recipe(MOTION_ID_SLEW, p_slew_target, AUTO_PTN_MODE_AUTOMOVE) == NO_ERR_EXIST) {
+				p_slew_target->ptn_status = PTN_STANDBY;
+			}
+		}
+
+		if (p_slew_target->ptn_status != PTN_STANDBY) return ERROR_ANA_CREAPE_AUTO_PATERN;
+	}break;
+	default:break;
+	}
+
+	return NO_ERR_EXIST;
+};
 //#########################################################################
 int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 
@@ -221,9 +274,9 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
 	unsigned int play_scan_ms = pPly->inf.cycle_ms;
 
-	pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 0;
-	pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = 0;
-	pIO_Table->as_ctrl.as_out_dir[AS_MH_ID] = 0;
+	pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = 0;
+	pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = 0;
+	pIO_Table->auto_ctrl.as_out_dir[AS_MH_ID] = 0;
 
 	target->n_step = 0;
 		
@@ -240,13 +293,13 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 			{
 				target->motions[0].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
 				// _p
-				target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
+				target->motions[0]._p = pIO_Table->auto_ctrl.tgpos_bh;
 				// _t
 				target->motions[0]._t = pIO_Table->physics.T*2.0;
 				// low phase
-				double start_offset = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID] * pIO_Table->physics.w0;
+				double start_offset = pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID] * pIO_Table->physics.w0;
 				target->motions[0].phase1 = start_offset;//DEF_PI * 0.25;
-				// high phase
+														 // high phase
 				target->motions[0].phase2 = -DEF_PI + start_offset; //* 0.75;
 
 				target->motions[0]._v = 0.0;
@@ -255,12 +308,12 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 			{
 				target->motions[1].type = CTR_TYPE_ACC_AS;
 				// _p
-				target->motions[1]._p = pIO_Table->as_ctrl.tgpos_bh;
+				target->motions[1]._p = pIO_Table->auto_ctrl.tgpos_bh;
 				// _t
-				if(pMode->antisway_ptn_n == AS_PTN_DMP)
-					target->motions[1]._t = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
+				if (pMode->antisway_ptn_n == AS_PTN_DMP)
+					target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID];
 				else
-					target->motions[1]._t = pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID];
+					target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_pos[AS_BH_ID];
 				// _v
 				target->motions[1]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;
 			}
@@ -268,16 +321,16 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 			{
 				target->motions[2].type = CTR_TYPE_DEC_V;
 				// _p
-				target->motions[2]._p = pIO_Table->as_ctrl.tgpos_bh;
+				target->motions[2]._p = pIO_Table->auto_ctrl.tgpos_bh;
 				// _t
-				target->motions[2]._t = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
+				target->motions[2]._t = pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID];
 				target->motions[2]._v = 0.0;
 			}
 			//Step 4
 			{
 				target->motions[3].type = CTR_TYPE_TIME_WAIT;
 				// _p
-				target->motions[3]._p = pIO_Table->as_ctrl.tgpos_bh;
+				target->motions[3]._p = pIO_Table->auto_ctrl.tgpos_bh;
 				// _t
 				target->motions[3]._t = PTN_CONFIRMATION_TIME;
 				// _v
@@ -294,11 +347,11 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 			target->axis_type = BH_AXIS;
 			target->ptn_status = PTN_STANDBY;
 			target->iAct = 0; //Initialize activated pattern
-			
-			//Step 1
+
+							  //Step 1
 			target->motions[0].type = CTR_TYPE_TIME_WAIT;
 			// _p
-			target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
+			target->motions[0]._p = pIO_Table->auto_ctrl.tgpos_bh;
 			// _t
 			target->motions[0]._t = PTN_CONFIRMATION_TIME;
 			target->motions[0]._v = 0.0;
@@ -306,6 +359,14 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 				target->motions[i].act_counter = 0;
 				target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
 			}
+		}
+		if (mode == AUTO_PTN_MODE_AUTOMOVE) {
+			target->motions[target->n_step].type = CTR_TYPE_SLEW_WAIT;
+			target->motions[target->n_step]._p = pIO_Table->auto_ctrl.tgpos_bh;	
+			target->motions[target->n_step]._t = PTN_ERROR_CHECK_TIME1;
+			target->motions[target->n_step].time_count = (int)(target->motions[target->n_step]._t * 1000) / (int)play_scan_ms;
+			target->motions[target->n_step]._v = 0.0;
+			target->n_step += 1;
 		}
 	}break;
 	case MOTION_ID_SLEW: {
@@ -320,11 +381,11 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 				{
 					target->motions[0].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
 					// _p
-					target->motions[0]._p = pIO_Table->as_ctrl.tgpos_slew;
+					target->motions[0]._p = pIO_Table->auto_ctrl.tgpos_slew;
 					// _t
 					target->motions[0]._t = pIO_Table->physics.T*2.0;
 
-					double start_offset = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID] * pIO_Table->physics.w0;
+					double start_offset = pIO_Table->auto_ctrl.as_gain_damp[AS_SLEW_ID] * pIO_Table->physics.w0;
 					// low phase
 					target->motions[0].phase1 = start_offset;//DEF_PI * 0.25;
 					 // high phase
@@ -336,12 +397,12 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 				{
 					target->motions[1].type = CTR_TYPE_ACC_AS;
 					// _p
-					target->motions[1]._p = pIO_Table->as_ctrl.tgpos_slew;
+					target->motions[1]._p = pIO_Table->auto_ctrl.tgpos_slew;
 					// _t
 					if (pMode->antisway_ptn_t == AS_PTN_DMP)
-						target->motions[1]._t = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
+						target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_damp[AS_SLEW_ID];
 					else
-						target->motions[1]._t = pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID];
+						target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_pos[AS_SLEW_ID];
 	
 					// _v
 					target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;
@@ -350,9 +411,9 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 				{
 					target->motions[2].type = CTR_TYPE_DEC_V;
 					// _p
-					target->motions[2]._p = pIO_Table->as_ctrl.tgpos_slew;
+					target->motions[2]._p = pIO_Table->auto_ctrl.tgpos_slew;
 					// _t
-					target->motions[2]._t = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
+					target->motions[2]._t = pIO_Table->auto_ctrl.as_gain_damp[AS_SLEW_ID];
 					// _v
 					target->motions[2]._v = pIO_Table->physics.wth;
 				}
@@ -360,7 +421,7 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 				{
 					target->motions[3].type = CTR_TYPE_TIME_WAIT;
 					// _p
-					target->motions[3]._p = pIO_Table->as_ctrl.tgpos_slew;
+					target->motions[3]._p = pIO_Table->auto_ctrl.tgpos_slew;
 					// _t
 					target->motions[3]._t = PTN_CONFIRMATION_TIME;
 					// _v
@@ -382,7 +443,7 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 				//Step 1
 				target->motions[0].type = CTR_TYPE_TIME_WAIT;
 				// _p
-				target->motions[0]._p = pIO_Table->as_ctrl.tgpos_slew;
+				target->motions[0]._p = pIO_Table->auto_ctrl.tgpos_slew;
 				// _t
 				target->motions[0]._t = PTN_CONFIRMATION_TIME;
 
@@ -406,21 +467,21 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
 	unsigned int play_scan_ms = pPly->inf.cycle_ms;
 
-	pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 0;
-	pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = 0;
-	pIO_Table->as_ctrl.as_out_dir[AS_MH_ID] = 0;
+	pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = 0;
+	pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = 0;
+	pIO_Table->auto_ctrl.as_out_dir[AS_MH_ID] = 0;
 
 	target->n_step = 0;
 
 	switch (motion_id) {
 	case MOTION_ID_BH: {
 
-		if(pIO_Table->as_ctrl.tgD[AS_BH_ID] > 0.0) pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 1;
-		else if(pIO_Table->as_ctrl.tgD[AS_BH_ID] < 0.0)pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = -1;
+		if(pIO_Table->auto_ctrl.tgD[AS_BH_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = 1;
+		else if(pIO_Table->auto_ctrl.tgD[AS_BH_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = -1;
 		else;
 
 		//目標移動距離Da
-		double Da = pIO_Table->as_ctrl.tgD_abs[AS_BH_ID];
+		double Da = pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID];
 		int n = 0;
 
 		if(Da >= 0.0) n = cal_move_pattern_bh(ptn_notch_freq[AS_BH_ID], Da, AS_PTN_MOVE_LONG);
@@ -434,7 +495,7 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 			//Step 1
 			target->motions[0].type = CTR_TYPE_TIME_WAIT;
 			// _p
-			target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;
+			target->motions[0]._p = pIO_Table->auto_ctrl.tgpos_bh;
 			target->motions[0]._v = 0.0;
 			// _t
 			target->motions[0]._t = PTN_CONFIRMATION_TIME;
@@ -454,10 +515,10 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 			{
 				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
 				target->motions[step_count]._t = pIO_Table->physics.T;
-				target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * g_spec.bh_notch_spd[n];
+				target->motions[step_count]._v = pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * g_spec.bh_notch_spd[n];
 				target->motions[step_count]._p =   pIO_Table->physics.R 
 					                             + target->motions[step_count]._v * target->motions[step_count]._t
-												 - pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count]._v * target->motions[step_count]._v / g_spec.bh_acc[FWD_ACC] / 2.0;
+												 - pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count]._v * target->motions[step_count]._v / g_spec.bh_acc[FWD_ACC] / 2.0;
 			}
 
 			//Step 2～ 台形減速パターン部
@@ -470,7 +531,7 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 					target->n_step += 1;
 
 					target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
-					target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * g_spec.bh_notch_spd[n];
+					target->motions[step_count]._v = pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * g_spec.bh_notch_spd[n];
 
 					double  temp_d = (target->motions[step_count - 1]._v - target->motions[step_count]._v) / g_spec.bh_acc[FWD_ACC];
 					if (temp_d < 0.0)temp_d *= -1.0;
@@ -479,7 +540,7 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 					temp_d = 0.5*g_spec.bh_acc[FWD_ACC] *temp_d * temp_d;
 					target->motions[step_count]._p = target->motions[step_count-1]._p
 													+ target->motions[step_count]._v * target->motions[step_count]._t
-													- pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * temp_d;
+													- pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * temp_d;
 				}
 			}
 
@@ -494,7 +555,7 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 				if (temp_d < 0.0)temp_d *= -1.0;
 				target->motions[step_count]._t = temp_d;
 				temp_d = 0.5*g_spec.bh_acc[FWD_ACC] * temp_d * temp_d;
-				target->motions[step_count]._p = target->motions[step_count - 1]._p	- pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * temp_d;
+				target->motions[step_count]._p = target->motions[step_count - 1]._p	- pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * temp_d;
 			}
 
 			//time_count
@@ -504,20 +565,49 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 			}
 
 		}
+		if (mode == AUTO_PTN_MODE_AUTOMOVE) {
+			target->motions[target->n_step].type = CTR_TYPE_SLEW_WAIT;
+			target->motions[target->n_step]._p = pIO_Table->auto_ctrl.tgpos_bh;
+			target->motions[target->n_step]._t = PTN_ERROR_CHECK_TIME1;
+			target->motions[target->n_step].time_count = (int)(target->motions[target->n_step]._t * 1000) / (int)play_scan_ms;
+			target->motions[target->n_step]._v = 0.0;
+			target->n_step += 1;
+		}
+
 	}break;
 
 	case MOTION_ID_SLEW: {
 
-		if (pIO_Table->as_ctrl.tgD[AS_SLEW_ID] > 0.0) pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = 1;
-		else if (pIO_Table->as_ctrl.tgD[AS_SLEW_ID] < 0.0)pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = -1;
+		if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = 1;
+		else if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = -1;
 		else;
 
 		//目標移動距離Da
-
-		double Da = pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID];
 		int n = 0;
+		double Da;
 
-		if (Da >= 0.0) n = cal_move_pattern_slew(ptn_notch_freq[AS_SLEW_ID], Da, AS_PTN_MOVE_LONG);
+		if (mode == AUTO_PTN_MODE_AUTOMOVE) {
+			double t = DEF_HPI / pIO_Table->physics.w0;
+			Da = pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] - t*t*g_spec.slew_acc[FWD_ACC];
+			if (Da >= 0.0) {
+				for (int i = NOTCH_MAX - 1; i > 0; i--) {
+					if (n == 0) {
+						double Vn = g_spec.slew_notch_spd[n];
+						double chk_dist = Vn * Vn / g_spec.slew_acc[FWD_ACC];
+						if (Da < chk_dist) continue;
+						else {
+							n = i;
+							break;
+						}
+					}
+				}
+			}
+		}
+		else {
+			Da = pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID];
+			if (Da >= 0.0) n = cal_move_pattern_slew(ptn_notch_freq[AS_SLEW_ID], Da, AS_PTN_MOVE_LONG);
+		}
+
 
 		if ((n == 0) || (Da < 0.0)) {//パターン不要
 			target->n_step = 1;
@@ -527,11 +617,51 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 
 			 //Step 1
 			target->motions[0].type = CTR_TYPE_TIME_WAIT;
-			target->motions[0]._p = pIO_Table->as_ctrl.tgpos_slew;	// _p
+			target->motions[0]._p = pIO_Table->auto_ctrl.tgpos_slew;	// _p
 			target->motions[0]._v = 0.0;
 			target->motions[0]._t = PTN_CONFIRMATION_TIME;			// _t
 			target->motions[0].act_counter = 0;
 			target->motions[0].time_count = (int)(target->motions[0]._t * 1000) / (int)play_scan_ms;
+		}
+		else if (mode == AUTO_PTN_MODE_AUTOMOVE) {
+			int step_count = 0;
+
+			target->n_step = 3;
+			target->axis_type = SLW_AXIS;
+			target->ptn_status = PTN_STANDBY;
+			target->iAct = 0; //Initialize activated pattern
+			target->motion_type = AS_PTN_MOVE_LONG;
+
+			//Step 1 台形パターン部
+			{
+				target->motions[0].type = CTR_TYPE_CONST_V_TIME;
+				target->motions[step_count]._t = Da / g_spec.slew_notch_spd[n];
+				target->motions[step_count]._v = pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
+				target->motions[step_count]._p = target->motions[0]._p = pIO_Table->physics.th + Da
+												- pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count]._v * target->motions[step_count]._v / g_spec.slew_acc[FWD_ACC] / 2.0;
+			}
+			//Step 2～ 台形減速パターン部
+			{
+				step_count += 1;
+				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
+				target->motions[step_count]._t = g_spec.slew_notch_spd[n]/ g_spec.slew_acc[FWD_ACC];
+				target->motions[step_count]._v = 0.0;
+				target->motions[step_count]._p = target->motions[0]._p = pIO_Table->physics.th + Da;
+			}
+			//Step end 部
+			{
+				step_count += 1;
+				target->motions[step_count].type = CTR_TYPE_TIME_WAIT;
+				target->motions[step_count]._v = 0.0;
+				target->motions[step_count]._t = PTN_CONFIRMATION_TIME;
+				target->motions[step_count]._p = target->motions[0]._p = pIO_Table->physics.th + Da;
+			}
+
+			//time_count
+			for (int i = 0; i < target->n_step; i++) {
+				target->motions[i].act_counter = 0;
+				target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
+			}
 		}
 		else {
 			int step_count = 0;
@@ -546,10 +676,10 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 			{
 				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
 				target->motions[step_count]._t = pIO_Table->physics.T;
-				target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
+				target->motions[step_count]._v = pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
 				target->motions[step_count]._p = pIO_Table->physics.th
 					+ target->motions[step_count]._v * target->motions[step_count]._t
-					- pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count]._v * target->motions[step_count]._v / g_spec.slew_acc[FWD_ACC] / 2.0;
+					- pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count]._v * target->motions[step_count]._v / g_spec.slew_acc[FWD_ACC] / 2.0;
 			}
 			//Step 2～ 台形減速パターン部
 			{
@@ -561,7 +691,7 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 					target->n_step += 1;
 
 					target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
-					target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
+					target->motions[step_count]._v = pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
 
 					double  temp_d = (target->motions[step_count - 1]._v - target->motions[step_count]._v) / g_spec.slew_acc[FWD_ACC];
 					if (temp_d < 0.0)temp_d *= -1.0;//次ノッチ速度までの減速時間
@@ -570,7 +700,7 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 					temp_d = 0.5*g_spec.slew_acc[FWD_ACC] * temp_d * temp_d;
 					target->motions[step_count]._p = target->motions[step_count - 1]._p
 						+ target->motions[step_count]._v * target->motions[step_count]._t
-						- pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * temp_d;
+						- pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * temp_d;
 				}
 			}
 			//Step end 部
@@ -584,7 +714,7 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 				if (temp_d < 0.0)temp_d *= -1.0;
 				target->motions[step_count]._t = temp_d;
 				temp_d = 0.5 * g_spec.slew_acc[FWD_ACC] * temp_d * temp_d;
-				target->motions[step_count]._p = target->motions[step_count - 1]._p - pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * temp_d;
+				target->motions[step_count]._p = target->motions[step_count - 1]._p - pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * temp_d;
 			}
 
 			//time_count
@@ -606,21 +736,21 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
 	unsigned int play_scan_ms = pPly->inf.cycle_ms;
 
-	pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 0;
-	pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = 0;
-	pIO_Table->as_ctrl.as_out_dir[AS_MH_ID] = 0;
+	pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = 0;
+	pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = 0;
+	pIO_Table->auto_ctrl.as_out_dir[AS_MH_ID] = 0;
 
 	target->n_step = 0;
 
 	switch (motion_id) {
 	case MOTION_ID_BH: {
 
-		if (pIO_Table->as_ctrl.tgD[AS_BH_ID] > 0.0) pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = 1;
-		else if (pIO_Table->as_ctrl.tgD[AS_BH_ID] < 0.0)pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] = -1;
+		if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = 1;
+		else if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = -1;
 		else;
 
 		//目標移動距離Da
-		double Da = pIO_Table->as_ctrl.tgD_abs[AS_BH_ID];
+		double Da = pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID];
 		int n = 0;
 
 		if (Da >= 0.0) n = cal_move_pattern_bh(ptn_notch_freq[AS_BH_ID], Da, AS_PTN_MOVE_SHORT);
@@ -634,7 +764,7 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 
 			//Step 1
 			target->motions[0].type = CTR_TYPE_TIME_WAIT;
-			target->motions[0]._p = pIO_Table->as_ctrl.tgpos_bh;// _p
+			target->motions[0]._p = pIO_Table->auto_ctrl.tgpos_bh;// _p
 			target->motions[0]._v = 0.0;						// _v
 			target->motions[0]._t = PTN_CONFIRMATION_TIME;		// _t
 			target->motions[0].act_counter = 0;
@@ -656,9 +786,9 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 
 				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
 				target->motions[step_count]._t = pIO_Table->physics.T / 6.0;
-				target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * g_spec.bh_notch_spd[n];
+				target->motions[step_count]._v = pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * g_spec.bh_notch_spd[n];
 				target->motions[step_count]._p = pIO_Table->physics.R
-					+ pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.bh_acc[FWD_ACC] / 2.0);
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.bh_acc[FWD_ACC] / 2.0);
 			}
 
 			//Step 2　停止
@@ -670,7 +800,7 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 				target->motions[step_count]._t = pIO_Table->physics.T / 6.0;
 				target->motions[step_count]._v = 0.0;
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
-					+ pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.bh_acc[FWD_ACC] / 2.0;
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.bh_acc[FWD_ACC] / 2.0;
 			}
 
 			//Step 3　定速
@@ -679,10 +809,10 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 				target->n_step += 1;
 
 				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
-				target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * g_spec.bh_notch_spd[n];
+				target->motions[step_count]._v = pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * g_spec.bh_notch_spd[n];
 				target->motions[step_count]._t = Da / g_spec.bh_notch_spd[n] - pIO_Table->physics.T / 3.0;
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
-					+ pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.bh_acc[FWD_ACC] / 2.0);
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.bh_acc[FWD_ACC] / 2.0);
 			}
 			//Step 4　停止
 			{
@@ -693,7 +823,7 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 				target->motions[step_count]._t = pIO_Table->physics.T / 6.0;
 				target->motions[step_count]._v = 0.0;
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
-					+ pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.bh_acc[FWD_ACC] / 2.0;
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.bh_acc[FWD_ACC] / 2.0;
 			}
 			//Step 5 加速
 			{
@@ -702,9 +832,9 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 
 				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
 				target->motions[step_count]._t = pIO_Table->physics.T / 6.0;
-				target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * g_spec.bh_notch_spd[n];
+				target->motions[step_count]._v = pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * g_spec.bh_notch_spd[n];
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
-					+ pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.bh_acc[FWD_ACC] / 2.0);
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.bh_acc[FWD_ACC] / 2.0);
 			}
 
 			//Step 6　停止
@@ -716,7 +846,7 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 				target->motions[step_count]._t = target->motions[step_count - 1]._v / g_spec.bh_acc[FWD_ACC] + PTN_CONFIRMATION_TIME;
 				target->motions[step_count]._v = 0.0;
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
-					+ pIO_Table->as_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.bh_acc[FWD_ACC] / 2.0;
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.bh_acc[FWD_ACC] / 2.0;
 			}
 
 			//time_count
@@ -726,17 +856,25 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 			}
 
 		}
+		if (mode == AUTO_PTN_MODE_AUTOMOVE) {
+			target->motions[target->n_step].type = CTR_TYPE_SLEW_WAIT;
+			target->motions[target->n_step]._p = pIO_Table->auto_ctrl.tgpos_bh;
+			target->motions[target->n_step]._t = PTN_ERROR_CHECK_TIME1;
+			target->motions[target->n_step].time_count = (int)(target->motions[target->n_step]._t * 1000) / (int)play_scan_ms;
+			target->motions[target->n_step]._v = 0.0;
+			target->n_step += 1;
+		}
 	}break;
 
 	case MOTION_ID_SLEW: {
 
-		if (pIO_Table->as_ctrl.tgD[AS_SLEW_ID] > 0.0) pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = 1;
-		else if (pIO_Table->as_ctrl.tgD[AS_SLEW_ID] < 0.0)pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] = -1;
+		if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = 1;
+		else if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = -1;
 		else;
 
 		//目標移動距離Da
 
-		double Da = pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID];
+		double Da = pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID];
 		int n = 0;
 
 		if (Da >= 0.0) n = cal_move_pattern_slew(ptn_notch_freq[AS_SLEW_ID], Da, AS_PTN_MOVE_SHORT);
@@ -749,7 +887,7 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 			target->motion_type = AS_PTN_0;
 			//Step 1
 			target->motions[0].type = CTR_TYPE_TIME_WAIT;
-			target->motions[0]._p = pIO_Table->as_ctrl.tgpos_slew;	// _p
+			target->motions[0]._p = pIO_Table->auto_ctrl.tgpos_slew;	// _p
 			target->motions[0]._v = 0.0;
 			target->motions[0]._t = PTN_CONFIRMATION_TIME;			// _t
 			target->motions[0].act_counter = 0;
@@ -772,9 +910,9 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 
 				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
 				target->motions[step_count]._t = pIO_Table->physics.T / 6.0;
-				target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
+				target->motions[step_count]._v = pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
 				target->motions[step_count]._p = pIO_Table->physics.th
-					+ pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.slew_acc[FWD_ACC] / 2.0);
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.slew_acc[FWD_ACC] / 2.0);
 			}
 			//Step 2　停止
 			{
@@ -785,7 +923,7 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 				target->motions[step_count]._t = pIO_Table->physics.T / 6.0;
 				target->motions[step_count]._v = 0.0;
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
-					+ pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.slew_acc[FWD_ACC] / 2.0;
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.slew_acc[FWD_ACC] / 2.0;
 			}
 
 			//Step 3　定速
@@ -794,10 +932,10 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 				target->n_step += 1;
 
 				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
-				target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
+				target->motions[step_count]._v = pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
 				target->motions[step_count]._t = Da / g_spec.slew_notch_spd[n] - pIO_Table->physics.T / 3.0;
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
-					+ pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.slew_acc[FWD_ACC] / 2.0);
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.slew_acc[FWD_ACC] / 2.0);
 			}
 			//Step 4　停止
 			{
@@ -808,7 +946,7 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 				target->motions[step_count]._t = pIO_Table->physics.T / 6.0;
 				target->motions[step_count]._v = 0.0;
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
-					+ pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.slew_acc[FWD_ACC] / 2.0;
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.slew_acc[FWD_ACC] / 2.0;
 			}
 			//Step 5 加速
 			{
@@ -817,9 +955,9 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 
 				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
 				target->motions[step_count]._t = pIO_Table->physics.T / 6.0;
-				target->motions[step_count]._v = pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
+				target->motions[step_count]._v = pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * g_spec.slew_notch_spd[n];
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
-					+ pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.slew_acc[FWD_ACC] / 2.0);
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count]._v * (target->motions[step_count]._t - target->motions[step_count]._v / g_spec.slew_acc[FWD_ACC] / 2.0);
 			}
 
 			//Step 6　停止
@@ -831,7 +969,7 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 				target->motions[step_count]._t = target->motions[step_count - 1]._v / g_spec.bh_acc[FWD_ACC] + PTN_CONFIRMATION_TIME;
 				target->motions[step_count]._v = 0.0;
 				target->motions[step_count]._p = target->motions[step_count - 1]._p
-					+ pIO_Table->as_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.slew_acc[FWD_ACC] / 2.0;
+					+ pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * target->motions[step_count - 1]._v * target->motions[step_count - 1]._v / g_spec.slew_acc[FWD_ACC] / 2.0;
 			}
 
 			}
@@ -847,7 +985,7 @@ int CAnalyst::cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int 
 	return NO_ERR_EXIST;
 };
 //### Update Anti-sway Control Mode################################################
-void CAnalyst::update_as_ctrl() {
+void CAnalyst::update_auto_ctrl() {
 
 	// Update Anti-Sway Control mode
 	if (pMode->antisway != OPE_MODE_AS_ON) {
@@ -867,11 +1005,11 @@ void CAnalyst::update_as_ctrl() {
 		pMode->antisway_control_n = AS_MOVE_STANDBY;
 	}
 	else if ((pIO_Table->physics.sway_amp_n_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) &&			//振れが完了レベル
-				(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_COMPLE])){	//位置が完了レベル
+				(pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_COMPLE])){	//位置が完了レベル
 		pMode->antisway_ptn_n = AS_PTN_0;
 		pMode->antisway_control_n = AS_MOVE_COMPLETE;
 	}
-	else if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {		//目標が位置決め起動判定距離内
+	else if (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {		//目標が位置決め起動判定距離内
 		if (pIO_Table->physics.sway_amp_n_ph > g_spec.as_compl_swayLv[I_AS_LV_TRIGGER]){			//振れがトリガ判定値以上
 			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
 			pMode->antisway_ptn_n = AS_PTN_DMP;
@@ -886,7 +1024,7 @@ void CAnalyst::update_as_ctrl() {
 			}
 		}
 	}
-	else if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_POSITION]) {
+	else if (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_POSITION]) {
 		pMode->antisway_control_n = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_n = AS_PTN_POS;
 	}
@@ -894,7 +1032,7 @@ void CAnalyst::update_as_ctrl() {
 		pMode->antisway_control_n = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_n = AS_PTN_DMP;
 	}
-	else if (pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {
+	else if (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) {
 		pMode->antisway_control_n = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_n = AS_PTN_POS;
 	}
@@ -913,11 +1051,11 @@ void CAnalyst::update_as_ctrl() {
 		pMode->antisway_control_t = AS_MOVE_STANDBY;
 	}
 	else if ((pIO_Table->physics.sway_amp_t_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) &&		//目標が位置決め完了判定距離内
-		(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_tposLv[I_AS_LV_COMPLE])) {	//振れが完了判定内
+		(pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_tposLv[I_AS_LV_COMPLE])) {	//振れが完了判定内
 		pMode->antisway_ptn_t = AS_PTN_0;
 		pMode->antisway_control_t = AS_MOVE_COMPLETE;
 	}
-	else if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_tposLv[I_AS_LV_TRIGGER]) {	//目標が位置決め起動判定距離内
+	else if (pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_tposLv[I_AS_LV_TRIGGER]) {	//目標が位置決め起動判定距離内
 		if (pIO_Table->physics.sway_amp_t_ph > g_spec.as_compl_swayLv[I_AS_LV_TRIGGER]) {	//振れがトリガ判定値以上
 			pMode->antisway_control_t = AS_MOVE_ANTISWAY;
 			pMode->antisway_ptn_t = AS_PTN_DMP;
@@ -931,7 +1069,7 @@ void CAnalyst::update_as_ctrl() {
 				pMode->antisway_ptn_t = AS_PTN_0;
 		}
 	}
-	else if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] > g_spec.as_compl_tposLv[I_AS_LV_POSITION]) {
+	else if (pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] > g_spec.as_compl_tposLv[I_AS_LV_POSITION]) {
 		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_t = AS_PTN_POS;
 	}
@@ -939,7 +1077,7 @@ void CAnalyst::update_as_ctrl() {
 		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_t = AS_PTN_DMP;
 	}
-	else if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] > g_spec.as_compl_tposLv[I_AS_LV_TRIGGER]) {
+	else if (pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] > g_spec.as_compl_tposLv[I_AS_LV_TRIGGER]) {
 		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_t= AS_PTN_POS;
 	}
@@ -952,53 +1090,53 @@ void CAnalyst::cal_as_gain() {//振れ止めゲイン＝加速時間
 	//#### 引込方向
 	double temp_angle;
 
-	if (pIO_Table->as_ctrl.phase_acc_offset[AS_BH_ID] < pIO_Table->physics.sway_amp_n_ph) {
+	if (pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID] < pIO_Table->physics.sway_amp_n_ph) {
 		temp_angle = DEF_HPI*0.8;
 	}
 	else {
-		temp_angle = DEF_HPI*0.8 * pIO_Table->physics.sway_amp_n_ph/ pIO_Table->as_ctrl.phase_acc_offset[AS_BH_ID];
+		temp_angle = DEF_HPI*0.8 * pIO_Table->physics.sway_amp_n_ph/ pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID];
 		if (temp_angle < DEF_PI / 10.0) temp_angle = DEF_PI / 10.0;
 	}
 	
-	pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID] = temp_angle / pIO_Table->physics.w0;	//Gain = time
+	pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID] = temp_angle / pIO_Table->physics.w0;	//Gain = time
 
 
 	//####旋回方向
 
-	if (pIO_Table->as_ctrl.phase_acc_offset[AS_SLEW_ID] < pIO_Table->physics.sway_amp_t_ph) {
+	if (pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID] < pIO_Table->physics.sway_amp_t_ph) {
 		temp_angle = DEF_HPI * 0.8;
 	}
 	else {
-		temp_angle = DEF_HPI*0.8 * pIO_Table->physics.sway_amp_t_ph / pIO_Table->as_ctrl.phase_acc_offset[AS_SLEW_ID];
+		temp_angle = DEF_HPI*0.8 * pIO_Table->physics.sway_amp_t_ph / pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID];
 		//下限設定
 		if (temp_angle < DEF_PI / 4.0) temp_angle = DEF_PI / 4.0 * pIO_Table->physics.R / 40.0;
 	}
-	pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID] = temp_angle / pIO_Table->physics.w0;
+	pIO_Table->auto_ctrl.as_gain_damp[AS_SLEW_ID] = temp_angle / pIO_Table->physics.w0;
 
 	//### Positioning Modeゲイン計算
 	//移動距離から加速時間計算
-	pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = sqrt(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] / g_spec.bh_acc[FWD_ACC]);
-	pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = sqrt(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] / g_spec.slew_acc[FWD_ACC]);
+	pIO_Table->auto_ctrl.as_gain_pos[AS_BH_ID] = sqrt(pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] / g_spec.bh_acc[FWD_ACC]);
+	pIO_Table->auto_ctrl.as_gain_pos[AS_SLEW_ID] = sqrt(pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] / g_spec.slew_acc[FWD_ACC]);
 	
 	//Positioning Modeで設定
-	if ((pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID]) && //位置移動量に比べ振れが小さい
-		(pIO_Table->as_ctrl.tgD_abs[AS_BH_ID] < 0.2)){											  //移動量が小さい
-		pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_BH_ID];
+	if ((pIO_Table->auto_ctrl.as_gain_pos[AS_BH_ID] > pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID]) && //位置移動量に比べ振れが小さい
+		(pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] < 0.2)){											  //移動量が小さい
+		pIO_Table->auto_ctrl.as_gain_pos[AS_BH_ID] = pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID];
 	}
-	if ((pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID]) && 	//位置移動量に比べ振れが小さい
-		(pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < 0.005)) {												//距離が近い
-		pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->as_ctrl.as_gain_damp[AS_SLEW_ID];
+	if ((pIO_Table->auto_ctrl.as_gain_pos[AS_SLEW_ID] > pIO_Table->auto_ctrl.as_gain_damp[AS_SLEW_ID]) && 	//位置移動量に比べ振れが小さい
+		(pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] < 0.005)) {												//距離が近い
+		pIO_Table->auto_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->auto_ctrl.as_gain_damp[AS_SLEW_ID];
 	}
 	//Positioning Modeで上限設定
-	if (pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] > DEF_HPI / pIO_Table->physics.w0 * 0.5) {
-		pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID] = pIO_Table->as_ctrl.as_gain_pos[AS_BH_ID]*0.5;
+	if (pIO_Table->auto_ctrl.as_gain_pos[AS_BH_ID] > DEF_HPI / pIO_Table->physics.w0 * 0.5) {
+		pIO_Table->auto_ctrl.as_gain_pos[AS_BH_ID] = pIO_Table->auto_ctrl.as_gain_pos[AS_BH_ID]*0.5;
 	}
 
-	if (pIO_Table->as_ctrl.tgD_abs[AS_SLEW_ID] < 0.1) {
-//		pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] * 0.5;
+	if (pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] < 0.1) {
+//		pIO_Table->auto_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->auto_ctrl.as_gain_pos[AS_SLEW_ID] * 0.5;
 	}
-	if (pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] > DEF_HPI / pIO_Table->physics.w0) {
-		pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->as_ctrl.as_gain_pos[AS_SLEW_ID]*0.8;
+	if (pIO_Table->auto_ctrl.as_gain_pos[AS_SLEW_ID] > DEF_HPI / pIO_Table->physics.w0) {
+		pIO_Table->auto_ctrl.as_gain_pos[AS_SLEW_ID] = pIO_Table->auto_ctrl.as_gain_pos[AS_SLEW_ID]*0.8;
 	}
 
 	return;

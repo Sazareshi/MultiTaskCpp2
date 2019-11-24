@@ -25,6 +25,7 @@
 #define MOTION_ID_SLEW	3
 
 #define NO_ERR_EXIST	0
+#define ERROR_ANA_CREAPE_AUTO_PATERN 0x7001
 
 inline double rad2deg(double rad) { return COF_RAD2DEG * rad; }
 
@@ -141,6 +142,8 @@ typedef struct _stCOMMAND_Target {	//JOBÅ@ORDERç\ë¢ëÃ
 #define JOB_ORDER_STEP_STANDBY		0x0002
 #define JOB_ORDER_STEP_ON_GOING		0x0003
 #define JOB_ORDER_STEP_COMPLETED	0x0004
+#define JOB_ORDER_STEP_IDLE			0x0005
+#define JOB_ORDER_STEP_ERROR		0x1000
 
 //####### ORDER TYPE  ################
 #define TEST_ORDER					0xffff

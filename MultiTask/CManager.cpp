@@ -24,16 +24,6 @@ bool CManager::get_UI() {
 		if (pMode->antisway == OPE_MODE_AS_ON) pMode->antisway = OPE_MODE_AS_OFF;
 		else pMode->antisway = OPE_MODE_AS_ON;
 	}
-
-	if (pOrder->ui.auto_mode == AUTO_MODE_ACTIVE) {
-		CAnalyst* pAna = (CAnalyst*)VectpCTaskObj[g_itask.ana];
-		pAna->cal_job_recipe(pOrder->ui.auto_mode);
-
-		CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
-		pPly->auto_start(&(pOrder->job_A),pOrder->ui.auto_mode);
-	}
-
-
 	return FALSE;
 }
 
@@ -49,13 +39,43 @@ int CManager::set_job_order(DWORD type, LPST_COMMAND_TARGET p_targets) {
 		if(p_targets->mh_pos != 0.0) pOrder->job_A.command_target[0].mh_pos = p_targets->mh_pos;
 		else pOrder->job_A.command_target[0].mh_pos = pIO_Table->physics.L;
 
-		pOrder->job_A.status = JOB_ORDER_STANDBY;
+		pOrder->job_A.status = JOB_ORDER_STEP_STANDBY;
+		pOrder->job_A.n_job_step = 1;
+		pOrder->job_A.job_step_now = 0;
 		return 0;
 	}
 	else {
 		pOrder->job_A.type = NO_ORDER;
 		return 1;
 	}
+};
+
+int CManager::handle_order_event(int order_id, int event_id, int option) {
+	switch(order_id){
+	case ORDER_ID_JOB_A: {
+		if (event_id == JOB_EVENT_ACTIVATE_COMMAND_STEP) {
+			if (option == pOrder->job_A.job_step_now) pOrder->job_A.status = JOB_ORDER_STEP_ON_GOING;
+			else pOrder->job_A.status = JOB_ORDER_STEP_ERROR;
+		}
+		else if (event_id == JOB_EVENT_COMPLETE_COMMAND_STEP_NORMAL) {
+			if (option == pOrder->job_A.job_step_now) {
+				pOrder->job_A.job_step_now++;
+				if (pOrder->job_A.n_job_step > pOrder->job_A.job_step_now) {
+					pOrder->job_A.status = JOB_ORDER_STEP_STANDBY;
+				}
+				else {
+					pOrder->job_A.status = JOB_ORDER_COMPLETED;
+					pOrder->job_A.n_job_step = 0;
+					pOrder->job_A.job_step_now = 0;
+				}
+			}
+			else pOrder->job_A.status = JOB_ORDER_STEP_ERROR;
+		}
+		else;
+	}break;
+	default:break;
+	}
+	return 0;
 };
 
 void CManager::init_task(void *pobj) {

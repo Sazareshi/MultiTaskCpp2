@@ -3,6 +3,15 @@
 #include "CommonFormat.h"
 #include "CVector3.h"
 
+
+#define ORDER_ID_MANUAL_A	0
+#define ORDER_ID_JOB_A		1
+#define ORDER_ID_JOB_B		2
+#define ORDER_ID_MODE		3
+#define ORDER_ID_ESTOP		4
+#define ORDER_ID_MANUAL_B	5
+#define ORDER_ID_UI			6
+
 class CORDER_Table
 {
 public:
@@ -22,19 +31,19 @@ public:
 #define ENV_MODE_SIM1	1
 #define ENV_MODE_SIM2	2
 
-#define OPE_MODE_MANUAL			0x0000
-#define OPE_MODE_REMOTE_MANUAL	0x0001
-#define OPE_MODE_AUTO_ENABLE	0x0003
+#define OPE_MODE_MANUAL					0x0000
+#define OPE_MODE_REMOTE_MANUAL			0x0001
+#define OPE_MODE_AUTO_ENABLE			0x0011
 
-#define OPE_MODE_AS_ON			0x0001
-#define OPE_MODE_AS_OFF			0x0000
+#define OPE_MODE_AS_ON					0x0001
+#define OPE_MODE_AS_OFF					0x0000
 
 #define AS_PTN_DMP						0x0100
 #define AS_PTN_POS						0x0200
 #define AS_PTN_MOVE_LONG				0x0400
 #define AS_PTN_MOVE_SHORT				0x0800
-#define AS_PTN_MOVE_LONG_A				0x1000
-#define AS_PTN_MOVE_SHORT_A				0x2000
+#define AS_PTN_MOVE_LONG2				0x1000
+#define AS_PTN_MOVE_SHORT2				0x2000
 #define AS_PTN_0						0x0000
 
 #define AUTO_PTN_MODE_SINGLE			0
@@ -133,7 +142,7 @@ public:
 
 	ST_IO_PHYSIC	physics;
 	ST_IO_REF		ref;
-	ST_AS_CTRL		as_ctrl;
+	ST_AS_CTRL		auto_ctrl;
 	ST_CONSOLE		console_ope_room;
 	ST_CONSOLE		console_remote;
 	ST_CONSOLE		console_pc;

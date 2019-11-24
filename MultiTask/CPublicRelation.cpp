@@ -168,28 +168,28 @@ LRESULT CALLBACK CPublicRelation::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPAR
 				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) {
 					n = GetDlgItemText(hDlg, IDC_TASK_EDIT1, (LPTSTR)wstr_tmp.c_str(), 128);
 					if (n)tempf = stof(wstr_tmp); else tempf = 0.0;
-					pIO_Table->as_ctrl.tgpos_slew += (double)tempf / COF_RAD2DEG;
+					pIO_Table->auto_ctrl.tgpos_slew += (double)tempf / COF_RAD2DEG;
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) {
 					n = GetDlgItemText(hDlg, IDC_TASK_EDIT1, (LPTSTR)wstr_tmp.c_str(), 128);
 					if (n)tempf = stof(wstr_tmp); else tempf = 0.0;
-					pIO_Table->as_ctrl.tgpos_slew -= (double)tempf / COF_RAD2DEG;
+					pIO_Table->auto_ctrl.tgpos_slew -= (double)tempf / COF_RAD2DEG;
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) {
-					pIO_Table->as_ctrl.tgpos_slew = pIO_Table->physics.th;
+					pIO_Table->auto_ctrl.tgpos_slew = pIO_Table->physics.th;
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO4) {
 					n = GetDlgItemText(hDlg, IDC_TASK_EDIT2, (LPTSTR)wstr_tmp.c_str(), 128);
 					if (n)tempf = stof(wstr_tmp); else tempf = 0.0;
-					pIO_Table->as_ctrl.tgpos_bh += (double)tempf;
+					pIO_Table->auto_ctrl.tgpos_bh += (double)tempf;
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO5) {
 					n = GetDlgItemText(hDlg, IDC_TASK_EDIT2, (LPTSTR)wstr_tmp.c_str(), 128);
 					if (n)tempf = stof(wstr_tmp); else tempf = 0.0;
-					pIO_Table->as_ctrl.tgpos_bh -= (double)tempf;
+					pIO_Table->auto_ctrl.tgpos_bh -= (double)tempf;
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO6) {
-					pIO_Table->as_ctrl.tgpos_bh = pIO_Table->physics.R;
+					pIO_Table->auto_ctrl.tgpos_bh = pIO_Table->physics.R;
 				}
 				else;
 

@@ -26,42 +26,36 @@ extern ST_iTask g_itask;
 #define STEP_PAUSE				3
 #define STEP_ERROR				0xffff
 
+
+#define CHECK_RANGE_OF_SLEW_POS  10.0
+
 class CPlayer :	public CTaskObj
 {
 public:
 	CPlayer();
 	~CPlayer();
 
-	double auto_vref[MOTION_NUM];	//振れ止めの速度指令値  MOTION_ID_MH, MOTION_ID_BH, MOTION_ID_SLEW
-	double manual_vref[MOTION_NUM];	//手動の速度指令値  MOTION_ID_MH, MOTION_ID_BH, MOTION_ID_SLEW
-	
-	
-	LPST_MOTION_UNIT p_bh_motion_ptn;
-	LPST_MOTION_UNIT p_slew_motion_ptn;
-	LPST_MOTION_UNIT p_mh_motion_ptn;
+	double auto_vref[MOTION_NUM];			//振れ止めの速度指令値  MOTION_ID_MH, MOTION_ID_BH, MOTION_ID_SLEW
+	double manual_vref[MOTION_NUM];			//手動の速度指令値  MOTION_ID_MH, MOTION_ID_BH, MOTION_ID_SLEW
+	LPST_MOTION_UNIT p_motion_ptn[M_AXIS];
+	ST_MOTION_UNIT motion_ptn[M_AXIS];
 
-	ST_MOTION_UNIT bh_motion_ptn;
-	ST_MOTION_UNIT slew_motion_ptn;
-	ST_MOTION_UNIT mh_motion_ptn;
+	int set_motion_receipe();//実行パターンの計算とポインタのセット
 
 	double act_slew_steps(LPST_MOTION_UNIT pRecipe);
 	double act_bh_steps(LPST_MOTION_UNIT pRecipe);
 	double act_mh_steps(LPST_MOTION_UNIT pRecipe);
-	
-
-	int set_motion_ptn_unit();
 
 	int check_step_status_slew(LPST_MOTION_ELEMENT pStep);
 	int check_step_status_bh(LPST_MOTION_ELEMENT pStep);
 	int check_step_status_mh(LPST_MOTION_ELEMENT pStep);
 
-
 	void routine_work(void *param);
 	void init_task(void *pobj);
-	int auto_start(LPST_JOB_ORDER recipe, int type);
+
 	void cal_console_order();
 	void cal_auto_ref();
-	int update_as_status();			//振止状態更新
+	int update_auto_status();			//振止状態更新
 	int set_table_out();			//出力セット
 };
 
