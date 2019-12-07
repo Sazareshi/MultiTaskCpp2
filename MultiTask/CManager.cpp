@@ -58,18 +58,9 @@ int CManager::handle_order_event(int order_id, int event_id, int option) {
 			else pOrder->job_A.status = JOB_ORDER_STEP_ERROR;
 		}
 		else if (event_id == JOB_EVENT_COMPLETE_COMMAND_STEP_NORMAL) {
-			if (option == pOrder->job_A.job_step_now) {
-				pOrder->job_A.job_step_now++;
-				if (pOrder->job_A.n_job_step > pOrder->job_A.job_step_now) {
-					pOrder->job_A.status = JOB_ORDER_STEP_STANDBY;
-				}
-				else {
-					pOrder->job_A.status = JOB_ORDER_COMPLETED;
-					pOrder->job_A.n_job_step = 0;
-					pOrder->job_A.job_step_now = 0;
-				}
-			}
-			else pOrder->job_A.status = JOB_ORDER_STEP_ERROR;
+			pOrder->job_A.status = JOB_ORDER_COMPLETED;
+			pOrder->job_A.n_job_step = 0;
+			pOrder->job_A.job_step_now = 0;
 		}
 		else;
 	}break;

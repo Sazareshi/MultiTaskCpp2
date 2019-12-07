@@ -135,6 +135,47 @@ int CPlayer::set_motion_receipe() {
 		p_motion_ptn[BH_AXIS] = &(pOrder->job_A.command_recipe[pOrder->job_A.job_step_now].motions[BH_AXIS]);//レシピ構造体セット
 		pAna->cal_auto_target(CAL_FOR_AUTO_JOB_A);
 
+		//Set pattern recipe
+		//Judge Positioning or Damping
+#if 0
+		double check_d = pIO_Table->physics.T * g_spec.bh_notch_spd[1] //1ノッチ一周期　＋　振れ止め1回の移動距離
+			+ g_spec.bh_acc[FWD_ACC] * pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID] * pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID];
+		double check_d2 = pIO_Table->physics.T * g_spec.bh_notch_spd[1] / 3.0 //1ノッチ 1/3周期　＋　1ノッチインチング距離
+			+ g_spec.bh_notch_spd[1] * g_spec.bh_notch_spd[1] / g_spec.bh_acc[FWD_ACC];
+
+		if (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > check_d) {
+			if (pAna->cal_long_move_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_AUTOMOVE) == NO_ERR_EXIST) {
+				p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
+			}
+		}
+		else if ((pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > check_d2) && (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > 0.5)) {
+			if (pAna->cal_short_move_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_AUTOMOVE) == NO_ERR_EXIST) {
+				p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
+			}
+		}
+		else {
+			if (pMode->antisway_control_n == AS_MOVE_ANTISWAY) {
+				if (pAna->cal_as_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_AUTOMOVE) == NO_ERR_EXIST) {
+					p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
+				}
+			}
+		}
+
+#else
+		if (pAna->cal_long_move_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_AUTOMOVE) == NO_ERR_EXIST) {
+			p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
+		}
+#endif
+		if ((p_motion_ptn[BH_AXIS]->ptn_status == PTN_STANDBY)||(p_motion_ptn[BH_AXIS]->ptn_status == PTN_UNIT_FIN)) {
+			if (pAna->cal_long_move_recipe(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_AUTOMOVE) == NO_ERR_EXIST) {
+				p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
+			}
+		}
+
+		if (p_motion_ptn[SLW_AXIS]->ptn_status != PTN_STANDBY) {
+			p_motion_ptn[BH_AXIS]->ptn_status = PTN_UNIT_FIN;
+		}
+
 
 		pMan->handle_order_event(ORDER_ID_JOB_A, JOB_EVENT_ACTIVATE_COMMAND_STEP, pOrder->job_A.job_step_now);
 	}
@@ -157,8 +198,13 @@ int CPlayer::set_motion_receipe() {
 						p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
 					}
 				}
-				else if ((pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > check_d2) && (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > 0.5)) {
+				else if ((pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > check_d2) && (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_POSITION])) {
 					if (pAna->cal_short_move_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
+						p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
+					}
+				}
+				else if (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_POSITION]) {
+					if (pAna->cal_short_move_recipe2(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
 						p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
 					}
 				}
@@ -194,22 +240,23 @@ int CPlayer::set_motion_receipe() {
 						p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
 					}
 				}
-				else {
-					if (pAna->cal_as_recipe(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
+				else if (pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] >  g_spec.as_compl_tposLv[I_AS_LV_POSITION]) {
+					if (pAna->cal_short_move_recipe2(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
 						p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
+					}
+				}
+				else {
+					if (pMode->antisway_control_t == AS_MOVE_ANTISWAY) {
+						if (pAna->cal_as_recipe(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
+							p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
+						}
 					}
 				}
 			}
 		}
 	}
 	else;
-
-	if (pOrder->job_A.status == JOB_ORDER_STEP_ON_GOING) {
-		if ((p_motion_ptn[BH_AXIS]->ptn_status == PTN_UNIT_FIN) && (p_motion_ptn[SLW_AXIS]->ptn_status == PTN_UNIT_FIN)) {
-			pMan->handle_order_event(ORDER_ID_JOB_A, JOB_EVENT_COMPLETE_COMMAND_STEP_NORMAL, pOrder->job_A.job_step_now);
-		}
-	}
-	
+		
 	return 0;
 };
 
@@ -675,6 +722,15 @@ void CPlayer::cal_auto_ref() {
 		auto_vref[MOTION_ID_BH] = 0.0;
 	}
 	
+
+	CManager* pMan = (CManager*)VectpCTaskObj[g_itask.mng];
+	if (pOrder->job_A.status == JOB_ORDER_STEP_ON_GOING) {
+//		if ((p_motion_ptn[BH_AXIS]->ptn_status == PTN_UNIT_FIN) && (p_motion_ptn[SLW_AXIS]->ptn_status == PTN_UNIT_FIN)) {
+		if ((pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] < g_spec.as_compl_nposLv[I_AS_LV_TRIGGER]) && (pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_tposLv[I_AS_LV_TRIGGER])) {
+			pMan->handle_order_event(ORDER_ID_JOB_A, JOB_EVENT_COMPLETE_COMMAND_STEP_NORMAL, pOrder->job_A.job_step_now);
+		}
+	}
+
 	return ;
 };
 

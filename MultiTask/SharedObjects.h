@@ -41,9 +41,13 @@ public:
 #define AS_PTN_DMP						0x0100
 #define AS_PTN_POS						0x0200
 #define AS_PTN_MOVE_LONG				0x0400
+#define AS_PTN_MOVE_LONG_AUTO			0x0401
 #define AS_PTN_MOVE_SHORT				0x0800
+#define AS_PTN_MOVE_SHORT_AUTO			0x0801
 #define AS_PTN_MOVE_LONG2				0x1000
 #define AS_PTN_MOVE_SHORT2				0x2000
+#define AS_PTN_MOVE_LONG2_AUTO			0x1001
+#define AS_PTN_MOVE_SHORT2_AUTO			0x2001
 #define AS_PTN_0						0x0000
 
 #define AUTO_PTN_MODE_SINGLE			0

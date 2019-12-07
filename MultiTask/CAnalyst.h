@@ -30,6 +30,7 @@ public:
 	int cal_as_recipe(int motion_id,LPST_MOTION_UNIT target, int mode);
 	int cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int mode);
 	int cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int mode);
+	int cal_short_move_recipe2(int motion_id, LPST_MOTION_UNIT target, int mode);
 	int cal_move_pattern_bh(int * notch_freq, double Da, int mode);
 	int cal_move_pattern_slew(int * notch_freq, double Da, int mode);
 

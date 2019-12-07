@@ -27,7 +27,7 @@ extern ST_iTask g_itask;
 #define STEP_ERROR				0xffff
 
 
-#define CHECK_RANGE_OF_SLEW_POS  10.0
+#define CHECK_RANGE_OF_SLEW_POS  20.0
 
 class CPlayer :	public CTaskObj
 {
