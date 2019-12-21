@@ -12,12 +12,29 @@ extern ST_iTask g_itask;
 #define CAL_FOR_AUTO_JOB_B			2
 #define CAL_FOR_MANUAL				3
 
+#define NUM_OF_2STEP				3
+#define DEPTH_OF_2STEP_BH			3
+#define DEPTH_OF_2STEP_SLEW			3
+
+typedef struct i2stepV {
+	int iV1[NUM_OF_2STEP];
+	int iV2[NUM_OF_2STEP];
+	double v1;
+	double v2;
+} I2STP_V, *LPI2STP_V;
+
+
+
 class CAnalyst :
 	public CTaskObj
 {
 public:
 	CAnalyst();
 	~CAnalyst();
+
+
+	I2STP_V i_vlong_slew;
+	I2STP_V i_vlong_bh;
 
 	int ptn_notch_freq[NUM_OF_AS][NOTCH_MAX];
 	void init_task(void *pobj);
@@ -29,6 +46,7 @@ public:
 	int cal_job_recipe(int job_id, int mode);
 	int cal_as_recipe(int motion_id,LPST_MOTION_UNIT target, int mode);
 	int cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int mode);
+	int cal_long_move_recipe2(int motion_id, LPST_MOTION_UNIT target, int mode);
 	int cal_short_move_recipe(int motion_id, LPST_MOTION_UNIT target, int mode);
 	int cal_short_move_recipe2(int motion_id, LPST_MOTION_UNIT target, int mode);
 	int cal_move_pattern_bh(int * notch_freq, double Da, int mode);

@@ -224,7 +224,11 @@ void CPublicRelation::GL_Display(void) {
 
 	//球 描画
 	glPushMatrix();
-	glColor3d(1.0, 0.0, 0.0);				//色の設定
+	if (pMode->antisway)
+		glColor3d(1.0, 0.0, 0.0);				//色の設定
+	else
+		glColor3d(0.0, 1.0, 0.0);				//色の設定
+
 	glTranslated(pIO_Table->physics.lp.x, pIO_Table->physics.lp.y, pIO_Table->physics.lp.z);		//平行移動値の設定
 	glutSolidSphere(1.0, 20, 20);//引数：(半径, Z軸まわりの分割数, Z軸に沿った分割数)
 	glPopMatrix();
@@ -264,15 +268,15 @@ void CPublicRelation::GL_Display(void) {
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(5, 88, t_char2);
 
-	strcpy_s(t_char2, "as_tg = ");
+	strcpy_s(t_char2, "th_tg = ");
 	sprintf_s(t_char, "%f", COF_RAD2DEG * pIO_Table->auto_ctrl.tgpos_slew);
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(28, 88, t_char2);
 
-	strcpy_s(t_char2, "as_dir = ");
+	strcpy_s(t_char2, "th_dir = ");
 	sprintf_s(t_char, "%d", pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID]);
 	strcat_s(t_char2, t_char);
-	GL_DISPLAY_TEXT(52, 88, t_char2);
+	GL_DISPLAY_TEXT(56, 88, t_char2);
 
 
 	strcpy_s(t_char2, "bm = ");
@@ -280,30 +284,29 @@ void CPublicRelation::GL_Display(void) {
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(5, 83, t_char2);
 
-	strcpy_s(t_char2, "as_tg = ");
+	strcpy_s(t_char2, "bm_tg = ");
 	sprintf_s(t_char, "%f", pIO_Table->auto_ctrl.tgpos_bh);
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(28, 83, t_char2);
 
-	strcpy_s(t_char2, "as_dir = ");
+	strcpy_s(t_char2, "bm_dir = ");
 	sprintf_s(t_char, "%d", pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID]);
 	strcat_s(t_char2, t_char);
-	GL_DISPLAY_TEXT(52, 83, t_char2);
+	GL_DISPLAY_TEXT(56, 83, t_char2);
 
-	strcpy_s(t_char2, "SL_PTN = ");
-	sprintf_s(t_char, "%x", pMode->antisway_ptn_t);
+	strcpy_s(t_char2, "AS MODE = ");
+	sprintf_s(t_char, "%x", pMode->antisway);
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(5, 78, t_char2);
 
-	strcpy_s(t_char2, "SL_CTR = ");
-	sprintf_s(t_char, "%x", pMode->antisway_control_t);
-	strcat_s(t_char2, t_char);
-	GL_DISPLAY_TEXT(28, 78, t_char2);
 
-	strcpy_s(t_char2, "AS_MODE = ");
-	sprintf_s(t_char, "%x", pMode->antisway);
+	strcpy_s(t_char2, "AUTO_MODE = ");
+	sprintf_s(t_char, "%x", pMode->auto_control);
 	strcat_s(t_char2, t_char);
-	GL_DISPLAY_TEXT(52, 78, t_char2);
+	if(pMode->antisway)
+		GL_DISPLAY_TEXT(28, 78, t_char2, 1.0,0.0,0.0);
+	else
+		GL_DISPLAY_TEXT(28, 78, t_char2, 0.0, 1.0, 0.0);
 
 	glutSwapBuffers(); //glutInitDisplayMode(GLUT_DOUBLE)でダブルバッファリングを利用可
 }
@@ -545,6 +548,34 @@ void CPublicRelation::GL_DISPLAY_TEXT(int x, int y, char *string) {
 	glPushMatrix();
 	glLoadIdentity();
 	glColor3f(0.0, 1.0, 0.0);
+	glCallList(list);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glPopAttrib();
+	glMatrixMode(GL_MODELVIEW);
+	list = glGenLists(1);
+	glNewList(list, GL_COMPILE);
+
+	GL_DRAW_STRING(x, y, string, GLUT_BITMAP_TIMES_ROMAN_24);
+	glEndList();
+
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+}
+void CPublicRelation::GL_DISPLAY_TEXT(int x, int y, char *string, GLfloat r, GLfloat g, GLfloat b ) {
+	glDisable(GL_LIGHTING);
+	glDisable(GL_LIGHT0);
+
+	glPushAttrib(GL_ENABLE_BIT);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, 100, 0, 100);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glColor3f(r, g, b);
 	glCallList(list);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

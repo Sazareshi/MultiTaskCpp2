@@ -25,6 +25,9 @@
 #define MOTION_ID_SLEW	3
 
 #define NO_ERR_EXIST	0
+#define CAL_RESULT_POSITIVE 1
+#define CAL_RESULT_NEGATIVE 0
+
 #define ERROR_ANA_CREAPE_AUTO_PATERN 0x7001
 
 inline double rad2deg(double rad) { return COF_RAD2DEG * rad; }

@@ -24,7 +24,7 @@ void CPlayer::routine_work(void *param) {
 			
 	//ws << L" working!" << *(inf.psys_counter) % 100 << " BH STAT PTN " <<p_motion_ptn[BH_AXIS]->ptn_status << " BH STEP " << p_motion_ptn[BH_AXIS]->iAct <<"AS N POS16/SWAY8: "<< pMode->antisway_control_n;
 
-	ws << " Motion:" << p_motion_ptn[SLW_AXIS]->motion_type<<"   SL STEP_N " << p_motion_ptn[SLW_AXIS]->n_step << "    SL STEP " << p_motion_ptn[SLW_AXIS]->iAct << "  SL Type " << p_motion_ptn[SLW_AXIS]->motion_type<< "  SL tgD " << pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] ;
+	ws << " MotionSLEW:" << p_motion_ptn[SLW_AXIS]->motion_type<<"    MotionBH: " << p_motion_ptn[BH_AXIS]->motion_type;
 
 	tweet2owner(ws.str()); ws.str(L""); ws.clear(); 
 
@@ -137,7 +137,6 @@ int CPlayer::set_motion_receipe() {
 
 		//Set pattern recipe
 		//Judge Positioning or Damping
-#if 0
 		double check_d = pIO_Table->physics.T * g_spec.bh_notch_spd[1] //1ノッチ一周期　＋　振れ止め1回の移動距離
 			+ g_spec.bh_acc[FWD_ACC] * pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID] * pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID];
 		double check_d2 = pIO_Table->physics.T * g_spec.bh_notch_spd[1] / 3.0 //1ノッチ 1/3周期　＋　1ノッチインチング距離
@@ -161,17 +160,6 @@ int CPlayer::set_motion_receipe() {
 			}
 		}
 
-#else
-		if (pAna->cal_long_move_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_AUTOMOVE) == NO_ERR_EXIST) {
-			p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
-		}
-#endif
-		if ((p_motion_ptn[BH_AXIS]->ptn_status == PTN_STANDBY)||(p_motion_ptn[BH_AXIS]->ptn_status == PTN_UNIT_FIN)) {
-			if (pAna->cal_long_move_recipe(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_AUTOMOVE) == NO_ERR_EXIST) {
-				p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
-			}
-		}
-
 		if (p_motion_ptn[SLW_AXIS]->ptn_status != PTN_STANDBY) {
 			p_motion_ptn[BH_AXIS]->ptn_status = PTN_UNIT_FIN;
 		}
@@ -185,29 +173,27 @@ int CPlayer::set_motion_receipe() {
 
 			p_motion_ptn[BH_AXIS] = &motion_ptn[BH_AXIS];//レシピ構造体セット
 
-			if (pMode->antisway_control_n != AS_MOVE_DEACTIVATE) {
-				//Set pattern recipe
-				//Judge Positioning or Damping
-				double check_d = pIO_Table->physics.T * g_spec.bh_notch_spd[1] //1ノッチ一周期　＋　振れ止め1回の移動距離
-					+ g_spec.bh_acc[FWD_ACC] * pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID] * pIO_Table->auto_ctrl.as_gain_damp[AS_BH_ID];
+			if (pMode->antisway_control_n != AS_MOVE_DEACTIVATE) {//Set pattern recipe
+
 				double check_d2 = pIO_Table->physics.T * g_spec.bh_notch_spd[1] / 3.0 //1ノッチ 1/3周期　＋　1ノッチインチング距離
 					+ g_spec.bh_notch_spd[1] * g_spec.bh_notch_spd[1] / g_spec.bh_acc[FWD_ACC];
 
-				if (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > check_d) {
-					if (pAna->cal_long_move_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
+				if (pAna->cal_long_move_recipe2(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE)) {
+					p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
+				}
+				else if(pAna->cal_long_move_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE)) {
 						p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
-					}
 				}
 				else if ((pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > check_d2) && (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_POSITION])) {
 					if (pAna->cal_short_move_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
 						p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
 					}
 				}
-				else if (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_POSITION]) {
-					if (pAna->cal_short_move_recipe2(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
-						p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
-					}
-				}
+			//	else if (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] > g_spec.as_compl_nposLv[I_AS_LV_POSITION]) {
+			//		if (pAna->cal_short_move_recipe2(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
+			//			p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
+			//		}
+			//	}
 				else {
 					if (pMode->antisway_control_n == AS_MOVE_ANTISWAY) {
 						if (pAna->cal_as_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
@@ -225,26 +211,25 @@ int CPlayer::set_motion_receipe() {
 			if (pMode->antisway_control_t != AS_MOVE_DEACTIVATE) {
 				//Set pattern recipe
 				//Judge Positioning or Damping
-				double	check_d = pIO_Table->physics.T * g_spec.slew_notch_spd[1];
-				check_d += g_spec.slew_acc[FWD_ACC] * pIO_Table->auto_ctrl.as_gain_damp[AS_SLEW_ID] * pIO_Table->auto_ctrl.as_gain_damp[AS_SLEW_ID];
 				double check_d2 = pIO_Table->physics.T * g_spec.slew_notch_spd[1] / 3.0 //1ノッチ 1/3周期　＋　1ノッチインチング距離
 					+ g_spec.slew_notch_spd[1] * g_spec.slew_notch_spd[1] / g_spec.slew_acc[FWD_ACC];
 
-				if (pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] > check_d) {
-					if (pAna->cal_long_move_recipe(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
-						p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
-					}
+				if (pAna->cal_long_move_recipe2(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_SINGLE)) {
+					p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
+				}
+				else if (pAna->cal_long_move_recipe(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_SINGLE)) {
+					p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
 				}
 				else if (pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] > check_d2) {
 					if (pAna->cal_short_move_recipe(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
 						p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
 					}
 				}
-				else if (pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] >  g_spec.as_compl_tposLv[I_AS_LV_POSITION]) {
-					if (pAna->cal_short_move_recipe2(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
-						p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
-					}
-				}
+		//		else if (pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] >  g_spec.as_compl_tposLv[I_AS_LV_POSITION]) {
+		//			if (pAna->cal_short_move_recipe2(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
+		//				p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
+		//			}
+		//		}
 				else {
 					if (pMode->antisway_control_t == AS_MOVE_ANTISWAY) {
 						if (pAna->cal_as_recipe(MOTION_ID_SLEW, p_motion_ptn[SLW_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {

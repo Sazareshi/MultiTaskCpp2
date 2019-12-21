@@ -57,6 +57,7 @@ public:
 	static void GL_DrawStructure(bool);
 	static void GL_DRAW_STRING(int x, int y, char *string, void *font);
 	static void GL_DISPLAY_TEXT(int x, int y, char *string);
+	static void GL_DISPLAY_TEXT(int x, int y, char *string, GLfloat r, GLfloat g, GLfloat b);
 
 	static void GL_qmul(double r[], const double p[], const double q[]);
 	static void GL_qrot(double r[], double q[]);

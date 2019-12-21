@@ -26,8 +26,9 @@ extern ST_iTask g_itask;
 #define STEP_PAUSE				3
 #define STEP_ERROR				0xffff
 
-
 #define CHECK_RANGE_OF_SLEW_POS  20.0
+
+
 
 class CPlayer :	public CTaskObj
 {
@@ -39,6 +40,7 @@ public:
 	double manual_vref[MOTION_NUM];			//手動の速度指令値  MOTION_ID_MH, MOTION_ID_BH, MOTION_ID_SLEW
 	LPST_MOTION_UNIT p_motion_ptn[M_AXIS];
 	ST_MOTION_UNIT motion_ptn[M_AXIS];
+
 
 	int set_motion_receipe();//実行パターンの計算とポインタのセット
 
@@ -55,7 +57,10 @@ public:
 
 	void cal_console_order();
 	void cal_auto_ref();
-	int update_auto_status();			//振止状態更新
+	int update_auto_status();		//振止状態更新
 	int set_table_out();			//出力セット
+
+
+
 };
 
