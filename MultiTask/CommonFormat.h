@@ -230,6 +230,7 @@ typedef struct _stUI_ORDER {
 	int env_mode;
 	int ope_mode;
 	int as_mode;
+	int as_mode_hoist;		//ŠªU‚ê~‚ßİ’èPB
 	int auto_mode;
 	int remote_mode;		//‰“Šu‰^“]ƒ‚[ƒhİ’èPB
 	int anti_sway_trigger;	//U‚ê~‚ß‹N“®PB

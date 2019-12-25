@@ -66,6 +66,7 @@ int CPlayer::update_auto_status() {
 	if (pMode->antisway == OFF) {
 		motion_ptn[BH_AXIS].ptn_status = PTN_UNIT_FIN;
 		motion_ptn[SLW_AXIS].ptn_status = PTN_UNIT_FIN;
+		motion_ptn[MH_AXIS].ptn_status = PTN_UNIT_FIN;
 	}
 	return 0;
 };
@@ -126,7 +127,7 @@ int CPlayer::set_motion_receipe() {
 	CAnalyst* pAna = (CAnalyst*)VectpCTaskObj[g_itask.ana];
 	CManager* pMan = (CManager*)VectpCTaskObj[g_itask.mng];
 
-	if((pMode->antisway == OPE_MODE_AS_ON)
+	if((pMode->antisway == OPE_MODE_AS_ON) //自動可モードでパターンの準備完了
 		&&(pMode->operation & OPE_MODE_AUTO_ENABLE) && (pOrder->job_A.status == JOB_ORDER_STEP_STANDBY)
 		&& ((p_motion_ptn[BH_AXIS]->ptn_status == PTN_UNIT_FIN) || (p_motion_ptn[BH_AXIS]->ptn_status == PTN_NOTHING))
 		&& ((p_motion_ptn[SLW_AXIS]->ptn_status == PTN_UNIT_FIN) || (p_motion_ptn[SLW_AXIS]->ptn_status == PTN_NOTHING)))
@@ -167,7 +168,7 @@ int CPlayer::set_motion_receipe() {
 
 		pMan->handle_order_event(ORDER_ID_JOB_A, JOB_EVENT_ACTIVATE_COMMAND_STEP, pOrder->job_A.job_step_now);
 	}
-	else if (pMode->antisway == OPE_MODE_AS_ON) {
+	else if (pMode->antisway == OPE_MODE_AS_ON) { //手動振れ止め時
 		//### normal direction
 		if ((p_motion_ptn[BH_AXIS]->ptn_status == PTN_UNIT_FIN) || (p_motion_ptn[BH_AXIS]->ptn_status == PTN_NOTHING)) {//Any pattern not running
 
@@ -236,6 +237,18 @@ int CPlayer::set_motion_receipe() {
 							p_motion_ptn[SLW_AXIS]->ptn_status = PTN_STANDBY;
 						}
 					}
+				}
+			}
+		}
+		//### hoist direction
+		if ((p_motion_ptn[MH_AXIS]->ptn_status == PTN_UNIT_FIN) || (p_motion_ptn[MH_AXIS]->ptn_status == PTN_NOTHING)) {//Any pattern not running
+
+			p_motion_ptn[MH_AXIS] = &motion_ptn[MH_AXIS];//レシピ構造体セット
+
+			if (pMode->antisway_control_h != AS_MOVE_DEACTIVATE) {
+				//Set pattern recipe
+				if (pAna->cal_as_recipe(MOTION_ID_MH, p_motion_ptn[MH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
+					p_motion_ptn[MH_AXIS]->ptn_status = PTN_STANDBY;
 				}
 			}
 		}
@@ -355,7 +368,7 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 			if (pIO_Table->physics.wth <= pStep->_v) status = STEP_FIN;
 		}
 		else {
-			if (abs(pIO_Table->physics.wth) < g_spec.bh_notch_spd[0] * 0.5) status = STEP_FIN;
+			if (abs(pIO_Table->physics.wth) < g_spec.bh_notch_spd[1] * 0.5) status = STEP_FIN;
 		}
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 	}break;
@@ -480,7 +493,7 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 			if (auto_vref[MOTION_ID_BH] <= pStep->_v) status = STEP_FIN;
 		}
 		else {
-			if(abs(auto_vref[MOTION_ID_BH]) < g_spec.bh_notch_spd[0] * 0.5) status = STEP_FIN;
+			if(abs(auto_vref[MOTION_ID_BH]) < g_spec.bh_notch_spd[1] * 0.5) status = STEP_FIN;
 		}
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
 	}break;
@@ -503,8 +516,116 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 	return status;
 }
 int CPlayer::check_step_status_mh(LPST_MOTION_ELEMENT pStep) {
-	int status = STEP_FIN;
+	int status = STEP_ON_GOING;
+
 	switch (pStep->type) {
+	case CTR_TYPE_TIME_WAIT: {
+		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
+	}break;
+	case CTR_TYPE_SINGLE_PHASE_WAIT: {
+		double temp_chk1 = pStep->phase1 + pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
+		double temp_chk2 = pStep->phase1 - pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
+
+		//Low Phase
+		if (temp_chk1 > DEF_PI) {
+			if ((pIO_Table->physics.PhPlane_r.z < (temp_chk1 - DEF_2PI)) || (pIO_Table->physics.PhPlane_r.z > temp_chk2))
+				status = STEP_FIN;
+		}
+		else if (temp_chk2 < -DEF_PI) {
+			if ((pIO_Table->physics.PhPlane_r.z >(-temp_chk2 + DEF_2PI)) || (pIO_Table->physics.PhPlane_r.z < temp_chk1))
+				status = STEP_FIN;
+		}
+		else {
+			if ((pIO_Table->physics.PhPlane_r.z < temp_chk1) && (pIO_Table->physics.PhPlane_r.z > temp_chk2))
+				status = STEP_FIN;
+		}
+
+		//Too small sway
+		if (pIO_Table->physics.sway_amp_r_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) {
+			status = STEP_FIN;
+		}
+		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
+
+	}break;
+	case CTR_TYPE_DOUBLE_PHASE_WAIT: {
+		double temp_chk1 = pStep->phase1 + pIO_Table->auto_ctrl.phase_chk_range[AS_BH_ID];
+		double temp_chk2 = pStep->phase1 - pIO_Table->auto_ctrl.phase_chk_range[AS_BH_ID];
+
+		//LOW PHASE
+		if (temp_chk1 > DEF_PI) {
+			if ((pIO_Table->physics.PhPlane_r.z < (temp_chk1 - DEF_2PI)) || (pIO_Table->physics.PhPlane_r.z > temp_chk2))
+				status = STEP_FIN;
+		}
+		else if (temp_chk2 < -DEF_PI) {
+			if ((pIO_Table->physics.PhPlane_r.z >(-temp_chk2 + DEF_2PI)) || (pIO_Table->physics.PhPlane_r.z < temp_chk1))
+				status = STEP_FIN;
+		}
+		else {
+			if ((pIO_Table->physics.PhPlane_r.z < temp_chk1) && (pIO_Table->physics.PhPlane_r.z > temp_chk2))
+				status = STEP_FIN;
+		}
+		//HIGH PHASE
+		if (abs(pStep->phase2) >= DEF_PI) {
+			status = STEP_ERROR;
+		}
+		else if (pStep->phase2 > 0.0) {
+			temp_chk1 = pStep->phase2 - pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
+			if (pIO_Table->physics.PhPlane_r.z > temp_chk1) {
+				temp_chk2 = pStep->phase2 + pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
+				if (temp_chk2 < DEF_PI) {
+					if (pIO_Table->physics.PhPlane_r.z < temp_chk2) status = STEP_FIN;
+				}
+				else {
+					if (pIO_Table->physics.PhPlane_r.z < -DEF_2PI + temp_chk2) status = STEP_FIN;
+				}
+			}
+		}
+		else {
+			temp_chk1 = pStep->phase2 + pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
+			if (pIO_Table->physics.PhPlane_r.z < temp_chk1) {
+				temp_chk2 = pStep->phase2 - pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
+				if (temp_chk2 > -DEF_PI) {
+					if (pIO_Table->physics.PhPlane_r.z > temp_chk2) status = STEP_FIN;
+				}
+				else {
+					if (pIO_Table->physics.PhPlane_r.z > DEF_2PI - temp_chk2) status = STEP_FIN;
+				}
+			}
+		}
+
+		//Too small sway
+		if (pIO_Table->physics.sway_amp_n_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) {
+			status = STEP_FIN;
+		}
+		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
+	}break;
+	case CTR_TYPE_ACC_AS: {
+		//	if(abs(auto_vref[MOTION_ID_BH]) > abs(pStep->_v)) status = STEP_FIN;
+		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
+	}break;
+	case CTR_TYPE_DEC_V: {
+		if (pStep->_v < 0.0) {
+			if (auto_vref[MOTION_ID_MH] >= pStep->_v) status = STEP_FIN;
+		}
+		else if (pStep->_v > 0.0) {
+			if (auto_vref[MOTION_ID_MH] <= pStep->_v) status = STEP_FIN;
+		}
+		else {
+			if (abs(auto_vref[MOTION_ID_MH]) < g_spec.hoist_notch_spd[1] * 0.5) status = STEP_FIN;
+		}
+		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
+	}break;
+	case CTR_TYPE_CONST_V_TIME: {
+		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
+	}break;
+	case CTR_TYPE_SLEW_WAIT:
+	case CTR_TYPE_BH_WAIT:
+	case CTR_TYPE_MH_WAIT:
+	case CTR_TYPE_ACC_TIME:
+	case CTR_TYPE_ACC_V:
+	case CTR_TYPE_ACC_TIME_OR_V:
+	case CTR_TYPE_DEC_TIME:
+	case CTR_TYPE_DEC_TIME_OR_V:
 	default:
 		break;
 	}

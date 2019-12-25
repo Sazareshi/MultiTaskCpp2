@@ -19,6 +19,7 @@ bool CManager::get_UI() {
 	pMode->environment = pOrder->ui.env_mode;
 	pMode->operation = pOrder->ui.ope_mode;
 	pMode->antisway = pOrder->ui.as_mode;
+	pMode->antisway_hoist = pOrder->ui.as_mode_hoist;
 
 	if (pOrder->ui.anti_sway_trigger == ON) {
 		if (pMode->antisway == OPE_MODE_AS_ON) pMode->antisway = OPE_MODE_AS_OFF;

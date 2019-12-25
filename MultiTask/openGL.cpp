@@ -299,14 +299,24 @@ void CPublicRelation::GL_Display(void) {
 	strcat_s(t_char2, t_char);
 	GL_DISPLAY_TEXT(5, 78, t_char2);
 
+	strcpy_s(t_char2, "AUTO_MODE_H = ");
+	sprintf_s(t_char, "%x", pMode->antisway_hoist);
+	strcat_s(t_char2, t_char);
+	if (pMode->antisway)
+		GL_DISPLAY_TEXT(28, 78, t_char2, 1.0, 0.0, 0.0);
+	else
+		GL_DISPLAY_TEXT(28, 78, t_char2, 0.0, 1.0, 0.0);
 
 	strcpy_s(t_char2, "AUTO_MODE = ");
 	sprintf_s(t_char, "%x", pMode->auto_control);
 	strcat_s(t_char2, t_char);
 	if(pMode->antisway)
-		GL_DISPLAY_TEXT(28, 78, t_char2, 1.0,0.0,0.0);
+		GL_DISPLAY_TEXT(56, 78, t_char2, 1.0,0.0,0.0);
 	else
-		GL_DISPLAY_TEXT(28, 78, t_char2, 0.0, 1.0, 0.0);
+		GL_DISPLAY_TEXT(56, 78, t_char2, 0.0, 1.0, 0.0);
+
+
+
 
 	glutSwapBuffers(); //glutInitDisplayMode(GLUT_DOUBLE)でダブルバッファリングを利用可
 }
