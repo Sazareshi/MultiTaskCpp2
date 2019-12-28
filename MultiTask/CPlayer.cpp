@@ -121,7 +121,6 @@ int CPlayer::set_table_out() {
 
 	return 0;
 };
-
 int CPlayer::set_motion_receipe() {
 
 	CAnalyst* pAna = (CAnalyst*)VectpCTaskObj[g_itask.ana];
@@ -179,7 +178,14 @@ int CPlayer::set_motion_receipe() {
 				double check_d2 = pIO_Table->physics.T * g_spec.bh_notch_spd[1] / 3.0 //1ノッチ 1/3周期　＋　1ノッチインチング距離
 					+ g_spec.bh_notch_spd[1] * g_spec.bh_notch_spd[1] / g_spec.bh_acc[FWD_ACC];
 
-				if (pAna->cal_long_move_recipe2(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE)) {
+				if (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] < 2.0) {
+					if (pMode->antisway_control_n == AS_MOVE_ANTISWAY) {
+						if (pAna->cal_as_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
+							p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
+						}
+					}
+				}
+				else if (pAna->cal_long_move_recipe2(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE)) {
 					p_motion_ptn[BH_AXIS]->ptn_status = PTN_STANDBY;
 				}
 				else if(pAna->cal_long_move_recipe(MOTION_ID_BH, p_motion_ptn[BH_AXIS], AUTO_PTN_MODE_SINGLE)) {
@@ -758,7 +764,46 @@ double CPlayer::act_bh_steps(LPST_MOTION_UNIT pRecipe) {
 };
 double CPlayer::act_mh_steps(LPST_MOTION_UNIT pRecipe) {
 	double output_v = 0.0;
+	LPST_MOTION_ELEMENT pStep = &pRecipe->motions[pRecipe->iAct];
 
+	pStep->act_counter++;
+	switch (pStep->type) {
+	case CTR_TYPE_TIME_WAIT:
+		output_v = pStep->_v;
+		break;
+	case CTR_TYPE_SINGLE_PHASE_WAIT: {
+		output_v = pStep->_v;
+	}break;
+
+	case CTR_TYPE_DOUBLE_PHASE_WAIT: {
+		output_v = pStep->_v;
+	}break;
+	case CTR_TYPE_ACC_AS: {
+		output_v = pStep->_v;
+	}break;
+	case CTR_TYPE_DEC_V: {
+		output_v = pStep->_v;
+	}break;
+	case CTR_TYPE_CONST_V_TIME: {
+		output_v = pStep->_v;
+	}break;
+	case CTR_TYPE_SLEW_WAIT: {
+		output_v = pStep->_v;
+	}break;
+
+	case CTR_TYPE_BH_WAIT:
+
+	case CTR_TYPE_MH_WAIT:
+
+	case CTR_TYPE_ACC_TIME:
+	case CTR_TYPE_ACC_V:
+	case CTR_TYPE_ACC_TIME_OR_V:
+	case CTR_TYPE_DEC_TIME:
+	case CTR_TYPE_DEC_TIME_OR_V:
+	default:
+		break;
+	}
+	if (STEP_FIN == check_step_status_mh(pStep)) pRecipe->iAct++;
 
 	return output_v;
 };
@@ -821,6 +866,32 @@ void CPlayer::cal_auto_ref() {
 		else {
 				auto_vref[MOTION_ID_SLEW] = 0.0;
 			}
+		//## hoist derection
+		if ((p_motion_ptn[MH_AXIS]->ptn_status == PTN_UNIT_FIN) || (p_motion_ptn[MH_AXIS]->ptn_status == PTN_NOTHING)) {//Any pattern not running
+			auto_vref[MOTION_ID_MH] = 0.0;
+		}
+		else if (p_motion_ptn[MH_AXIS]->ptn_status == PTN_PAUSE) {
+			auto_vref[MOTION_ID_MH] = 0.0;
+		}
+		else if (p_motion_ptn[MH_AXIS]->ptn_status == PTN_STANDBY) {
+			p_motion_ptn[MH_AXIS]->ptn_status = PTN_ACTIVE;
+		}
+		else if (p_motion_ptn[MH_AXIS]->ptn_status == PTN_ACTIVE) {
+			if (p_motion_ptn[MH_AXIS]->iAct > p_motion_ptn[MH_AXIS]->n_step) {
+				p_motion_ptn[MH_AXIS]->ptn_status = PTN_UNIT_FIN;
+				auto_vref[MOTION_ID_MH] = 0.0;
+			}
+			else if (p_motion_ptn[MH_AXIS]->axis_type != MH_AXIS) {
+				p_motion_ptn[MH_AXIS]->ptn_status = PTN_NOTHING;
+				auto_vref[MOTION_ID_MH] = 0.0;
+			}
+			else {
+				auto_vref[MOTION_ID_MH] = act_mh_steps(p_motion_ptn[MH_AXIS]);
+			}
+		}
+		else {
+			auto_vref[MOTION_ID_BH] = 0.0;
+		}
 	}
 	else {
 		auto_vref[MOTION_ID_SLEW] = 0.0;

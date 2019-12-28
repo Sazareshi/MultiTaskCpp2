@@ -349,11 +349,13 @@ void CAnalyst::update_auto_ctrl() {
 	else if (pMode->antisway_control_h == AS_MOVE_COMPLETE) {	//UŽ~Š®—¹’†
 		if (pIO_Table->physics.sway_amp_r_ph > g_spec.as_compl_swayLv[I_AS_LV_TRIGGER]) {	//U‚ê‚ªƒgƒŠƒK”»’è’lˆÈã
 			pMode->antisway_control_h = AS_MOVE_ANTISWAY;
-			pMode->antisway_ptn_h = AS_PTN_DMP;
 		}
 		else {
 				pMode->antisway_ptn_h = AS_PTN_0;
 		}
+	}
+	else if (pIO_Table->physics.sway_amp_r_ph > g_spec.as_compl_swayLv[I_AS_LV_TRIGGER]) {	//U‚ê‚ªƒgƒŠƒK”»’è’lˆÈã
+		pMode->antisway_control_h = AS_MOVE_ANTISWAY;
 	}
 	else;
 
@@ -416,7 +418,6 @@ void CAnalyst::cal_as_gain() {//U‚êŽ~‚ßƒQƒCƒ“‰Á‘¬ŽžŠÔ
 
 	return;
 };
-
 //@@@
 //#########################################################################
 int CAnalyst::cal_job_recipe(int job_id, int mode) {
@@ -658,6 +659,87 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 			}
 		}
 	}break;
+	case MOTION_ID_MH: {
+		int step_count;
+		target->axis_type = MH_AXIS;
+		target->ptn_status = PTN_STANDBY;
+		target->iAct = 0; //Initialize activated pattern
+		target->motion_type = AS_PTN_MOVE_LONG2;
+
+		//Step 1 ˆÊ‘Š‘Ò‚¿
+		{
+			target->n_step = 1;
+			step_count = 0;
+			target->motions[step_count].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
+			target->motions[step_count]._p = pIO_Table->auto_ctrl.tgpos_h;	// _p
+			target->motions[step_count]._t = pIO_Table->physics.T*2.0;		// _t
+			target->motions[step_count].phase1 = DEF_PI / 4.0;				// low phase
+			target->motions[step_count].phase2 = -DEF_PI/4.0; 				// high phase
+			target->motions[step_count]._v = 0.0;
+		}
+		//Step 2 Šªã
+		{
+			step_count += 1;
+			target->n_step += 1;
+
+			target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
+			target->motions[step_count]._t = DEF_HPI/pIO_Table->physics.w0 - PTN_HOIST_ADJUST_TIME;
+			target->motions[step_count]._v = -g_spec.hoist_notch_spd[NOTCH_MAX-1];
+			target->motions[step_count]._p = target->motions[step_count - 1]._p
+				+ target->motions[step_count]._t * target->motions[step_count]._v
+				- target->motions[step_count]._v*target->motions[step_count]._v / g_spec.hoist_acc[FWD_ACC] / 2.0;
+		}
+		//Step 3 ’âŽ~
+		{
+			step_count += 1;
+			target->n_step += 1;
+
+			target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
+			target->motions[step_count]._t = abs(target->motions[step_count-1]._v/ g_spec.hoist_acc[FWD_ACC])+ PTN_HOIST_ADJUST_TIME;
+			target->motions[step_count]._v = 0.0;
+			target->motions[step_count]._p = target->motions[step_count - 1]._p
+				+ target->motions[step_count-1]._v*target->motions[step_count-1]._v / g_spec.hoist_acc[FWD_ACC] / 2.0;
+		}
+		//Step 4 Šª‰º
+		{
+			step_count += 1;
+			target->n_step += 1;
+
+			target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
+			target->motions[step_count]._t = DEF_HPI / pIO_Table->physics.w0 - PTN_HOIST_ADJUST_TIME;
+			target->motions[step_count]._v = g_spec.hoist_notch_spd[NOTCH_MAX-1];
+			target->motions[step_count]._p = pIO_Table->auto_ctrl.tgpos_h 
+				+ target->motions[step_count]._v*target->motions[step_count]._v / g_spec.hoist_acc[FWD_ACC] / 2.0;
+		}
+		//Step 5 ’âŽ~
+		{
+			step_count += 1;
+			target->n_step += 1;
+
+			target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
+			target->motions[step_count]._t = abs(target->motions[step_count - 1]._v / g_spec.hoist_acc[FWD_ACC]) + PTN_HOIST_ADJUST_TIME;
+			target->motions[step_count]._v = 0.0;
+			target->motions[step_count]._p = pIO_Table->auto_ctrl.tgpos_h;  
+		}
+		//Step end •”
+		{
+			step_count += 1;
+			target->n_step += 1;
+
+			target->motions[step_count].type = CTR_TYPE_TIME_WAIT;
+			target->motions[step_count]._v = 0.0;
+			target->motions[step_count]._t = PTN_CONFIRMATION_TIME;
+			target->motions[step_count]._p = target->motions[step_count - 1]._p;
+		}
+
+		//time_count
+		for (int i = 0; i < target->n_step; i++) {
+			target->motions[i].act_counter = 0;
+			target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
+		}
+
+	}break;
+
 	default: return 1;
 	}
 	return NO_ERR_EXIST;
@@ -674,7 +756,7 @@ int CAnalyst::cal_long_move_recipe(int motion_id, LPST_MOTION_UNIT target, int m
 	pIO_Table->auto_ctrl.as_out_dir[AS_MH_ID] = 0;
 
 	int n = 0;
-	double t1, t2, t3, t4, dx, acc, Da;
+	double dx, acc, Da;
 
 	target->n_step = 0;
 

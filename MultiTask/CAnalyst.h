@@ -7,6 +7,7 @@ extern ST_iTask g_itask;
 
 #define PTN_CONFIRMATION_TIME		0.1 //	Confirmation time of pattern output
 #define PTN_ERROR_CHECK_TIME1		60 //	Confirmation time of pattern output
+#define PTN_HOIST_ADJUST_TIME		0.15 //	Confirmation time of pattern output
 
 #define CAL_FOR_AUTO_JOB_A			1
 #define CAL_FOR_AUTO_JOB_B			2
