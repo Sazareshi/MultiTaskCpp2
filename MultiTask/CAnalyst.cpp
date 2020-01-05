@@ -334,7 +334,11 @@ void CAnalyst::update_auto_ctrl() {
 
 	//##### Hoist direction
 
-	if (pIO_Table->ref.b_mh_manual_ctrl) {
+	if (pMode->antisway_hoist != OPE_MODE_AS_ON) {
+		pMode->antisway_ptn_h = AS_PTN_0;
+		pMode->antisway_control_h = AS_MOVE_DEACTIVATE;
+	}
+	else if (pIO_Table->ref.b_mh_manual_ctrl){
 		pMode->antisway_ptn_h = AS_PTN_0;
 		pMode->antisway_control_h = AS_MOVE_INTERRUPT;
 	}
