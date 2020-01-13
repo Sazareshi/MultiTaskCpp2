@@ -17,6 +17,7 @@ CAnalyst::~CAnalyst(){
 }
 
 
+
 void CAnalyst::cal_simulation() {
 
 	//##加速度指令値計算  acc_cyl x:r y:th z:z
@@ -52,6 +53,7 @@ void CAnalyst::cal_simulation() {
 
 	//## Calicurate the motion of hung load
 	hl.timeEvolution(0.0); //double t  吊点の計算には経過時間は使わないので0.0
+	
 	hl.r.add(hl.dr);
 	hl.v.add(hl.dv);
 
@@ -92,10 +94,22 @@ void CAnalyst::cal_simulation() {
 	if (pIO_Table->physics.PhPlane_r.x < DEF_001DEG)pIO_Table->physics.PhPlane_r.x = DEF_001DEG;
 
 	pIO_Table->physics.PhPlane_r.y = temp_v / (pIO_Table->physics.L * pIO_Table->physics.w0);
+
+	double last_rz = pIO_Table->physics.PhPlane_r.z; //r位相前回値
+
 	pIO_Table->physics.PhPlane_r.z = atan(pIO_Table->physics.PhPlane_r.y / pIO_Table->physics.PhPlane_r.x);
+	buf_average_phase_rdz[i_buf_rdz] = pIO_Table->physics.PhPlane_r.z - last_rz; i_buf_rdz++;
+	if (i_buf_rdz > MAX_SAMPLE_AVERAGE_RZ - 1) i_buf_rdz = 0;
+
+	double temp_double=0.0;
+	for (int i = 0; i < MAX_SAMPLE_AVERAGE_RZ; i++) temp_double += buf_average_phase_rdz[i];
+	pIO_Table->physics.wPhPlane_r = temp_double/ MAX_SAMPLE_AVERAGE_RZ;
+
 
 	pIO_Table->physics.sway_amp_r_ph2 = pIO_Table->physics.PhPlane_r.x * pIO_Table->physics.PhPlane_r.x + pIO_Table->physics.PhPlane_r.y * pIO_Table->physics.PhPlane_r.y;
 	pIO_Table->physics.sway_amp_r_ph = sqrt(pIO_Table->physics.sway_amp_r_ph2);
+
+
 
 	//###XY平面角度
 	double radious = pIO_Table->physics.L * sin(pIO_Table->physics.lph);
@@ -153,6 +167,7 @@ void CAnalyst::cal_simulation() {
 	pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID] = g_spec.bh_acc[FWD_ACC] / DEF_G;								//Offset of center of phase plane on acceleration
 	pIO_Table->auto_ctrl.phase_dec_offset[AS_BH_ID] = g_spec.bh_acc[FWD_DEC] / DEF_G;								//Offset of center of phase plane on deceleration
 
+
 };
 
 void CAnalyst::init_task(void *pobj) {
@@ -184,6 +199,10 @@ void CAnalyst::init_task(void *pobj) {
 	i_vlong_bh.iV2[0] = 5; i_vlong_bh.iV1[0] = 3; // 2段加速パターン　１組目　5ノッチ＋3ノッチ
 	i_vlong_bh.iV2[1] = 4; i_vlong_bh.iV1[1] = 2; // 2段加速パターン　2組目　4ノッチ＋1ノッチ
 	i_vlong_bh.iV2[2] = 3; i_vlong_bh.iV1[2] = 2; // 2段加速パターン　3組目　3ノッチ＋1ノッチ
+	
+	//位相角速度平均処理用バッファ初期化
+	for (int i = 0; i < MAX_SAMPLE_AVERAGE_RZ; i++) buf_average_phase_rdz[i] = 0.0;
+	i_buf_rdz = 0;
 	
 	return;
 };
@@ -296,8 +315,8 @@ void CAnalyst::update_auto_ctrl() {
 		pMode->antisway_control_t = AS_MOVE_INTERRUPT;
 	}
 	else if ((pIO_Table->physics.vL != 0.0)||(pMode->antisway_hoist == OPE_MODE_AS_ON)) {	//振止動作中
-		pMode->antisway_ptn_h = AS_PTN_0;
-		pMode->antisway_control_h = AS_MOVE_STANDBY;
+		pMode->antisway_ptn_t = AS_PTN_0;
+		pMode->antisway_control_t = AS_MOVE_STANDBY;
 	}
 	else if ((pIO_Table->physics.sway_amp_t_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) &&		//目標が位置決め完了判定距離内
 		(pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] < g_spec.as_compl_tposLv[I_AS_LV_COMPLE])) {	//振れが完了判定内
@@ -668,79 +687,109 @@ int CAnalyst::cal_as_recipe(int motion_id, LPST_MOTION_UNIT target, int mode) {
 		target->axis_type = MH_AXIS;
 		target->ptn_status = PTN_STANDBY;
 		target->iAct = 0; //Initialize activated pattern
-		target->motion_type = AS_PTN_MOVE_LONG2;
+		target->motion_type = AS_PTN_DMP;
 
-		//Step 1 位相待ち
-		{
+		if (pMode->antisway_control_h == AS_MOVE_ANTISWAY) {
+
+			double t0, t1, tx, v1;
+			t0 = pIO_Table->physics.T * 2.0 / 16.0;
+
+			t1 = pIO_Table->physics.T / 4.0 - t0;
+			if(t1 >  pIO_Table->physics.T / 8.0) t1 = pIO_Table->physics.T / 8.0;
+
+			tx = pIO_Table->physics.T / 4.0 - t1;
+			v1 = t1 * g_spec.hoist_acc[FWD_ACC];
+
+			//Step 1 位相待ち
+			{
+				target->n_step = 1;
+				step_count = 0;
+				target->motions[step_count].type = CTR_TYPE_SINGLE_PHASE_WAIT;
+				target->motions[step_count]._p = pIO_Table->auto_ctrl.tgpos_h;	// _p
+				target->motions[step_count]._t = pIO_Table->physics.T*2.0;		// _t タイムオーバーを2周期とする
+				target->motions[step_count].phase1 = t0 * pIO_Table->physics.w0;		// low phase
+				target->motions[step_count].phase2 = target->motions[step_count].phase1;// high phase
+				target->motions[step_count]._v = 0.0;
+			}
+			//Step 2 巻上
+			{
+				step_count += 1;
+				target->n_step += 1;
+
+				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
+				target->motions[step_count]._t = tx;
+				target->motions[step_count]._v = -v1;
+				target->motions[step_count]._p = target->motions[step_count - 1]._p
+					+ target->motions[step_count]._t * target->motions[step_count]._v
+					- target->motions[step_count]._v*target->motions[step_count]._v / g_spec.hoist_acc[FWD_ACC] / 2.0;
+			}
+			//Step 3 停止
+			{
+				step_count += 1;
+				target->n_step += 1;
+
+				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
+				target->motions[step_count]._t = pIO_Table->physics.T / 4.0 - t0;
+				target->motions[step_count]._v = 0.0;
+				target->motions[step_count]._p = target->motions[step_count - 1]._p
+					+ target->motions[step_count - 1]._v*target->motions[step_count - 1]._v / g_spec.hoist_acc[FWD_ACC] / 2.0;
+			}
+			//Step 4 巻下
+			{
+				step_count += 1;
+				target->n_step += 1;
+
+				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
+				target->motions[step_count]._t = tx;
+				target->motions[step_count]._v = v1;
+				target->motions[step_count]._p = pIO_Table->auto_ctrl.tgpos_h
+					+ target->motions[step_count]._v*target->motions[step_count]._v / g_spec.hoist_acc[FWD_ACC] / 2.0;
+			}
+			//Step 5 停止
+			{
+				step_count += 1;
+				target->n_step += 1;
+
+				target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
+				target->motions[step_count]._t = t1;
+				target->motions[step_count]._v = 0.0;
+				target->motions[step_count]._p = pIO_Table->auto_ctrl.tgpos_h;
+			}
+			//Step end 部
+			{
+				step_count += 1;
+				target->n_step += 1;
+
+				target->motions[step_count].type = CTR_TYPE_TIME_WAIT;
+				target->motions[step_count]._v = 0.0;
+				target->motions[step_count]._t = PTN_CONFIRMATION_TIME;
+				target->motions[step_count]._p = target->motions[step_count - 1]._p;
+			}
+
+			//time_count
+			for (int i = 0; i < target->n_step; i++) {
+				target->motions[i].act_counter = 0;
+				target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
+			}
+		}
+		else {
 			target->n_step = 1;
-			step_count = 0;
-			target->motions[step_count].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
-			target->motions[step_count]._p = pIO_Table->auto_ctrl.tgpos_h;	// _p
-			target->motions[step_count]._t = pIO_Table->physics.T*2.0;		// _t
-			target->motions[step_count].phase1 = DEF_PI / 4.0;				// low phase
-			target->motions[step_count].phase2 = -DEF_PI/4.0; 				// high phase
-			target->motions[step_count]._v = 0.0;
-		}
-		//Step 2 巻上
-		{
-			step_count += 1;
-			target->n_step += 1;
+			target->axis_type = MH_AXIS;
+			target->ptn_status = PTN_STANDBY;
+			target->iAct = 0; //Initialize activated pattern
 
-			target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
-			target->motions[step_count]._t = DEF_HPI/pIO_Table->physics.w0 - PTN_HOIST_ADJUST_TIME;
-			target->motions[step_count]._v = -g_spec.hoist_notch_spd[NOTCH_MAX-1];
-			target->motions[step_count]._p = target->motions[step_count - 1]._p
-				+ target->motions[step_count]._t * target->motions[step_count]._v
-				- target->motions[step_count]._v*target->motions[step_count]._v / g_spec.hoist_acc[FWD_ACC] / 2.0;
-		}
-		//Step 3 停止
-		{
-			step_count += 1;
-			target->n_step += 1;
-
-			target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
-			target->motions[step_count]._t = abs(target->motions[step_count-1]._v/ g_spec.hoist_acc[FWD_ACC])+ PTN_HOIST_ADJUST_TIME;
-			target->motions[step_count]._v = 0.0;
-			target->motions[step_count]._p = target->motions[step_count - 1]._p
-				+ target->motions[step_count-1]._v*target->motions[step_count-1]._v / g_spec.hoist_acc[FWD_ACC] / 2.0;
-		}
-		//Step 4 巻下
-		{
-			step_count += 1;
-			target->n_step += 1;
-
-			target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
-			target->motions[step_count]._t = DEF_HPI / pIO_Table->physics.w0 - PTN_HOIST_ADJUST_TIME;
-			target->motions[step_count]._v = g_spec.hoist_notch_spd[NOTCH_MAX-1];
-			target->motions[step_count]._p = pIO_Table->auto_ctrl.tgpos_h 
-				+ target->motions[step_count]._v*target->motions[step_count]._v / g_spec.hoist_acc[FWD_ACC] / 2.0;
-		}
-		//Step 5 停止
-		{
-			step_count += 1;
-			target->n_step += 1;
-
-			target->motions[step_count].type = CTR_TYPE_CONST_V_TIME;
-			target->motions[step_count]._t = abs(target->motions[step_count - 1]._v / g_spec.hoist_acc[FWD_ACC]) + PTN_HOIST_ADJUST_TIME;
-			target->motions[step_count]._v = 0.0;
-			target->motions[step_count]._p = pIO_Table->auto_ctrl.tgpos_h;  
-		}
-		//Step end 部
-		{
-			step_count += 1;
-			target->n_step += 1;
-
-			target->motions[step_count].type = CTR_TYPE_TIME_WAIT;
-			target->motions[step_count]._v = 0.0;
-			target->motions[step_count]._t = PTN_CONFIRMATION_TIME;
-			target->motions[step_count]._p = target->motions[step_count - 1]._p;
+			 //Step 1
+			target->motions[0].type = CTR_TYPE_TIME_WAIT;
+			
+			target->motions[0]._p = pIO_Table->auto_ctrl.tgpos_h;// _p
+			target->motions[0]._t = PTN_CONFIRMATION_TIME;			// _t
+			target->motions[0]._v = 0.0;
+			for (int i = 0; i < 1; i++) {
+				target->motions[i].act_counter = 0;
+				target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
+			}
 		}
 
-		//time_count
-		for (int i = 0; i < target->n_step; i++) {
-			target->motions[i].act_counter = 0;
-			target->motions[i].time_count = (int)(target->motions[i]._t * 1000) / (int)play_scan_ms;
-		}
 
 	}break;
 

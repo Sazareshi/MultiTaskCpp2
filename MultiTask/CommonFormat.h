@@ -280,9 +280,10 @@ typedef struct _stIO_Physic {
 	double T;		//U‚êüŠú
 	double w0;		//U‚êŠpü”g”(2PI()/Tj
 
-	Vector3 PhPlane_r;	//Z²Šp“x‚ÌˆÊ‘Š•½–Ê x:OmegaTheata y:TheataDot z:angle
-	Vector3 PhPlane_n;	//‰ñ“]À•W”¼Œa•ûŒü‚ÌˆÊ‘Š•½–Ê x:OmegaTheata y:TheataDot z:angle
-	Vector3 PhPlane_t;	//‰ñ“]À•WÚü•ûŒü‚ÌˆÊ‘Š•½–Ê x:OmegaTheata y:TheataDot z:angle
+	Vector3 PhPlane_r;	//Z²Šp“x‚ÌˆÊ‘Š•½–Ê x:Theata y:TheataDot/Omega z:phase angle
+	double wPhPlane_r; //Z²Šp“x‚ÌˆÊ‘Š‚ÌŠpü”g”
+	Vector3 PhPlane_n;	//‰ñ“]À•W”¼Œa•ûŒü‚ÌˆÊ‘Š•½–Ê x:Theata y:TheataDot/Omega z:phase angle
+	Vector3 PhPlane_t;	//‰ñ“]À•WÚü•ûŒü‚ÌˆÊ‘Š•½–Ê x:Theata y:TheataDot/Omega z:phase angle
 
 	double sway_amp_r_ph2;	//ˆÊ‘Š•½–Ê”¼Œa2æ
 	double sway_amp_n_ph2;	//ˆÊ‘Š•½–Ê”¼Œa2æ@–@ü•ûŒü

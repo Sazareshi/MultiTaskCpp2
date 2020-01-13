@@ -12,6 +12,7 @@ ST_SPEC g_spec =
 	{ 0.0,	0.25,	0.25,	0.25,	0.25,	0.25 },	//	m/s		operm_notch_spd[NOTCH_MAX];
 
 	{ 0.00875,	-0.00875,	0.00875,	-0.00875 },	//	rad/s2	slew_acc[ACCELERATION_MAX];
+//	{ 1.387,	-1.387,	1.387,	-1.387 },			//	m/s2	hoist_acc[ACCELERATION_MAX];
 	{ 0.387,	-0.387,	0.387,	-0.387 },			//	m/s2	hoist_acc[ACCELERATION_MAX];
 	{ 0.333,	-0.333,	0.333,	-0.333 },			//	m/s2	bh_acc[ACCELERATION_MAX];
 	{ 0.0812,	-0.0812,	0.0812,	-0.0812 },		//	m/s2	gantry_acc[ACCELERATION_MAX];

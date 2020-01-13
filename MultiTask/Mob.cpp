@@ -93,6 +93,7 @@ void Mob_HungLoad::init_mob(double _dt, Vector3& _r, Vector3& _v) {
 	r.copy(_r);
 	v.copy(_v);
 	m = 10000.0;//10 ton
+	//m = 40000.0;//40 ton
 	return;
 }
 

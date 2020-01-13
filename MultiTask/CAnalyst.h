@@ -17,6 +17,8 @@ extern ST_iTask g_itask;
 #define DEPTH_OF_2STEP_BH			3
 #define DEPTH_OF_2STEP_SLEW			3
 
+#define MAX_SAMPLE_AVERAGE_RZ       3
+
 typedef struct i2stepV {
 	int iV1[NUM_OF_2STEP];
 	int iV2[NUM_OF_2STEP];
@@ -56,5 +58,10 @@ public:
 	// Mob
 	Mob_HoistPoint  hp;
 	Mob_HungLoad	hl;
+
+private:
+	double buf_average_phase_rdz[MAX_SAMPLE_AVERAGE_RZ];
+	int i_buf_rdz;
+
 };
 

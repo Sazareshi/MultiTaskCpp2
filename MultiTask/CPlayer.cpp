@@ -24,7 +24,7 @@ void CPlayer::routine_work(void *param) {
 			
 	//ws << L" working!" << *(inf.psys_counter) % 100 << " BH STAT PTN " <<p_motion_ptn[BH_AXIS]->ptn_status << " BH STEP " << p_motion_ptn[BH_AXIS]->iAct <<"AS N POS16/SWAY8: "<< pMode->antisway_control_n;
 
-	ws << " MotionSLEW:" << p_motion_ptn[SLW_AXIS]->motion_type<<"    MotionBH: " << p_motion_ptn[BH_AXIS]->motion_type;
+	ws << "PHASE r:" << pIO_Table->physics.PhPlane_r.z << "PHASE rw:" << pIO_Table->physics.wPhPlane_r << "   PHASE amp: "<< pIO_Table->physics.sway_amp_r_ph << " MotionSLEW:" << p_motion_ptn[SLW_AXIS]->motion_type<<"    MotionBH: " << p_motion_ptn[BH_AXIS]->motion_type;
 
 	tweet2owner(ws.str()); ws.str(L""); ws.clear(); 
 
@@ -251,7 +251,7 @@ int CPlayer::set_motion_receipe() {
 
 			p_motion_ptn[MH_AXIS] = &motion_ptn[MH_AXIS];//レシピ構造体セット
 
-			if (pMode->antisway_control_h != AS_MOVE_DEACTIVATE) {
+			if (pMode->antisway_control_h==AS_MOVE_ANTISWAY){
 				//Set pattern recipe
 				if (pAna->cal_as_recipe(MOTION_ID_MH, p_motion_ptn[MH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
 					p_motion_ptn[MH_AXIS]->ptn_status = PTN_STANDBY;
@@ -532,7 +532,6 @@ int CPlayer::check_step_status_mh(LPST_MOTION_ELEMENT pStep) {
 		double temp_chk1 = pStep->phase1 + pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
 		double temp_chk2 = pStep->phase1 - pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
 
-		//Low Phase
 		if (temp_chk1 > DEF_PI) {
 			if ((pIO_Table->physics.PhPlane_r.z < (temp_chk1 - DEF_2PI)) || (pIO_Table->physics.PhPlane_r.z > temp_chk2))
 				status = STEP_FIN;
@@ -542,7 +541,7 @@ int CPlayer::check_step_status_mh(LPST_MOTION_ELEMENT pStep) {
 				status = STEP_FIN;
 		}
 		else {
-			if ((pIO_Table->physics.PhPlane_r.z < temp_chk1) && (pIO_Table->physics.PhPlane_r.z > temp_chk2))
+			if ((pIO_Table->physics.PhPlane_r.z < temp_chk1) && (pIO_Table->physics.PhPlane_r.z > temp_chk2)&&(pIO_Table->physics.wPhPlane_r<0.0))
 				status = STEP_FIN;
 		}
 
@@ -554,9 +553,10 @@ int CPlayer::check_step_status_mh(LPST_MOTION_ELEMENT pStep) {
 
 	}break;
 	case CTR_TYPE_DOUBLE_PHASE_WAIT: {
-		double temp_chk1 = pStep->phase1 + pIO_Table->auto_ctrl.phase_chk_range[AS_BH_ID];
-		double temp_chk2 = pStep->phase1 - pIO_Table->auto_ctrl.phase_chk_range[AS_BH_ID];
 
+#if 0
+		double temp_chk1 = pStep->phase1 + pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
+		double temp_chk2 = pStep->phase1 - pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
 		//LOW PHASE
 		if (temp_chk1 > DEF_PI) {
 			if ((pIO_Table->physics.PhPlane_r.z < (temp_chk1 - DEF_2PI)) || (pIO_Table->physics.PhPlane_r.z > temp_chk2))
@@ -579,10 +579,12 @@ int CPlayer::check_step_status_mh(LPST_MOTION_ELEMENT pStep) {
 			if (pIO_Table->physics.PhPlane_r.z > temp_chk1) {
 				temp_chk2 = pStep->phase2 + pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
 				if (temp_chk2 < DEF_PI) {
-					if (pIO_Table->physics.PhPlane_r.z < temp_chk2) status = STEP_FIN;
+					if (pIO_Table->physics.PhPlane_r.z < temp_chk2) 
+						status = STEP_FIN;
 				}
 				else {
-					if (pIO_Table->physics.PhPlane_r.z < -DEF_2PI + temp_chk2) status = STEP_FIN;
+					if (pIO_Table->physics.PhPlane_r.z < -DEF_2PI + temp_chk2) 
+						status = STEP_FIN;
 				}
 			}
 		}
@@ -591,16 +593,18 @@ int CPlayer::check_step_status_mh(LPST_MOTION_ELEMENT pStep) {
 			if (pIO_Table->physics.PhPlane_r.z < temp_chk1) {
 				temp_chk2 = pStep->phase2 - pIO_Table->auto_ctrl.phase_chk_range[AS_MH_ID];
 				if (temp_chk2 > -DEF_PI) {
-					if (pIO_Table->physics.PhPlane_r.z > temp_chk2) status = STEP_FIN;
+					if (pIO_Table->physics.PhPlane_r.z > temp_chk2) 
+						status = STEP_FIN;
 				}
 				else {
-					if (pIO_Table->physics.PhPlane_r.z > DEF_2PI - temp_chk2) status = STEP_FIN;
+					if (pIO_Table->physics.PhPlane_r.z > DEF_2PI - temp_chk2) 
+						status = STEP_FIN;
 				}
 			}
 		}
-
+#endif
 		//Too small sway
-		if (pIO_Table->physics.sway_amp_n_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) {
+		if (pIO_Table->physics.sway_amp_r_ph < g_spec.as_compl_swayLv[I_AS_LV_COMPLE]) {
 			status = STEP_FIN;
 		}
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
