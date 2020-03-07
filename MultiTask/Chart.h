@@ -64,10 +64,6 @@ typedef struct _stCHART_DISP
 }ST_CHART_DISP, *LPST_CHART_DISP;
 
 
-
-
-
-
 class Chart
 {
 public:

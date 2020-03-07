@@ -303,9 +303,9 @@ void CPublicRelation::GL_Display(void) {
 	sprintf_s(t_char, "%x", pMode->antisway_hoist);
 	strcat_s(t_char2, t_char);
 	if (pMode->antisway)
-		GL_DISPLAY_TEXT(28, 78, t_char2, 1.0, 0.0, 0.0);
+		GL_DISPLAY_TEXT(26, 78, t_char2, 1.0, 0.0, 0.0);
 	else
-		GL_DISPLAY_TEXT(28, 78, t_char2, 0.0, 1.0, 0.0);
+		GL_DISPLAY_TEXT(26, 78, t_char2, 0.0, 1.0, 0.0);
 
 	strcpy_s(t_char2, "AUTO_MODE = ");
 	sprintf_s(t_char, "%x", pMode->auto_control);
@@ -315,7 +315,10 @@ void CPublicRelation::GL_Display(void) {
 	else
 		GL_DISPLAY_TEXT(56, 78, t_char2, 0.0, 1.0, 0.0);
 
-
+	strcpy_s(t_char2, "Amp = ");
+	sprintf_s(t_char, "%f", pIO_Table->physics.sway_amp_r_ph);
+	strcat_s(t_char2, t_char);
+	GL_DISPLAY_TEXT(5, 72, t_char2);
 
 
 	glutSwapBuffers(); //glutInitDisplayMode(GLUT_DOUBLE)でダブルバッファリングを利用可

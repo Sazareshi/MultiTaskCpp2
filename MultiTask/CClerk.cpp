@@ -1,16 +1,25 @@
 #include "stdafx.h"
 #include "CClerk.h"
 #include "Chart.h"
+#include "CMKlog.h"
 
 extern CORDER_Table*	pOrder;				//共有メモリOrderクラスポインタ
 extern CMODE_Table*		pMode;				//共有メモリModeクラスポインタ
 extern ST_SPEC			g_spec;				//クレーン仕様
 extern CIO_Table*		pIO_Table;
 
+using namespace MKlog;
+
+static CMKlog* plogobj = nullptr;
 
 CClerk::CClerk(){}
 
-CClerk::~CClerk(){}
+CClerk::~CClerk(){
+	plogobj->end_record(MK_LOGSET_1);
+	if (plogobj != nullptr) delete plogobj;
+}
+
+
 
 void CClerk::routine_work(void *param) {
 
@@ -46,7 +55,14 @@ LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 					Chart::open_chart(inf.hInstance, inf.hWnd_parent);
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) {
-					;
+					if (b_logact[0] == false) {
+						b_logact[0] = true;
+						plogobj->start_record(MK_LOGSET_1, NULL);
+					}
+					else {
+						b_logact[0] = false;
+						plogobj->end_record(MK_LOGSET_1);
+					};
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) {
 					;
@@ -282,7 +298,15 @@ void CClerk::set_panel_tip_txt()
 
 void CClerk::init_task(void *pobj) {
 	set_panel_tip_txt();
-	return;
+
+	//LOG関連設定
+	plogobj = new CMKlog;
+	plogobj->init_logfunc();
+	plogobj->set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_LOGSET_1, 0);
+	plogobj->set_double_data(&(pIO_Table->physics.PhPlane_n.y), MK_LOGSET_1, 1);
+	for (int i = 0; i < CLERK_LOG_MAX; i++)b_logact[i] = false;
+
+	return; 
 };
 
 HWND CClerk::CreateOwnWindow(HWND h_parent_wnd) {
