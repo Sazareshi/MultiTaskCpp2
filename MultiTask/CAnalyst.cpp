@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CAnalyst.h"
-#include "SharedObjects.h"
+#include "SharedObjects.h"@
+
 #include "CPlayer.h"
 
 extern CORDER_Table*	pOrder;				//‹¤—Lƒƒ‚ƒŠOrderƒNƒ‰ƒXƒ|ƒCƒ“ƒ^
@@ -87,13 +88,13 @@ void CAnalyst::cal_simulation() {
 
 	double temp_r = sqrt(rel_lp.x * rel_lp.x + rel_lp.y * rel_lp.y);//XY•½–Ê”¼Œa
 	double temp_v = sqrt(rel_lvp.x * rel_lvp.x + rel_lvp.y * rel_lvp.y);//XY•½–Ê”¼Œa‘¬“x
-	pIO_Table->physics.lph = asin(temp_r / pIO_Table->physics.L);
+	pIO_Table->physics.lph = asin(temp_r / pIO_Table->physics.L);//‚šŽ²‚Æ‚ÌŠp“x
 
 	//###ZŽ²Šp“x‚ÌˆÊ‘Š•½–Ê  x:Theata y:TheataDot/Omega
-	pIO_Table->physics.PhPlane_r.x = temp_r / pIO_Table->physics.L;
-	if (pIO_Table->physics.PhPlane_r.x < DEF_001DEG)pIO_Table->physics.PhPlane_r.x = DEF_001DEG;
+	pIO_Table->physics.PhPlane_r.x = temp_r / pIO_Table->physics.L;//r/L = theata
+	if (pIO_Table->physics.PhPlane_r.x < DEF_001DEG)pIO_Table->physics.PhPlane_r.x = DEF_001DEG;//0Š„‚è–hŽ~—p‰ºŒÀ
 
-	pIO_Table->physics.PhPlane_r.y = temp_v / (pIO_Table->physics.L * pIO_Table->physics.w0);
+	pIO_Table->physics.PhPlane_r.y = temp_v / (pIO_Table->physics.L * pIO_Table->physics.w0);//vr/L/w = thata dot/w
 
 	double last_rz = pIO_Table->physics.PhPlane_r.z; //rˆÊ‘Š‘O‰ñ’l
 

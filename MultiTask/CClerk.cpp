@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "CClerk.h"
-#include "Chart.h"
 #include "CMKlog.h"
+#include "CMKChart.h"
 
 extern CORDER_Table*	pOrder;				//共有メモリOrderクラスポインタ
 extern CMODE_Table*		pMode;				//共有メモリModeクラスポインタ
@@ -52,16 +52,41 @@ LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 			inf.panel_type_id = LOWORD(wp); set_panel_tip_txt();  SetFocus(GetDlgItem(inf.hWnd_opepane, IDC_TASK_EDIT1));
 			if (inf.panel_func_id == IDC_TASK_FUNC_RADIO1) {
 				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) {
-					Chart::open_chart(inf.hInstance, inf.hWnd_parent);
+//					Chart::open_chart(inf.hInstance, inf.hWnd_parent);
+					MKChart::CMKChart::init_chartfunc();
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART1, 0, 0, 0.1, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.vR), MK_CHART1, 0, 1, 1.0, false);
+
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART1, 1, 0, 0.1, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.wth), MK_CHART1, 1, 1, 0.105, false);
+					MKChart::CMKChart::open_chart(MK_CHART1, hDlg);
+					MKChart::CMKChart::set_chart_spd(MK_CHART1, 30000);
+
+
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART2, 0, 0, 0.1, true);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.y), MK_CHART2, 0, 0, 0.1, false);
+
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART2, 1, 0, 0.1, true);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.y), MK_CHART2, 1, 0, 0.1, false);
+
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_r.x), MK_CHART2, 2, 0, 0.1, true);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_r.y), MK_CHART2, 2, 0, 0.1, false);
+					MKChart::CMKChart::open_chart(MK_CHART2, hDlg);
+					MKChart::CMKChart::set_reflesh_time(MK_CHART2, 60000);
+
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) {
 					if (b_logact[0] == false) {
 						b_logact[0] = true;
-						plogobj->start_record(MK_LOGSET_1, NULL);
+	//					plogobj->start_record(MK_LOGSET_1, NULL);
+
+						MKlog::CMKlog::start_record(MK_LOGSET_1, NULL);
 					}
 					else {
 						b_logact[0] = false;
-						plogobj->end_record(MK_LOGSET_1);
+	//					plogobj->end_record(MK_LOGSET_1);
+
+						MKlog::CMKlog::end_record(MK_LOGSET_1);
 					};
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) {
