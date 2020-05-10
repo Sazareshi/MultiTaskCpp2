@@ -7,6 +7,7 @@
 /*    Define                                */
 /************************************************/
 #define	DEF_QPI  0.7854			//45deg
+#define DEF_TPI  1.0472         //60deg
 #define	DEF_HPI  1.5708			//90deg
 #define	DEF_PI  3.1415265
 #define DEF_2PI 6.2831853
@@ -25,6 +26,7 @@
 #define MOTION_ID_SLEW	3
 
 #define NO_ERR_EXIST	0
+#define ERR_NO_CASE_EXIST	1
 #define CAL_RESULT_POSITIVE 1
 #define CAL_RESULT_NEGATIVE 0
 
@@ -60,14 +62,18 @@ typedef struct _st_iTask {
 #define CTR_TYPE_BH_WAIT					0x0003	//Keep condition awaiting BH position
 #define CTR_TYPE_SLEW_WAIT					0x0004	//Keep condition awaiting SLEW position
 #define CTR_TYPE_MH_WAIT					0x0005	//Keep condition awaiting HOIST position
+#define CTR_TYPE_TIME_WAIT_2PN				0x0006  //Keep condition for specified time
+#define CTR_TYPE_TIME_WAIT_2PP				0x0007  //Keep condition for specified time
 #define CTR_TYPE_CONST_V_TIME				0x0100  //Keep specified speed ref for specified time
 #define CTR_TYPE_ACC_TIME					0x0200  //Specified time acceleration
 #define CTR_TYPE_ACC_V						0x0201  //Toward specified speed acceleration
 #define CTR_TYPE_ACC_TIME_OR_V				0x0202  //Specified time acceleration or reach specified speed
 #define CTR_TYPE_ACC_AS						0x0203 //Toward specified speed acceleration for inching antisway
+#define CTR_TYPE_ACC_AS_2PN					0x0204 //Toward specified speed acceleration for inching antisway
 #define CTR_TYPE_DEC_TIME					0x0300  //Specified time deceleration
 #define CTR_TYPE_DEC_V						0x0301  //Toward specified speed deceleration
 #define CTR_TYPE_DEC_TIME_OR_V				0x0302  //Specified time acceleration or reach specified speed
+#define CTR_TYPE_DEC_AS_2PN					0x0302  //Toward specified speed deceleration
 
 typedef struct _stMotion_Element {	//運動要素
 	int type;				//制御種別
@@ -306,10 +312,12 @@ typedef struct _stIO_Ref {
 
 }ST_IO_REF, *LPST_IO_REF;
 
-#define NUM_OF_AS	3
-#define AS_SLEW_ID  0
-#define AS_BH_ID	1
-#define AS_MH_ID	2
+#define NUM_OF_AS			3
+#define AS_SLEW_ID			0
+#define AS_BH_ID			1
+#define AS_MH_ID			2
+#define AS_START_LOW_PHASE	 1
+#define AS_START_HIGH_PHASE	 -1
 
 typedef struct _stAS_CTRL {
 	double tgpos_h;							//巻目標位置
@@ -322,17 +330,19 @@ typedef struct _stAS_CTRL {
 	double tgspd_slew;						//旋回目標速度
 	double tgspd_bh;						//引込目標速度
 
-	double as_gain_pos[NUM_OF_AS];		//振止ゲイン　位置合わせ用　接線方向  加速時間sec
-	double as_gain_damp[NUM_OF_AS];		//振止ゲイン　振れ止め用	接線方向　加速時間sec
+	double as_gain_ph[NUM_OF_AS];			//振止ゲイン  加速位相rad
+	double as_gain_time[NUM_OF_AS];			//振止ゲイン　加速時間sec
 
-	double phase_acc_offset[NUM_OF_AS];		//Offset of center of phase plane on acceleration
-	double phase_dec_offset[NUM_OF_AS];		//Offset of center of phase plane on deceleration
+	double phase_acc_offset[NUM_OF_AS];		//加速時位相面振れ中心
+	double phase_dec_offset[NUM_OF_AS];		//加速時位相面振れ中心
 	
-	double phase_chk_range[NUM_OF_AS];		//振れ止め位相確認許容誤差	
+	double phase_chk_range[NUM_OF_AS];		//振れ止め位相確認許容誤差	-
 	int as_out_dir[NUM_OF_AS];				//振れ止め出力の方向
+	int as_start_ph[NUM_OF_AS];			//振れ止め加速開始時の位相方向
 
 	double tgD[NUM_OF_AS];					//振止目標-現在角度
 	double tgD_abs[NUM_OF_AS];				//振止目標-現在角度 絶対値
+	double Dmax_2step[NUM_OF_AS];			//2Step微小移動最大移動距離
 
 	double allowable_pos_overshoot_plus[NUM_OF_AS];		//振止目標位置オーバー許容値　進行方向
 	double allowable_pos_overshoot_minus[NUM_OF_AS];	//振止目標位置オーバー許容値　進行逆方向
