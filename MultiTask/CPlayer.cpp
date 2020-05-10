@@ -24,7 +24,8 @@ void CPlayer::routine_work(void *param) {
 			
 	//ws << L" working!" << *(inf.psys_counter) % 100 << " BH STAT PTN " <<p_motion_ptn[BH_AXIS]->ptn_status << " BH STEP " << p_motion_ptn[BH_AXIS]->iAct <<"AS N POS16/SWAY8: "<< pMode->antisway_control_n;
 
-	ws << "PHASE r:" << pIO_Table->physics.PhPlane_r.z << "PHASE rw:" << pIO_Table->physics.wPhPlane_r << "   PHASE amp: "<< pIO_Table->physics.sway_amp_r_ph << " MotionSLEW:" << p_motion_ptn[SLW_AXIS]->motion_type<<"    MotionBH: " << p_motion_ptn[BH_AXIS]->motion_type;
+	//ws << "PHASE r:" << pIO_Table->physics.PhPlane_r.z << "PHASE rw:" << pIO_Table->physics.wPhPlane_r << "   PHASE amp: "<< pIO_Table->physics.sway_amp_r_ph << " MotionSLEW:" << p_motion_ptn[SLW_AXIS]->motion_type<<"    MotionBH: " << p_motion_ptn[BH_AXIS]->motion_type;
+	ws <<  " MotionSLEW:" << p_motion_ptn[SLW_AXIS]->motion_type<<"    MotionBH: " << p_motion_ptn[BH_AXIS]->motion_type;
 
 	tweet2owner(ws.str()); ws.str(L""); ws.clear(); 
 
@@ -271,7 +272,6 @@ int CPlayer::set_motion_receipe() {
 		
 	return 0;
 };
-
 int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 	int status = STEP_ON_GOING;
 	switch (pStep->type) {
@@ -667,7 +667,6 @@ double CPlayer::act_slew_steps(LPST_MOTION_UNIT pRecipe) {
 		output_v = pStep->_v;
 	}break;
 	case CTR_TYPE_ACC_AS: {
-
 		output_v = (double)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * pStep->_v;
 	}break;
 	case CTR_TYPE_DEC_V: {

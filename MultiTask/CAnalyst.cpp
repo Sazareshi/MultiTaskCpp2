@@ -533,6 +533,7 @@ int CAnalyst::cal_move_1Step(int motion_id, LPST_MOTION_UNIT target, int mode) {
 				//phase1 プラス方向用位相
 				target->motions[0].phase2 = -DEF_PI + pIO_Table->auto_ctrl.as_gain_ph[AS_BH_ID];// high phase
 				target->motions[0]._v = 0.0;
+				target->motions[0].opt_i1 = AS_PTN_1STEP;//パターン出力時判定用
 			}
 			//Step 2　加速
 			{
@@ -540,7 +541,6 @@ int CAnalyst::cal_move_1Step(int motion_id, LPST_MOTION_UNIT target, int mode) {
 				target->motions[1]._p = pIO_Table->auto_ctrl.tgpos_bh;							// _p
 				target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
 				target->motions[1]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;			// _v
-				target->motions[1].opt_i1 = AS_PTN_1STEP;//パターン出力時判定用
 
 			}
 			//Step 3　減速
@@ -609,6 +609,7 @@ int CAnalyst::cal_move_1Step(int motion_id, LPST_MOTION_UNIT target, int mode) {
 				target->motions[0].phase1 = pIO_Table->auto_ctrl.as_gain_ph[AS_SLEW_ID];		// low phase
 				target->motions[0].phase2 = -DEF_PI+pIO_Table->auto_ctrl.as_gain_ph[AS_SLEW_ID];// high phase
 				target->motions[0]._v = 0.0;
+				target->motions[0].opt_i1 = AS_PTN_1STEP;//パターン出力時判定用
 			}
 			//Step 2　加速
 			{
@@ -616,7 +617,6 @@ int CAnalyst::cal_move_1Step(int motion_id, LPST_MOTION_UNIT target, int mode) {
 				target->motions[1]._p = pIO_Table->auto_ctrl.tgpos_slew;						// _p
 				target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID];			// _t
 				target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;
-				target->motions[1].opt_i1 = AS_PTN_1STEP;//パターン出力時判定用
 			}
 			//Step 3　減速
 			{
@@ -709,6 +709,7 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[0].phase1 = 0;													// low phase
 				target->motions[0].phase2 = DEF_PI;												// high phase
 				target->motions[0]._v = 0.0;
+				target->motions[0].opt_i1 = AS_PTN_2STEP_PN;//パターン出力時判定用
 			}
 			//Step 2　加速
 			{
@@ -815,7 +816,7 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[0].phase1 = 0;							// low phase
 				target->motions[0].phase2 = DEF_PI;						// high phase
 				target->motions[0]._v = 0.0;
-
+				target->motions[0].opt_i1 = AS_PTN_2STEP_PN;//パターン出力時判定用
 			}
 			//Step 2　加速
 			{
@@ -1041,6 +1042,7 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[0].phase1 = 0;													// low phase
 				target->motions[0].phase2 = DEF_PI;												// high phase
 				target->motions[0]._v = 0.0;
+				target->motions[0].opt_i1 = AS_PTN_2STEP_PP;//パターン出力時判定用
 			}
 			//Step 2　加速
 			{
@@ -1048,7 +1050,6 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[1]._p = pIO_Table->auto_ctrl.tgpos_bh;							// _p
 				target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
 				target->motions[1]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;			// _v
-				target->motions[1].opt_i1 = AS_PTN_2STEP_PP;//パターン出力時判定用
 			}
 			//Step 3　減速
 			{
@@ -1071,7 +1072,6 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[4]._p = pIO_Table->auto_ctrl.tgpos_bh;							// _p
 				target->motions[4]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
 				target->motions[4]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;			// _v
-				target->motions[4].opt_i1 = AS_PTN_2STEP_PP;//パターン出力時判定用
 			}
 			//Step 6　減速
 			{
@@ -1139,6 +1139,7 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[0].phase1 = 0;							// low phase
 				target->motions[0].phase2 = DEF_PI;						// high phase
 				target->motions[0]._v = 0.0;
+				target->motions[0].opt_i1 = AS_PTN_2STEP_PP;//パターン出力時判定用
 			}
 			//Step 2　加速
 			{
@@ -1146,7 +1147,6 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[1]._p = pIO_Table->auto_ctrl.tgpos_slew;						// _p
 				target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID];			// _t
 				target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;			// _v
-				target->motions[1].opt_i1 = AS_PTN_2STEP_PP;//パターン出力時判定用
 			}
 			//Step 3　減速
 			{
@@ -1169,7 +1169,6 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[4]._p = pIO_Table->auto_ctrl.tgpos_slew;						// _p
 				target->motions[4]._t = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID];			// _t
 				target->motions[4]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;			// _v
-				target->motions[1].opt_i1 = AS_PTN_2STEP_PP;//パターン出力時判定用
 			}
 			//Step 6　減速
 			{
