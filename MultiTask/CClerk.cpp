@@ -54,23 +54,24 @@ LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) {
 //					Chart::open_chart(inf.hInstance, inf.hWnd_parent);
 					MKChart::CMKChart::init_chartfunc();
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART1, 0, 0, 0.1, false);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.vR), MK_CHART1, 0, 1, 1.0, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART1, 0, 0, 0.05, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.vR), MK_CHART1, 0, 1, 0.25, false);
 
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART1, 1, 0, 0.1, false);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.wth), MK_CHART1, 1, 1, 0.105, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART1, 1, 0, 0.05, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.wth), MK_CHART1, 1, 1, 0.01, false);
+					
 					MKChart::CMKChart::open_chart(MK_CHART1, hDlg);
 					MKChart::CMKChart::set_chart_spd(MK_CHART1, 30000);
 
 
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART2, 0, 0, 0.1, true);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.y), MK_CHART2, 0, 0, 0.1, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART2, 0, 0, 0.05, true);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.y), MK_CHART2, 0, 0, 0.05, false);
 
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART2, 1, 0, 0.1, true);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.y), MK_CHART2, 1, 0, 0.1, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART2, 1, 0, 0.05, true);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.y), MK_CHART2, 1, 0, 0.05, false);
 
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_r.x), MK_CHART2, 2, 0, 0.1, true);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_r.y), MK_CHART2, 2, 0, 0.1, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_r.x), MK_CHART2, 2, 0, 0.05, true);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_r.y), MK_CHART2, 2, 0, 0.05, false);
 					MKChart::CMKChart::open_chart(MK_CHART2, hDlg);
 					MKChart::CMKChart::set_reflesh_time(MK_CHART2, 60000);
 

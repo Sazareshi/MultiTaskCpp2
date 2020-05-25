@@ -196,7 +196,9 @@ void CAnalyst::init_task(void *pobj) {
 
 void CAnalyst::routine_work(void *param) {
 	Vector3 rel_lp = hl.r - hp.r;		//吊荷相対xyz
-	ws << L" working!" << *(inf.psys_counter) % 100 << "  AS ptn n ;" << pMode->antisway_ptn_n << ": AS ctr n" << pMode->antisway_control_n << "__   AS ptn t ;" << pMode->antisway_ptn_t << ": AS ctr t" << pMode->antisway_control_t;
+//	ws << L" working!" << *(inf.psys_counter) % 100 << "  AS ptn n ;" << pMode->antisway_ptn_n << ": AS ctr n" << pMode->antisway_control_n << "__   AS ptn t ;" << pMode->antisway_ptn_t << ": AS ctr t" << pMode->antisway_control_t;
+	
+	ws << L"BH AS:" << pMode->antisway_control_n << L"SLEW AS:" << pMode->antisway_control_t;
 	tweet2owner(ws.str()); ws.str(L""); ws.clear();
 
 	//シミュレータ計算
@@ -266,6 +268,12 @@ void CAnalyst::update_auto_ctrl() {
 		pMode->antisway_ptn_n = AS_PTN_0;
 		pMode->antisway_control_n = AS_MOVE_COMPLETE;
 	}
+#if 1
+	else {
+		pMode->antisway_control_n = AS_MOVE_ANTISWAY;
+		pMode->antisway_ptn_n = AS_PTN_2STEP_PN;
+	}
+#else
 	else if (pIO_Table->physics.sway_amp_n_ph > pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID]) {	//振れが加速振れより大
 			pMode->antisway_control_n = AS_MOVE_ANTISWAY;
 			pMode->antisway_ptn_n = AS_PTN_1STEP;
@@ -294,18 +302,19 @@ void CAnalyst::update_auto_ctrl() {
 
 		//2段加減速最小移動距離
 		double Dmin = g_spec.bh_notch_spd[NOTCH_MAX - 1]*(pIO_Table->physics.T + g_spec.bh_notch_spd[NOTCH_MAX - 1] / g_spec.bh_acc[FWD_ACC]);
-
+		//2段加減速
 		if (pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] <= Dmin) pMode->antisway_ptn_n = AS_PTN_3STEP;
+		//3段
 		else pMode->antisway_ptn_n = AS_PTN_2ACCDEC;
 	}
-
+#endif
 	//##### Tangent direction
 
 	if (pIO_Table->ref.b_slew_manual_ctrl) {
 		pMode->antisway_ptn_t = AS_PTN_0;
 		pMode->antisway_control_t = AS_MOVE_INTERRUPT;
 	}
-	else if ((pIO_Table->physics.vL != 0.0)||(pMode->antisway_hoist == OPE_MODE_AS_ON)) {	//振止動作中
+	else if ((pIO_Table->physics.wth != 0.0)||(pMode->antisway_hoist == OPE_MODE_AS_ON)) {	//振止動作中
 		pMode->antisway_ptn_t = AS_PTN_0;
 		pMode->antisway_control_t = AS_MOVE_STANDBY;
 	}
@@ -314,6 +323,12 @@ void CAnalyst::update_auto_ctrl() {
 		pMode->antisway_ptn_t = AS_PTN_0;
 		pMode->antisway_control_t = AS_MOVE_COMPLETE;
 	}
+#if 1
+	else{	//振れが加速振れ以上
+		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
+		pMode->antisway_ptn_t = AS_PTN_2STEP_PN;
+	}
+#else
 	else if (pIO_Table->physics.sway_amp_t_ph > pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID]) {	//振れが加速振れ以上
 		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_t = AS_PTN_1STEP;
@@ -341,11 +356,11 @@ void CAnalyst::update_auto_ctrl() {
 
 		//2段加減速最小移動距離
 		double Dmin = g_spec.slew_notch_spd[NOTCH_MAX - 1] * (pIO_Table->physics.T + g_spec.slew_notch_spd[NOTCH_MAX - 1] / g_spec.bh_acc[FWD_ACC]);
-
+		//2段加減速
 		if (pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] <= Dmin) pMode->antisway_ptn_t = AS_PTN_3STEP;
 		else pMode->antisway_ptn_t = AS_PTN_2ACCDEC;
 	}
-
+#endif
 	//##### Hoist direction
 
 	if (pMode->antisway_hoist != OPE_MODE_AS_ON) {
@@ -356,7 +371,7 @@ void CAnalyst::update_auto_ctrl() {
 		pMode->antisway_ptn_h = AS_PTN_0;
 		pMode->antisway_control_h = AS_MOVE_INTERRUPT;
 	}
-	else if (pIO_Table->physics.wth != 0.0) {
+	else if (pIO_Table->physics.vL != 0.0) {
 		pMode->antisway_ptn_h = AS_PTN_0;
 		pMode->antisway_control_h = AS_MOVE_STANDBY;
 	}
@@ -397,9 +412,31 @@ void CAnalyst::cal_as_gain(int motion_id, int type) {
 			pIO_Table->auto_ctrl.as_gain_ph[AS_BH_ID] = acos(1 - 0.5 * R0 / pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID]);
 			pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] = pIO_Table->auto_ctrl.as_gain_ph[AS_BH_ID] / pIO_Table->physics.w0;
 		}
-		else if(type == AS_PTN_2STEP_PN){//ゲインは当面π/2
-			pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] = DEF_HPI / pIO_Table->physics.w0; 
-			if (pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] > gain_limit2) pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] = gain_limit2;
+		else if(type == AS_PTN_2STEP_PN){
+			//初期振れ量でまず、ゲインを設定
+			if (pIO_Table->physics.sway_amp_n_ph < pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID]) {//振れ振幅が加速振れ内側
+				//2回のインチングで振れ止め用
+				double temp_d = acos(1 - pIO_Table->physics.sway_amp_n_ph /4.0/ pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID]);
+				pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] = temp_d/ pIO_Table->physics.w0;
+			}
+			else {
+				//2回目のインチングで振れ止め（待ち時間調整タイプ）用
+				pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] = sqrt(pIO_Table->physics.sway_amp_n_ph * pIO_Table->physics.L / g_spec.bh_acc[FWD_ACC]);
+			}
+
+			//ターゲット距離移動する加速時間は確保
+			double time_dist2 = sqrt(pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] / g_spec.bh_acc[FWD_ACC]/2.0);
+			if (pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] < time_dist2){
+				pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] = time_dist2;
+			}
+			//最大速度による加速時間制限
+			if (pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] > gain_limit2) { 
+				pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] = gain_limit2;
+			}
+
+			if (pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] > DEF_HPI/ pIO_Table->physics.w0) {
+				pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] = DEF_HPI / pIO_Table->physics.w0;
+			}
 			pIO_Table->auto_ctrl.as_gain_ph[AS_BH_ID] = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] * pIO_Table->physics.w0;
 		}
 		else if (type == AS_PTN_2STEP_PP) {
@@ -424,9 +461,32 @@ void CAnalyst::cal_as_gain(int motion_id, int type) {
 			pIO_Table->auto_ctrl.as_gain_ph[AS_SLEW_ID] = acos(1 - 0.5 * R0 / pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID]);
 			pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] = pIO_Table->auto_ctrl.as_gain_ph[AS_SLEW_ID] / pIO_Table->physics.w0;
 		}
-		else if (type == AS_PTN_2STEP_PN) {//ゲインは当面π/2
-			pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] = DEF_HPI/ pIO_Table->physics.w0;
-			if (pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] > gain_limit2) pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] = gain_limit2;
+		else if (type == AS_PTN_2STEP_PN) {
+			//初期振れ量でまず、ゲインを設定
+			if (pIO_Table->physics.sway_amp_t_ph < pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID]) {//振れ振幅が加速振れ内側
+				//2回のインチングで振れ止め用
+//				double temp_ph = acos(1 - pIO_Table->physics.sway_amp_t_ph / 4.0 / pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID] );
+				double temp_ph = acos(1 - pIO_Table->physics.sway_amp_t_ph / 1.8 / pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID]);
+				pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] = temp_ph  /  pIO_Table->physics.w0;
+			}
+			else {
+				//2回目のインチングで振れ止め（待ち時間調整）用
+				pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] = sqrt(pIO_Table->physics.sway_amp_t_ph * pIO_Table->physics.L / g_spec.slew_acc[FWD_ACC]);
+			}
+
+			//ターゲット距離移動する加速時間は確保
+			double time_dist2 = sqrt(pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] / g_spec.slew_acc[FWD_ACC]/2.0);
+			if (pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] < time_dist2) {
+				pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] = time_dist2;
+			}
+			//最大速度による加速時間制限
+			if (pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] > gain_limit2) {
+				pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] = gain_limit2;
+			}
+
+			if (pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] > DEF_HPI / pIO_Table->physics.w0) {
+				pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] = DEF_HPI / pIO_Table->physics.w0;
+			}
 			pIO_Table->auto_ctrl.as_gain_ph[AS_SLEW_ID] = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] * pIO_Table->physics.w0;
 		}
 		else if (type == AS_PTN_2STEP_PP) {
@@ -666,7 +726,7 @@ int CAnalyst::cal_move_1Step(int motion_id, LPST_MOTION_UNIT target, int mode) {
 int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode) {
 
 	double adjust_t_pos, adjust_t_sway;
-	int adjust_count_pos, adjust_count_sway;
+	int adjust_count_pos, adjust_count_sway, adjust_dir;
 	
 	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
 	unsigned int play_scan_ms = pPly->inf.cycle_ms;
@@ -675,18 +735,38 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 
 	switch (motion_id) {
 	case MOTION_ID_BH: {
+		int large_sway_flag;
+		if (pIO_Table->physics.sway_amp_n_ph < pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID]) {
+			large_sway_flag = OFF;
+		}
+		else {
+			large_sway_flag = ON;
+		}
 
 		//振れ止め移動方向セット
-		if (pIO_Table->auto_ctrl.tgD > 0) pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = 1;
-		else pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = -1;
-
+		if (large_sway_flag == ON) {
+			if (pIO_Table->auto_ctrl.tgD > 0) pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = AS_DIR_PLUS;
+			else pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = AS_DIR_MINUS;
+		}
+		else {
+			pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = 0;
+		}
 		pIO_Table->auto_ctrl.as_start_ph[AS_BH_ID] = 0;	//振れ止め開始位相方向フラグクリア
 		cal_as_gain(AS_BH_ID, AS_PTN_2STEP_PN);//振れ止めゲイン計算
 
 	//目標位置までの位置合わせ補正時間,　目標位置までの距離に応じていずれかのステップの加速時間を減らす
 		adjust_t_pos = sqrt(pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] * pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID]
 			  - pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] / g_spec.bh_acc[FWD_ACC]); 
+		adjust_t_pos = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] - adjust_t_pos;
 		adjust_count_pos = (int)(adjust_t_pos * 1000) / (int)play_scan_ms;
+
+	//補正時間を適用する移動方向を判定する
+		if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] > 0.0) {
+			adjust_dir = AS_DIR_MINUS;//マイナス方向を減らす
+		}
+		else {
+			adjust_dir = AS_DIR_PLUS;
+		}
 
 	//初期振れ振幅による停止補正時間,　振れ振幅に応じて停止時間の増減をする
 		double R = 2.0 * pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID] * (1.0 - cos(pIO_Table->auto_ctrl.as_gain_ph[AS_BH_ID]));
@@ -718,6 +798,7 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
 				target->motions[1]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;			// _v
 				target->motions[1].opt_i1 = adjust_count_pos;	//位置合わせ用補正タイマーカウント
+				target->motions[1].opt_i2 = adjust_dir;			//補正タイマー適用移動方向
 			}
 			//Step 3　減速
 			{
@@ -726,14 +807,38 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[2]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
 				target->motions[2]._v = 0.0;													// _v
 				target->motions[2].opt_i1 = adjust_count_pos;	//位置合わせ用補正タイマーカウント
+				target->motions[2].opt_i2 = adjust_dir;			//補正タイマー適用移動方向
 			}
 			//Step 4　位相待ち待機
 			{
 				target->motions[3].type = CTR_TYPE_TIME_WAIT_2PN;
 				target->motions[3]._p = pIO_Table->auto_ctrl.tgpos_bh;							// _p
-				target->motions[3]._t = PTN_CONFIRMATION_TIME;									// _t
+				if (large_sway_flag) {
+					target->motions[3]._t = 2.0*(DEF_PI / pIO_Table->physics.w0 - pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID]);	// _t
+					target->motions[3].opt_i1 = adjust_count_sway;	//振れ止め用補正タイマーカウント
+					target->motions[3].opt_i2 = AS_INIT_SWAY_LARGE;
+				}
+				else {
+
+					double R1, cos_ph, r, r0, r0_p_r, ph1,phx;
+					cos_ph = cos(pIO_Table->auto_ctrl.as_gain_ph[AS_BH_ID]);
+					r = pIO_Table->physics.sway_amp_n_ph;
+					r0 = pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID];
+					r0_p_r = r + r0;
+					
+					R1 = sqrt(r0_p_r * r0_p_r + 4.0 * r0 - 4.0 * r0_p_r*r0*cos_ph);
+
+					ph1 = acos((2.0*r0 - r0_p_r * cos_ph) / R1) - pIO_Table->auto_ctrl.as_gain_ph[AS_BH_ID];
+					phx = atan(sin(ph1) / (r0 / R1 - cos(ph1)));
+
+					if (phx < 0.0) { //マイナス符号は、ｙ軸を超えているので変換必要
+						phx = DEF_PI + phx;
+					}
+					target->motions[3]._t = DEF_PI / pIO_Table->physics.w0;	// _t
+					target->motions[3].opt_i1 = (int)(phx / pIO_Table->physics.w0 * 1000) / (int)play_scan_ms;	//振れ止め用補正タイマーカウント
+					target->motions[3].opt_i2 = AS_INIT_SWAY_SMALL;
+				}
 				target->motions[3]._v = 0.0;													// _v
-				target->motions[3].opt_i1 = adjust_count_sway;	//振れ止め用補正タイマーカウント
 			}
 			//Step 5　加速
 			{
@@ -742,6 +847,7 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[4]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
 				target->motions[4]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;			// _v
 				target->motions[4].opt_i1 = adjust_count_pos;	//位置合わせ用補正タイマーカウント
+				target->motions[4].opt_i2 = adjust_dir;			//補正タイマー適用移動方向
 			}
 			//Step 6　減速
 			{
@@ -750,12 +856,13 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[5]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
 				target->motions[5]._v = 0.0;													// _v
 				target->motions[5].opt_i1 = adjust_count_pos;	//位置合わせ用補正タイマーカウント
+				target->motions[5].opt_i2 = adjust_dir;			//補正タイマー適用移動方向
 			}
 			//Step 7　動作停止待機
 			{
 				target->motions[6].type = CTR_TYPE_TIME_WAIT;
 				target->motions[6]._p = pIO_Table->auto_ctrl.tgpos_bh;							// _p
-				target->motions[6]._t = PTN_CONFIRMATION_TIME;									// _t
+				target->motions[6]._t = PTN_CONFIRMATION_TIME*10;									// _t
 				target->motions[6]._v = 0.0;													// _v
 			}
 			//time_count
@@ -780,19 +887,40 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 		}
 	}break;
 	case MOTION_ID_SLEW: {
+		int large_sway_flag;
+		if (pIO_Table->physics.sway_amp_t_ph < pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID]) {
+			large_sway_flag = OFF;
+		}
+		else {
+			large_sway_flag = ON;
+		}
 
 		//振れ止め移動方向セット
-		if (pIO_Table->auto_ctrl.tgD > 0) pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = 1;
-		else pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = -1;
-
+		if (large_sway_flag == ON) {
+			if (pIO_Table->auto_ctrl.tgD > 0) pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = AS_DIR_PLUS;
+			else pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = AS_DIR_MINUS;
+		}
+		else {
+			pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = 0;
+		}
+		//振れ止め移動方向セット
 		pIO_Table->auto_ctrl.as_start_ph[AS_SLEW_ID] = 0;//振れ止め開始位相方向フラグクリア
 		cal_as_gain(AS_SLEW_ID, AS_PTN_2STEP_PN);//振れ止めゲイン計算
-
 
 		//目標位置までの位置合わせ補正時間,　目標位置までの距離に応じていずれかのステップの加速時間を減らす
 		adjust_t_pos = sqrt(pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] * pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID]
 			- pIO_Table->auto_ctrl.tgD_abs[AS_SLEW_ID] / g_spec.slew_acc[FWD_ACC]);
+		adjust_t_pos = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID] - adjust_t_pos;
+
 		adjust_count_pos = (int)(adjust_t_pos * 1000) / (int)play_scan_ms;
+
+		//補正時間を適用する移動方向を判定する
+		if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] > 0.0) {
+			adjust_dir = AS_DIR_MINUS;//マイナス方向を減らす
+		}
+		else {
+			adjust_dir = AS_DIR_PLUS;
+		}
 
 		//初期振れ振幅による停止補正時間,　振れ振幅に応じて停止時間の増減をする
 		double R = 2.0 * pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID] * (1.0 - cos(pIO_Table->auto_ctrl.as_gain_ph[AS_SLEW_ID]));
@@ -800,7 +928,6 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 		adjust_t_sway = dph / pIO_Table->physics.w0;
 		adjust_count_sway = (int)(adjust_t_sway * 1000) / (int)play_scan_ms;
 
-		cal_as_gain(AS_SLEW_ID, AS_PTN_1STEP);//振れ止めゲイン計算
 		if (pMode->antisway_control_t &  AS_MOVE_ANTISWAY) {
 			target->n_step = 7;
 			target->axis_type = SLW_AXIS;
@@ -825,6 +952,7 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID];			// _t
 				target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;			// _v
 				target->motions[1].opt_i1 = adjust_count_pos;	//位置合わせ用補正タイマーカウント
+				target->motions[1].opt_i2 = adjust_dir;			//補正タイマー適用移動方向
 			}
 			//Step 3　減速
 			{
@@ -833,22 +961,46 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[2]._t = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID];			// _t
 				target->motions[2]._v = 0.0;													// _v
 				target->motions[2].opt_i1 = adjust_count_pos;	//位置合わせ用補正タイマーカウント
+				target->motions[2].opt_i2 = adjust_dir;			//補正タイマー適用移動方向
 			}
 			//Step 4　動作停止待機
 			{
 				target->motions[3].type = CTR_TYPE_TIME_WAIT_2PN;
-				target->motions[3]._p = pIO_Table->auto_ctrl.tgpos_slew;						// _p
-				target->motions[3]._t = PTN_CONFIRMATION_TIME;									// _t
+				target->motions[3]._p = pIO_Table->auto_ctrl.tgpos_bh;		// _p
+				if (large_sway_flag) {
+					target->motions[3]._t = 2.0*(DEF_PI / pIO_Table->physics.w0 - pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID]);									// _t
+					target->motions[3].opt_i1 = adjust_count_sway;	//振れ止め用補正タイマーカウント
+					target->motions[3].opt_i2 = AS_INIT_SWAY_LARGE;
+				}
+				else {
+
+					double R1, cos_ph, r, r0, r0_p_r, ph1, phx;
+					cos_ph = cos(pIO_Table->auto_ctrl.as_gain_ph[AS_SLEW_ID]);
+					r = pIO_Table->physics.sway_amp_t_ph;
+					r0 = pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID];
+					r0_p_r = r + r0;
+
+					R1 = sqrt(r0_p_r * r0_p_r + 4.0 * r0 - 4.0 * r0_p_r*r0*cos_ph);
+					ph1 = acos((2.0*r0 - r0_p_r * cos_ph) / R1) - pIO_Table->auto_ctrl.as_gain_ph[AS_SLEW_ID];
+					phx = atan(sin(ph1) / (r0 / R1 - cos(ph1)));
+
+					if (phx < 0.0) { //マイナス符号は、ｙ軸を超えているので変換必要
+						phx = DEF_PI + phx;
+					}
+					target->motions[3]._t = DEF_PI / pIO_Table->physics.w0;	// _t
+					target->motions[3].opt_i1 = (int)(phx / pIO_Table->physics.w0 * 1000) / (int)play_scan_ms;	//振れ止め用補正タイマーカウント
+					target->motions[3].opt_i2 = AS_INIT_SWAY_SMALL;
+				}
 				target->motions[3]._v = 0.0;													// _v
-				target->motions[3].opt_i1 = adjust_count_sway;	//振れ止め用補正タイマーカウント
 			}
 			//Step 5　加速
 			{
 				target->motions[4].type = CTR_TYPE_ACC_AS_2PN;
 				target->motions[4]._p = pIO_Table->auto_ctrl.tgpos_slew;						// _p
 				target->motions[4]._t = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID];			// _t
-				target->motions[4]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;			// _v
+				target->motions[4]._v = g_spec.slew_acc[FWD_ACC] * target->motions[4]._t;			// _v
 				target->motions[4].opt_i1 = adjust_count_pos;	//位置合わせ用補正タイマーカウント
+				target->motions[4].opt_i2 = adjust_dir;			//補正タイマー適用移動方向
 			}
 			//Step 6　減速
 			{
@@ -857,12 +1009,13 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[5]._t = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID];			// _t
 				target->motions[5]._v = 0.0;													// _v
 				target->motions[5].opt_i1 = adjust_count_pos;	//位置合わせ用補正タイマーカウント
+				target->motions[5].opt_i2 = adjust_dir;			//補正タイマー適用移動方向
 			}
 			//Step 7　動作停止待機
 			{
 				target->motions[6].type = CTR_TYPE_TIME_WAIT;
 				target->motions[6]._p = pIO_Table->auto_ctrl.tgpos_slew;						// _p
-				target->motions[6]._t = PTN_CONFIRMATION_TIME;									// _t
+				target->motions[6]._t = PTN_CONFIRMATION_TIME*10;									// _t
 				target->motions[6]._v = 0.0;													// _v
 				target->motions[6].opt_i1 = 0;	//振れ止め用補正タイマーカウント
 			}
@@ -1015,13 +1168,13 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 	case MOTION_ID_BH: {
 
 		//振れ止め移動方向セット
-		if (pIO_Table->auto_ctrl.tgD > 0) pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = 1;
-		else pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = -1;
+		if (pIO_Table->auto_ctrl.tgD > 0) pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = AS_DIR_PLUS;
+		else pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = AS_DIR_MINUS;
 
 		pIO_Table->auto_ctrl.as_start_ph[AS_BH_ID] = 0;	//振れ止め開始位相方向フラグクリア
 		cal_as_gain(AS_BH_ID, AS_PTN_2STEP_PP);//振れ止めゲイン計算
 
-	//初期振れ振幅による停止補正時間,　振れ振幅に応じて停止時間の増減をする
+		//初期振れ振幅による停止補正時間,　振れ振幅に応じて停止時間の増減をする
 		double R = 2.0 * pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID] * (1.0 - cos(pIO_Table->auto_ctrl.as_gain_ph[AS_BH_ID]));
 		double dph = pIO_Table->physics.sway_amp_n_ph / R;
 		adjust_t_sway = dph / pIO_Table->physics.w0;
@@ -1110,8 +1263,8 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 	}break;
 	case MOTION_ID_SLEW: {
 		//振れ止め移動方向セット
-		if (pIO_Table->auto_ctrl.tgD > 0) pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = 1;
-		else pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = -1;
+		if (pIO_Table->auto_ctrl.tgD > 0) pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = AS_DIR_PLUS;
+		else pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = AS_DIR_MINUS;
 
 		pIO_Table->auto_ctrl.as_start_ph[AS_SLEW_ID] = 0;//振れ止め開始位相方向フラグクリア
 
@@ -1569,8 +1722,8 @@ int CAnalyst::cal_move_2accdec(int motion_id, LPST_MOTION_UNIT target, int mode)
 	case MOTION_ID_BH: {
 	
 		//進行方向セット（開始位相判別用）
-		if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = 1;
-		else if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = -1;
+		if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = AS_DIR_PLUS;
+		else if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = AS_DIR_MINUS;
 		else;
 
 		double dir = (double)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID];
@@ -1678,8 +1831,8 @@ int CAnalyst::cal_move_2accdec(int motion_id, LPST_MOTION_UNIT target, int mode)
 	case MOTION_ID_SLEW: {
 
 		//進行方向セット（開始位相判別用）
-		if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = 1;
-		else if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = -1;
+		if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = AS_DIR_PLUS;
+		else if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = AS_DIR_MINUS;
 		else;
 
 		double dir = (double)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID];
@@ -1774,8 +1927,8 @@ int CAnalyst::cal_move_3Step(int motion_id, LPST_MOTION_UNIT target, int mode) {
 	switch (motion_id) {
 	case MOTION_ID_BH: {
 
-		if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = 1;
-		else if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = -1;
+		if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = AS_DIR_PLUS;
+		else if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] = AS_DIR_MINUS;
 		else;
 
 		double dir = (double)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID];
@@ -1897,8 +2050,8 @@ int CAnalyst::cal_move_3Step(int motion_id, LPST_MOTION_UNIT target, int mode) {
 	}break;
 	case MOTION_ID_SLEW: {
 
-		if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = 1;
-		else if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = -1;
+		if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] > 0.0) pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = AS_DIR_PLUS;
+		else if (pIO_Table->auto_ctrl.tgD[AS_SLEW_ID] < 0.0)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] = AS_DIR_MINUS;
 		else;
 
 		double dir = (double)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID];

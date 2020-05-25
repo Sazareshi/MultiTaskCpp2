@@ -73,7 +73,13 @@ typedef struct _st_iTask {
 #define CTR_TYPE_DEC_TIME					0x0300  //Specified time deceleration
 #define CTR_TYPE_DEC_V						0x0301  //Toward specified speed deceleration
 #define CTR_TYPE_DEC_TIME_OR_V				0x0302  //Specified time acceleration or reach specified speed
-#define CTR_TYPE_DEC_AS_2PN					0x0302  //Toward specified speed deceleration
+#define CTR_TYPE_DEC_AS_2PN					0x0303  //Toward specified speed deceleration
+
+#define AS_INIT_SWAY_0						0		//‰ŠúU‚ê0
+#define AS_INIT_SWAY_SMALL					1		//‰ŠúU‚ê¬
+#define AS_INIT_SWAY_LARGE					2		//‰ŠúU‚ê‘å
+
+
 
 typedef struct _stMotion_Element {	//‰^“®—v‘f
 	int type;				//§Œäí•Ê
@@ -318,6 +324,9 @@ typedef struct _stIO_Ref {
 #define AS_MH_ID			2
 #define AS_START_LOW_PHASE	 1
 #define AS_START_HIGH_PHASE	 -1
+#define AS_DIR_PLUS			 1
+#define AS_DIR_MINUS		-1
+
 
 typedef struct _stAS_CTRL {
 	double tgpos_h;							//Šª–Ú•WˆÊ’u
