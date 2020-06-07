@@ -55,10 +55,10 @@ LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 //					Chart::open_chart(inf.hInstance, inf.hWnd_parent);
 					MKChart::CMKChart::init_chartfunc();
 					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART1, 0, 0, 0.05, false);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.vR), MK_CHART1, 0, 1, 0.25, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.vR), MK_CHART1, 0, 1, 1.00, false);
 
 					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART1, 1, 0, 0.05, false);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.wth), MK_CHART1, 1, 1, 0.01, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.wth), MK_CHART1, 1, 1, 0.1, false);
 					
 					MKChart::CMKChart::open_chart(MK_CHART1, hDlg);
 					MKChart::CMKChart::set_chart_spd(MK_CHART1, 30000);

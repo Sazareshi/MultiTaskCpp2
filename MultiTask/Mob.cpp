@@ -53,6 +53,7 @@ void Mob_HoistPoint::timeEvolution(double t) {
 
 	a_bm = (dt*a_bm_ref + HP_Tf * a_bm) / (dt + HP_Tf); //ˆêŽŸ’x‚ê
 	dw_sl = (dt*dw_sl_ref + HP_Tf * dw_sl) / (dt + HP_Tf); //ˆêŽŸ’x‚ê
+
 	a_h	= (dt*a_h_ref + HP_Tf * a_h) / (dt + HP_Tf); //ˆêŽŸ’x‚ê
 
 	v_bm = v_bm + dt * a_bm;

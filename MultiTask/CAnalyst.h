@@ -26,8 +26,8 @@ typedef struct AS_notch {//振れ止め速度設定用
 	double v_2nd[NUM_OF_AS];//2段目SPEED
 	double t_acc_top[NUM_OF_AS];//2段目からTOP SPEEDまでの加速時間
 	double t_acc_2nd[NUM_OF_AS];//2段目までの加速時間
-	double t_const_d[NUM_OF_AS];//距離調整時間
-	double t_const_2nd[NUM_OF_AS];//2段加減速時の振れ止め定速時間
+	double t_const_d[NUM_OF_AS];//距離調整時間（トップスピード定速時間）
+	double t_const_2nd[NUM_OF_AS];//2段加減速時の加減速時振れ止め定速時間
 } AS_NOTCH_SET, *LPAS_NOTCH_SET;
 
 

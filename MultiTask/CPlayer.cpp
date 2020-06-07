@@ -337,7 +337,7 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 	}break;
 	case CTR_TYPE_TIME_WAIT_2PP: {
 		if (pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] == AS_DIR_PLUS) {
-			if (pIO_Table->auto_ctrl.as_start_ph[AS_SLEW_ID] == AS_START_LOW_PHASE) {
+			if (pIO_Table->auto_ctrl.as_start_ph[AS_SLEW_ID] == AS_START_HIGH_PHASE) {
 				if (pStep->act_counter > (pStep->time_count - pStep->opt_i1)) {//‰ŠúU‚ê•ª’âŽ~ŽžŠÔ’Zk
 					status = STEP_FIN;
 				}
@@ -349,13 +349,13 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 			}
 		}
 		else {
-			if (pIO_Table->auto_ctrl.as_start_ph[AS_SLEW_ID] == AS_START_LOW_PHASE) {
+			if (pIO_Table->auto_ctrl.as_start_ph[AS_SLEW_ID] == AS_START_HIGH_PHASE) {
 				if (pStep->act_counter > (pStep->time_count + pStep->opt_i1)) {//‰ŠúU‚ê•ª’âŽ~ŽžŠÔ‰„’·
 					status = STEP_FIN;
 				}
 			}
 			else {
-				if (pStep->act_counter > (pStep->time_count + pStep->opt_i1)) {//‰ŠúU‚ê•ª’âŽ~ŽžŠÔ’Zk
+				if (pStep->act_counter > (pStep->time_count - pStep->opt_i1)) {//‰ŠúU‚ê•ª’âŽ~ŽžŠÔ’Zk
 					status = STEP_FIN;
 				}
 			}
@@ -475,7 +475,7 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 	}break;
 	case CTR_TYPE_ACC_AS_2PN: {
 		if (pStep->opt_i2 == pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID]) { //ˆÊ’u‡‚í‚¹•â³•ûŒü‚Ö‚Ì‰Á‘¬Žž
-			if (pStep->act_counter > pStep->time_count - pStep->opt_i1) {
+			if (pStep->act_counter > pStep->time_count + pStep->opt_i1) {
 				status = STEP_FIN;
 			}
 		}
@@ -515,11 +515,20 @@ int CPlayer::check_step_status_slew(LPST_MOTION_ELEMENT pStep) {
 				status = STEP_FIN;
 			}
 		}
-		if (pStep->act_counter > pStep->time_count) {
-			status = STEP_FIN;
+		if (pStep->opt_i2 == pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID]) { //ˆÊ’u‡‚í‚¹•â³•ûŒü‚Ö‚Ì‰Á‘¬Žž
+			if (pStep->act_counter > pStep->time_count + pStep->opt_i1) {
+				status = STEP_FIN;
+			}
+		}
+		else {
+			if (pStep->act_counter > pStep->time_count) {
+				status = STEP_FIN;
+			}
 		}
 	} break;
-	case CTR_TYPE_CONST_V_TIME: break;
+	case CTR_TYPE_CONST_V_TIME: {
+		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
+	}break;
 	case CTR_TYPE_BH_WAIT:
 	case CTR_TYPE_SLEW_WAIT:
 	case CTR_TYPE_MH_WAIT:
@@ -596,7 +605,7 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 	}break;
 	case CTR_TYPE_TIME_WAIT_2PP: {
 		if (pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] == AS_DIR_PLUS) {
-			if (pIO_Table->auto_ctrl.as_start_ph[AS_BH_ID] == AS_START_LOW_PHASE) {
+			if (pIO_Table->auto_ctrl.as_start_ph[AS_BH_ID] == AS_START_HIGH_PHASE) {
 				if (pStep->act_counter > (pStep->time_count - pStep->opt_i1)) {//‰ŠúU‚ê•ª’âŽ~ŽžŠÔ’Zk
 					status = STEP_FIN;
 				}
@@ -608,13 +617,13 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 			}
 		}
 		else {
-			if (pIO_Table->auto_ctrl.as_start_ph[AS_BH_ID] == AS_START_LOW_PHASE) {
+			if (pIO_Table->auto_ctrl.as_start_ph[AS_BH_ID] == AS_START_HIGH_PHASE) {
 				if (pStep->act_counter > (pStep->time_count + pStep->opt_i1)) {//‰ŠúU‚ê•ª’âŽ~ŽžŠÔ‰„’·
 					status = STEP_FIN;
 				}
 			}
 			else {
-				if (pStep->act_counter > (pStep->time_count + pStep->opt_i1)) {//‰ŠúU‚ê•ª’âŽ~ŽžŠÔ’Zk
+				if (pStep->act_counter > (pStep->time_count - pStep->opt_i1)) {//‰ŠúU‚ê•ª’âŽ~ŽžŠÔ’Zk
 					status = STEP_FIN;
 				}
 			}
@@ -734,7 +743,7 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 	}break;
 	case CTR_TYPE_ACC_AS_2PN: {
 		if (pStep->opt_i2 == pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID]) { //ˆÊ’u‡‚í‚¹•â³•ûŒü‚Ö‚Ì‰Á‘¬Žž
-			if (pStep->act_counter > pStep->time_count - pStep->opt_i1) {
+			if (pStep->act_counter > pStep->time_count + pStep->opt_i1) {
 				status = STEP_FIN;
 			}
 		}
@@ -768,7 +777,17 @@ int CPlayer::check_step_status_bh(LPST_MOTION_ELEMENT pStep) {
 		else {
 			if (abs(pIO_Table->physics.vR) < g_spec.bh_notch_spd[1] * 0.1) status = STEP_FIN;
 		}
-		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
+
+		if (pStep->opt_i2 == pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID]) { //ˆÊ’u‡‚í‚¹•â³•ûŒü‚Ö‚Ì‰Á‘¬Žž
+			if (pStep->act_counter > pStep->time_count + pStep->opt_i1) {
+				status = STEP_FIN;
+			}
+		}
+		else {
+			if (pStep->act_counter > pStep->time_count) {
+				status = STEP_FIN;
+			}
+		}
 	} break;
 	case CTR_TYPE_CONST_V_TIME: {
 		if (pStep->act_counter > pStep->time_count) status = STEP_FIN;
@@ -933,7 +952,9 @@ double CPlayer::act_slew_steps(LPST_MOTION_UNIT pRecipe) {
 		output_v = (double)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * pStep->_v;
 	}break;
 	case CTR_TYPE_ACC_AS_2PN: {
-		output_v = (double)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] * pStep->_v;
+		output_v = (double)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] 
+						*(pStep->_v + (double)(pStep->opt_i1 * inf.cycle_ms * 1000) * g_spec.bh_acc[FWD_ACC]);
+
 	}break;
 	case CTR_TYPE_DEC_V: {
 		output_v = pStep->_v;
@@ -983,7 +1004,8 @@ double CPlayer::act_bh_steps(LPST_MOTION_UNIT pRecipe) {
 		output_v = (double)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * pStep->_v;
 	}break;
 	case CTR_TYPE_ACC_AS_2PN: {
-		output_v = (double)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] * pStep->_v;
+		output_v = (double)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] 
+			      * (pStep->_v + (double)(pStep->opt_i1 * inf.cycle_ms * 1000) * g_spec.bh_acc[FWD_ACC]);
 	}break;
 	case CTR_TYPE_DEC_V: {
 		output_v = pStep->_v;
