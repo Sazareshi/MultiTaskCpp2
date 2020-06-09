@@ -29,6 +29,7 @@ void CClerk::routine_work(void *param) {
 };
 
 LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
+	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
 
 	switch (msg) {
 
@@ -55,10 +56,12 @@ LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 //					Chart::open_chart(inf.hInstance, inf.hWnd_parent);
 					MKChart::CMKChart::init_chartfunc();
 					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART1, 0, 0, 0.05, false);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.vR), MK_CHART1, 0, 1, 1.00, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.vR), MK_CHART1, 0, 1, 0.10, false);
+					MKChart::CMKChart::set_double_data(&(pPly->auto_vref[MOTION_ID_BH]), MK_CHART1, 0, 2, 0.10, false);
 
 					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART1, 1, 0, 0.05, false);
 					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.wth), MK_CHART1, 1, 1, 0.1, false);
+					MKChart::CMKChart::set_double_data(&(pPly->auto_vref[MOTION_ID_SLEW]), MK_CHART1, 1, 2, 0.1, false);
 					
 					MKChart::CMKChart::open_chart(MK_CHART1, hDlg);
 					MKChart::CMKChart::set_chart_spd(MK_CHART1, 30000);

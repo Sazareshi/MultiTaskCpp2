@@ -187,10 +187,6 @@ void CAnalyst::init_task(void *pobj) {
 	for (int i = 0; i < MAX_SAMPLE_AVERAGE_RZ; i++) buf_average_phase_rdz[i] = 0.0;
 	i_buf_rdz = 0;
 	
-	//2STEP 小移動最大移動距離
-	pIO_Table->auto_ctrl.Dmax_2step[AS_BH_ID] = 2.0 * g_spec.bh_notch_spd[NOTCH_MAX - 1] * g_spec.bh_notch_spd[NOTCH_MAX - 1] / g_spec.bh_acc[FWD_ACC];
-	pIO_Table->auto_ctrl.Dmax_2step[AS_SLEW_ID] = 2.0 * g_spec.slew_notch_spd[NOTCH_MAX - 1] * g_spec.slew_notch_spd[NOTCH_MAX - 1] / g_spec.slew_acc[FWD_ACC];
-
 	return;
 };
 
@@ -253,6 +249,11 @@ void CAnalyst::update_auto_ctrl() {
 		return;
 	}
 
+	//2STEP 小移動最大移動距離(π/2の加速時間がリミット）
+	double temp_t = pIO_Table->physics.T / 4.0;
+	pIO_Table->auto_ctrl.Dmax_2step[AS_BH_ID] = 2.0 * g_spec.bh_acc[FWD_ACC]*temp_t*temp_t;
+	pIO_Table->auto_ctrl.Dmax_2step[AS_SLEW_ID] = 2.0 * g_spec.slew_acc[FWD_ACC]*temp_t*temp_t;
+
 	// ###Normal direction
 
 	if (pIO_Table->ref.b_bh_manual_ctrl) {	//手動操作中
@@ -268,7 +269,7 @@ void CAnalyst::update_auto_ctrl() {
 		pMode->antisway_ptn_n = AS_PTN_0;
 		pMode->antisway_control_n = AS_MOVE_COMPLETE;
 	}
-#if 1
+#if 0
 	else {
 		pMode->antisway_control_n = AS_MOVE_ANTISWAY;
 		pMode->antisway_ptn_n = AS_PTN_2ACCDEC;
@@ -323,10 +324,10 @@ void CAnalyst::update_auto_ctrl() {
 		pMode->antisway_ptn_t = AS_PTN_0;
 		pMode->antisway_control_t = AS_MOVE_COMPLETE;
 	}
-#if 1
+#if 0
 	else{	//振れが加速振れ以上
 		pMode->antisway_control_t = AS_MOVE_ANTISWAY;
-		pMode->antisway_ptn_t = AS_PTN_2ACCDEC;
+		pMode->antisway_ptn_t = AS_PTN_2STEP_PP;
 	}
 #else
 	else if (pIO_Table->physics.sway_amp_t_ph > pIO_Table->auto_ctrl.phase_acc_offset[AS_SLEW_ID]) {	//振れが加速振れ以上
@@ -936,11 +937,16 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 
 			//Step 1　位相待ち
 			{
+				//起動遅れ時間補正値
+				double delay_adjust_ph = pIO_Table->physics.w0 * g_spec.ref_time_delay_slew[0];
+				
 				target->motions[0].type = CTR_TYPE_DOUBLE_PHASE_WAIT;
 				target->motions[0]._p = pIO_Table->auto_ctrl.tgpos_slew;// _p
 				target->motions[0]._t = pIO_Table->physics.T*2.0;		// _t　タイムオーバー2周期
-				target->motions[0].phase1 = 0;							// low phase
-				target->motions[0].phase2 = DEF_PI;						// high phase
+//				target->motions[0].phase1 = 0;							// low phase
+//				target->motions[0].phase2 = DEF_PI;						// high phase
+				target->motions[0].phase1 = 0 + delay_adjust_ph;		// low phase
+				target->motions[0].phase2 = -DEF_PI + delay_adjust_ph;	// high phase
 				target->motions[0]._v = 0.0;
 				target->motions[0].opt_i1 = AS_PTN_2STEP_PN;//パターン出力時判定用
 			}
@@ -1215,6 +1221,8 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[1]._p = pIO_Table->auto_ctrl.tgpos_bh;							// _p
 				target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
 				target->motions[1]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;			// _v
+
+				target->motions[1]._t += g_spec.ref_time_delay_bh[0];//遅れ時間補正
 			}
 			//Step 3　減速
 			{
@@ -1222,6 +1230,8 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[2]._p = pIO_Table->auto_ctrl.tgpos_bh;							// _p			
 				target->motions[2]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
 				target->motions[2]._v = 0.0;													// _v
+
+				target->motions[2]._t += g_spec.ref_time_delay_bh[0];//遅れ時間補正
 			}
 			//Step 4　位相待ち待機
 			{
@@ -1237,7 +1247,9 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[4].type = CTR_TYPE_ACC_AS;
 				target->motions[4]._p = pIO_Table->auto_ctrl.tgpos_bh;							// _p
 				target->motions[4]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
-				target->motions[4]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;			// _v
+				target->motions[4]._v = g_spec.bh_acc[FWD_ACC] * target->motions[4]._t;			// _v
+
+				target->motions[4]._t += g_spec.ref_time_delay_bh[0];//遅れ時間補正
 			}
 			//Step 6　減速
 			{
@@ -1245,6 +1257,8 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[5]._p = pIO_Table->auto_ctrl.tgpos_bh;							// _p			
 				target->motions[5]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
 				target->motions[5]._v = 0.0;													// _v
+
+				target->motions[5]._t += g_spec.ref_time_delay_bh[0];//遅れ時間補正
 			}
 			//Step 7　動作停止待機
 			{
@@ -1320,7 +1334,9 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[1].type = CTR_TYPE_ACC_AS;
 				target->motions[1]._p = pIO_Table->auto_ctrl.tgpos_slew;						// _p
 				target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID];			// _t
-				target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;			// _v
+				target->motions[1]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;		// _v
+
+				target->motions[1]._t += g_spec.ref_time_delay_slew[0];//遅れ時間補正
 			}
 			//Step 3　減速
 			{
@@ -1328,6 +1344,8 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[2]._p = pIO_Table->auto_ctrl.tgpos_slew;						// _p			
 				target->motions[2]._t = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID];			// _t
 				target->motions[2]._v = 0.0;													// _v
+
+				target->motions[2]._t += g_spec.ref_time_delay_slew[0];//遅れ時間補正
 			}
 			//Step 4　動作停止待機
 			{
@@ -1342,7 +1360,9 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[4].type = CTR_TYPE_ACC_AS;
 				target->motions[4]._p = pIO_Table->auto_ctrl.tgpos_slew;						// _p
 				target->motions[4]._t = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID];			// _t
-				target->motions[4]._v = g_spec.slew_acc[FWD_ACC] * target->motions[1]._t;			// _v
+				target->motions[4]._v = g_spec.slew_acc[FWD_ACC] * target->motions[4]._t;			// _v
+
+				target->motions[4]._t += g_spec.ref_time_delay_slew[0];//遅れ時間補正
 			}
 			//Step 6　減速
 			{
@@ -1350,6 +1370,8 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[5]._p = pIO_Table->auto_ctrl.tgpos_slew;						// _p			
 				target->motions[5]._t = pIO_Table->auto_ctrl.as_gain_time[AS_SLEW_ID];			// _t
 				target->motions[5]._v = 0.0;													// _v
+
+				target->motions[5]._t += g_spec.ref_time_delay_slew[0];//遅れ時間補正
 			}
 			//Step 7　動作停止待機
 			{

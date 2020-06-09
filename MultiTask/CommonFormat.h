@@ -397,5 +397,10 @@ typedef struct _stSpec {
 	double as_compl_nposLv[3];		// m    0:complete 1:trigger 2:positioning
 	double as_compl_tposLv[3];		// rad  0:complete 1:trigger 2:positioning
 
+	double ref_time_delay_bh[3];			// level1,level2,level3
+	double ref_time_delay_slew[3];		// level1,level2,level3
+	double ref_time_delay_mh[3];			// level1,level2,level3
+
+
 }ST_SPEC, *LPST_SPEC;
 
