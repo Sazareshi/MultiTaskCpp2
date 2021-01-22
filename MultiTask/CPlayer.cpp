@@ -261,7 +261,7 @@ int CPlayer::set_motion_receipe() {
 
 			if (pMode->antisway_control_h==AS_MOVE_ANTISWAY){
 				//Set pattern recipe
-				if (pAna->cal_move_1Step(MOTION_ID_MH, p_motion_ptn[MH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
+				if (pAna->cal_move_2Step_pn(MOTION_ID_MH, p_motion_ptn[MH_AXIS], AUTO_PTN_MODE_SINGLE) == NO_ERR_EXIST) {
 					p_motion_ptn[MH_AXIS]->ptn_status = PTN_STANDBY;
 				}
 			}
@@ -953,7 +953,7 @@ double CPlayer::act_slew_steps(LPST_MOTION_UNIT pRecipe) {
 	}break;
 	case CTR_TYPE_ACC_AS_2PN: {
 		output_v = (double)pIO_Table->auto_ctrl.as_out_dir[AS_SLEW_ID] 
-						*(pStep->_v + (double)(pStep->opt_i1 * inf.cycle_ms * 1000) * g_spec.bh_acc[FWD_ACC]);
+						*(pStep->_v + (double)(pStep->opt_i1 * inf.cycle_ms / 1000) * g_spec.bh_acc[FWD_ACC]);
 
 	}break;
 	case CTR_TYPE_DEC_V: {
@@ -1005,7 +1005,7 @@ double CPlayer::act_bh_steps(LPST_MOTION_UNIT pRecipe) {
 	}break;
 	case CTR_TYPE_ACC_AS_2PN: {
 		output_v = (double)pIO_Table->auto_ctrl.as_out_dir[AS_BH_ID] 
-			      * (pStep->_v + (double)(pStep->opt_i1 * inf.cycle_ms * 1000) * g_spec.bh_acc[FWD_ACC]);
+			      * (pStep->_v + (double)(pStep->opt_i1 * inf.cycle_ms / 1000) * g_spec.bh_acc[FWD_ACC]);
 	}break;
 	case CTR_TYPE_DEC_V: {
 		output_v = pStep->_v;

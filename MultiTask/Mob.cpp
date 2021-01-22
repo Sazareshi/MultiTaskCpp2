@@ -37,11 +37,11 @@ void Mob_HoistPoint::init_mob(double _dt, Vector3& _r, Vector3& _v) {
 
 Vector3 Mob_HoistPoint::A(double t, Vector3& r, Vector3& v) {
 
-	double a_er = a_bm - r_bm * w_sl * w_sl;
-	double a_eth = r_bm *  dw_sl + 2.0 * v_bm * w_sl;
+	double a_er = a_bm - r_bm * w_sl * w_sl;				//引込方向加速度　引込加速度＋旋回分
+	double a_eth = r_bm *  dw_sl + 2.0 * v_bm * w_sl;		//旋回方向加速度
 	Vector3 acc_cyl(a_er,a_eth,0.0);
 
-	acc_rec = acc_cyl.cyl2rec(acc_cyl,th_sl);
+	acc_rec = acc_cyl.cyl2rec(acc_cyl,th_sl);				//円筒形座標→直行座標
 	
 	return acc_rec;
 
@@ -49,31 +49,33 @@ Vector3 Mob_HoistPoint::A(double t, Vector3& r, Vector3& v) {
 
 void Mob_HoistPoint::timeEvolution(double t) {
 
-	A(0.0, r, v);//吊点の加速度演算
+	A(0.0, r, v);//吊点の加速度演算　未使用
 
-	a_bm = (dt*a_bm_ref + HP_Tf * a_bm) / (dt + HP_Tf); //一次遅れ
-	dw_sl = (dt*dw_sl_ref + HP_Tf * dw_sl) / (dt + HP_Tf); //一次遅れ
+	a_bm = (dt*a_bm_ref + HP_Tf * a_bm) / (dt + HP_Tf);		//一次遅れ加速度　引込
+	dw_sl = (dt*dw_sl_ref + HP_Tf * dw_sl) / (dt + HP_Tf);	//一次遅れ加速度　旋回
 
-	a_h	= (dt*a_h_ref + HP_Tf * a_h) / (dt + HP_Tf); //一次遅れ
+	a_h	= (dt*a_h_ref + HP_Tf * a_h) / (dt + HP_Tf);		//一次遅れ加速度　巻
 
-	v_bm = v_bm + dt * a_bm;
+	v_bm = v_bm + dt * a_bm;								//速度　引込　オイラー法				
 	if (v_bm* v_bm < 0.00001)v_bm = 0.0;
 
-	w_sl = w_sl + dt * dw_sl;
+	w_sl = w_sl + dt * dw_sl;								//速度　旋回　オイラー法
 	if (dw_sl_ref*dw_sl_ref < 0.00000000001 && w_sl* w_sl < 0.00002)w_sl = 0.0;
 
-	v_h = v_h + dt * a_h;
+	v_h = v_h + dt * a_h;									//速度　巻　　オイラー法
 	if (v_h* v_h < 0.00001)v_h = 0.0;
 
+	
+	r_bm += dt * v_bm;										//位置　引込　オイラー法
 
-	r_bm += dt * v_bm;
-
-	th_sl += dt * w_sl;
+	th_sl += dt * w_sl;										//位置　旋回　オイラー法
 	if (th_sl >= DEF_2PI) th_sl -= DEF_2PI;
 	if (th_sl <= -DEF_2PI) th_sl += DEF_2PI;
 
-	l_h += dt * v_h;
+	l_h += dt * v_h;										//位置　巻　　オイラー法
 	 
+	
+	//直行座標に変換
 	v.x = v_bm * sin(th_sl) + r_bm * w_sl * cos(th_sl);
 	v.y = v_bm * cos(th_sl) - r_bm * w_sl * sin(th_sl);
 	v.z = 0.0;
@@ -123,7 +125,7 @@ Vector3 Mob_HungLoad::A(double t, Vector3& r, Vector3& v) {
 	return a;
 } //Model of acceleration
 
-double  Mob_HungLoad::S() {
+double  Mob_HungLoad::S() { //Aの計算部の関係でS/Lとなっている。巻きの加速度分が追加されている。
 	Vector3 v_ = v.clone().sub(pHP->v);
 	double v_abs2 = v_.lengthSq();
 	Vector3 vectmp;

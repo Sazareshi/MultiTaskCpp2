@@ -304,6 +304,11 @@ typedef struct _stIO_Physic {
 	double sway_amp_r_ph;	//ˆÊ‘Š•½–Ê”¼Œa
 	double sway_amp_n_ph;	//ˆÊ‘Š•½–Ê”¼Œa@–@ü•ûŒü
 	double sway_amp_t_ph;	//ˆÊ‘Š•½–Ê”¼Œa@Úü•ûŒü
+
+	double sway_R;			//ˆøU‚ê—Êm
+	double sway_th;			//ù‰ñU‚ê—Êm
+	double sway_amp_R;		//ˆøU‚êU•m
+	double sway_amp_th;		//ù‰ñU‚êU•m
 	
 }ST_IO_PHYSIC, *LPST_IO_PHYSIC;
 

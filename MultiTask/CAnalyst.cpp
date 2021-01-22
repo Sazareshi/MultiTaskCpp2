@@ -160,6 +160,14 @@ void CAnalyst::cal_simulation() {
 	pIO_Table->auto_ctrl.phase_acc_offset[AS_BH_ID] = g_spec.bh_acc[FWD_ACC] / DEF_G;								//Offset of center of phase plane on acceleration
 	pIO_Table->auto_ctrl.phase_dec_offset[AS_BH_ID] = g_spec.bh_acc[FWD_DEC] / DEF_G;								//Offset of center of phase plane on deceleration
 
+
+
+	pIO_Table->physics.sway_R = pIO_Table->physics.PhPlane_n.x * pIO_Table->physics.L;			//引込振れ量m
+	pIO_Table->physics.sway_th = pIO_Table->physics.PhPlane_t.x * pIO_Table->physics.L;			//旋回振れ量m
+	pIO_Table->physics.sway_amp_R = pIO_Table->physics.sway_amp_n_ph * pIO_Table->physics.L;	//引込振れ振幅m
+	pIO_Table->physics.sway_amp_th = pIO_Table->physics.sway_amp_t_ph * pIO_Table->physics.L;	//旋回振れ振幅m
+
+
 };
 
 void CAnalyst::init_task(void *pobj) {
@@ -439,6 +447,10 @@ void CAnalyst::cal_as_gain(int motion_id, int type) {
 			//最大速度による加速時間制限
 			if (pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] > gain_limit2) {
 				pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] = gain_limit2;
+			}
+			//位相π/2以下にする制限
+			if (pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] > DEF_HPI / pIO_Table->physics.w0) {
+				pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] = DEF_HPI / pIO_Table->physics.w0;
 			}
 			pIO_Table->auto_ctrl.as_gain_ph[AS_BH_ID] = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] * pIO_Table->physics.w0;
 		}
@@ -758,7 +770,7 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 		adjust_t_pos = sqrt(pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID] * pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID]
 			  + pIO_Table->auto_ctrl.tgD_abs[AS_BH_ID] / g_spec.bh_acc[FWD_ACC]); 
 		adjust_t_pos -= pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];
-		adjust_count_pos = (int)(adjust_t_pos * 1000) / (int)play_scan_ms;
+		adjust_count_pos = (int)(adjust_t_pos * 1000) / (int)play_scan_ms;//位置合わせの調整加速時間　PLAYERの加速追加カウント
 
 	//補正時間を適用する移動方向を判定する
 		if (pIO_Table->auto_ctrl.tgD[AS_BH_ID] > 0.0) {
@@ -797,7 +809,7 @@ int CAnalyst::cal_move_2Step_pn(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[1]._p = pIO_Table->auto_ctrl.tgpos_bh;							// _p
 				target->motions[1]._t = pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];			// _t
 				target->motions[1]._v = g_spec.bh_acc[FWD_ACC] * target->motions[1]._t;			// _v
-				target->motions[1].opt_i1 = adjust_count_pos;	//位置合わせ用補正タイマーカウント
+				target->motions[1].opt_i1 = adjust_count_pos;	//位置合わせ用補正タイマーカウント（PLAYERの追加スキャン回数）
 				target->motions[1].opt_i2 = adjust_dir;			//補正タイマー適用移動方向
 			}
 			//Step 3　減速
@@ -1238,7 +1250,7 @@ int CAnalyst::cal_move_2Step_pp(int motion_id, LPST_MOTION_UNIT target, int mode
 				target->motions[3].type = CTR_TYPE_TIME_WAIT_2PP;
 				target->motions[3]._p = pIO_Table->auto_ctrl.tgpos_bh;							// _p
 				target->motions[3]._t = DEF_PI/pIO_Table->physics.w0 - 2.0* pIO_Table->auto_ctrl.as_gain_time[AS_BH_ID];									// _t
-					target->motions[3]._v = 0.0;													// _v
+				target->motions[3]._v = 0.0;													// _v
 				target->motions[3].opt_i1 = adjust_count_sway;	//振れ止め用補正タイマーカウント
 		//		target->motions[3].opt_i1 = 0;	//振れ止め用補正タイマーカウント
 			}
