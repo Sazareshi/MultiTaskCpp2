@@ -29,6 +29,7 @@ void CClerk::routine_work(void *param) {
 };
 
 LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
+	CPlayer* pPly = (CPlayer*)VectpCTaskObj[g_itask.ply];
 
 	switch (msg) {
 
@@ -54,25 +55,62 @@ LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 				if (inf.panel_type_id == IDC_TASK_ITEM_RADIO1) {
 //					Chart::open_chart(inf.hInstance, inf.hWnd_parent);
 					MKChart::CMKChart::init_chartfunc();
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART1, 0, 0, 0.1, false);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.vR), MK_CHART1, 0, 1, 1.0, false);
+					
+					//set_double_data(&data, ChartID, i_chart, i_item, d_100, is_x)
+					// &data:データのアドレス ChartID:MH_CHART1 t-yグラフ　MK_CHART2　散布図グラフ 
+					// i_chart:4グラフのうちの何番目　i_item:４グラフ内データアイテムのうち何番目
+					// d_100:100%の値　is_x：散布図の横軸の項目でture
 
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART1, 1, 0, 0.1, false);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.wth), MK_CHART1, 1, 1, 0.105, false);
+					 //引込方向振れ
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.sway_R), MK_CHART1, 0, 0, 2.0, false);
+
+					//引込方向速度FB
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.vR), MK_CHART1, 0, 1, 0.5, false);
+
+					//引込方向速度Ref
+					MKChart::CMKChart::set_double_data(&(pPly->auto_vref[MOTION_ID_BH]), MK_CHART1, 0, 2, 0.5, false);
+
+					 //旋回方向振れ
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.sway_th), MK_CHART1, 1, 0, 2.0, false);
+
+					//旋回方向速度FB
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.wth), MK_CHART1, 1, 1, 0.1, false);
+
+					//旋回方向速度Ref
+					MKChart::CMKChart::set_double_data(&(pPly->auto_vref[MOTION_ID_SLEW]), MK_CHART1, 1, 2, 0.1, false);
+
+					MKChart::CMKChart::open_chart(MK_CHART1, hDlg);
+					// spped_ms : チャートが1周する時間
+					MKChart::CMKChart::set_chart_spd(MK_CHART1, 90000);
+
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.sway_amp_R), MK_CHART1, 2, 0, 2.0, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.sway_amp_th), MK_CHART1, 3, 0, 2.0, false);
+
+					/*
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART1, 0, 0, 0.05, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.vR), MK_CHART1, 0, 1, 0.10, false);
+					MKChart::CMKChart::set_double_data(&(pPly->auto_vref[MOTION_ID_BH]), MK_CHART1, 0, 2, 0.5, false);
+
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART1, 1, 0, 0.05, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.wth), MK_CHART1, 1, 1, 0.1, false);
+					MKChart::CMKChart::set_double_data(&(pPly->auto_vref[MOTION_ID_SLEW]), MK_CHART1, 1, 2, 0.5, false);
+					
 					MKChart::CMKChart::open_chart(MK_CHART1, hDlg);
 					MKChart::CMKChart::set_chart_spd(MK_CHART1, 30000);
+					*/
+					
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART2, 0, 0, 0.2, true);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.y), MK_CHART2, 0, 0, 0.2, false);
 
-
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.x), MK_CHART2, 0, 0, 0.1, true);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_n.y), MK_CHART2, 0, 0, 0.1, false);
-
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART2, 1, 0, 0.1, true);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.y), MK_CHART2, 1, 0, 0.1, false);
-
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_r.x), MK_CHART2, 2, 0, 0.1, true);
-					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_r.y), MK_CHART2, 2, 0, 0.1, false);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.x), MK_CHART2, 1, 0, 0.2, true);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_t.y), MK_CHART2, 1, 0, 0.2, false);
+					/*
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_r.x), MK_CHART2, 2, 0, 0.05, true);
+					MKChart::CMKChart::set_double_data(&(pIO_Table->physics.PhPlane_r.y), MK_CHART2, 2, 0, 0.05, false);
+										*/
 					MKChart::CMKChart::open_chart(MK_CHART2, hDlg);
-					MKChart::CMKChart::set_reflesh_time(MK_CHART2, 60000);
+
+					MKChart::CMKChart::set_reflesh_time(MK_CHART2, 90000);
 
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO2) {
@@ -90,7 +128,27 @@ LRESULT CALLBACK CClerk::PanelProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
 					};
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO3) {
-					;
+
+						MKChart::CMKChart::init_chartfunc();
+
+						//set_double_data(&data, ChartID, i_chart, i_item, d_100, is_x)
+						// &data:データのアドレス ChartID:MH_CHART1 t-yグラフ　MK_CHART2　散布図グラフ 
+						// i_chart:4グラフのうちの何番目　i_item:４グラフ内データアイテムのうち何番目
+						// d_100:100%の値　is_x：散布図の横軸の項目でture
+
+						 //引込方向振れ
+						MKChart::CMKChart::set_double_data(&(pIO_Table->physics.sway_R), MK_CHART1, 0, 0, 2.0, false);
+
+						//巻き方向速度FB
+						MKChart::CMKChart::set_double_data(&(pIO_Table->physics.vL), MK_CHART1, 0, 1, 0.5, false);
+
+						//引込方向速度Ref
+						MKChart::CMKChart::set_double_data(&(pIO_Table->physics.sway_amp_R), MK_CHART1, 0, 2, 2.0, false);
+
+						MKChart::CMKChart::open_chart(MK_CHART1, hDlg);
+						// spped_ms : チャートが1周する時間
+						MKChart::CMKChart::set_chart_spd(MK_CHART1, 120000);
+
 				}
 				else if (inf.panel_type_id == IDC_TASK_ITEM_RADIO4) {
 					;
